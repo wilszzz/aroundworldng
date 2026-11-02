@@ -44,11 +44,18 @@ class LevelBuilder:
 
         print(f"\n[LevelBuilder] Assembling level '{self.cfg.level_name}'...")
 
-        # 1. Export 16-bit Heightmap
+        # 1. Export 16-bit Heightmap and Native Torque3D .ter binary
         terrain_dir = self.level_dir / "terrain"
         terrain_dir.mkdir(exist_ok=True)
         heightmap_png_path = terrain_dir / "heightmap.png"
         heightmap_proc.export_16bit_png(heightmap_png_path)
+        
+        # Export binary .ter for instant physical collision in BeamNG
+        ter_path = self.level_dir / "theTerrain.ter"
+        heightmap_proc.export_binary_ter(ter_path)
+
+        # Also save as theTerrain.terrainheightmap.png for BeamNG editor
+        heightmap_proc.export_16bit_png(self.level_dir / "theTerrain.terrainheightmap.png")
 
         # 2. Export Satellite Texture and Preview
         art_dir = self.level_dir / "art" / "textures"
@@ -168,7 +175,7 @@ class LevelBuilder:
             {
                 "class": "TerrainBlock",
                 "name": "theTerrain",
-                "terrainFile": f"levels/{self.cfg.level_name}/terrain/heightmap.png",
+                "terrainFile": f"levels/{self.cfg.level_name}/theTerrain.ter",
                 "position": [0.0, 0.0, specs.height_offset],
                 "squareSize": specs.square_size,
                 "maxHeight": specs.max_elev - specs.min_elev,
@@ -201,6 +208,23 @@ class LevelBuilder:
         main_dir.mkdir(exist_ok=True)
         with open(main_dir / "items.level.json", "w", encoding="utf-8") as f:
             f.write(json.dumps({"name": "MissionGroup", "class": "SimGroup", "enabled": "1"}) + "\n")
+
+        # 3. main.materials.json (Material definitions)
+        mat_json = {
+            "satellite_ground": {
+                "name": "satellite_ground",
+                "mapTo": "satellite_ground",
+                "class": "Material",
+                "Stages": [
+                    {
+                        "colorMap": f"levels/{self.cfg.level_name}/art/textures/satellite_ground.png",
+                        "useAnisotropic": True,
+                    }
+                ],
+            }
+        }
+        with open(self.level_dir / "main.materials.json", "w", encoding="utf-8") as f:
+            json.dump(mat_json, f, indent=2)
 
     def _write_info_json(self, sx: float, sy: float, sz: float):
         """Writes info.json for BeamNG Free Roam level selector."""

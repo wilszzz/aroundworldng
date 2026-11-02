@@ -48,7 +48,7 @@ class AroundWorldWebHandler(SimpleHTTPRequestHandler):
                     center_lon=float(data["lon"]),
                     size_meters=float(data["size"]),
                     heightmap_res=int(data.get("res", 1025)),
-                    install_to_beamng=bool(data.get("install", False)),
+                    install_to_beamng=bool(data.get("install", True)),
                 )
 
                 generator = AroundWorldGenerator(cfg)
