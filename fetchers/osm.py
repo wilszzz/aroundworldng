@@ -11,6 +11,7 @@ import requests
 
 OSM_API_URL = "https://api.openstreetmap.org/api/0.6/map"
 OVERPASS_SERVERS = [
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
     "https://lz4.overpass-api.de/api/interpreter",
 ]

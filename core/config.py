@@ -14,19 +14,22 @@ def get_default_beamng_mods_dir() -> Optional[pathlib.Path]:
     if not local_app_data:
         return None
     
-    beamng_root = pathlib.Path(local_app_data) / "BeamNG.drive"
-    if not beamng_root.exists():
-        return None
-    
-    # Check for version folders like 0.33, 0.34, 0.35, etc.
-    version_dirs = [d for d in beamng_root.iterdir() if d.is_dir() and d.name.replace(".", "").isdigit()]
-    if version_dirs:
-        # Pick the latest version
-        latest = sorted(version_dirs, key=lambda p: [int(x) for x in p.name.split(".") if x.isdigit()])[-1]
-        mods_dir = latest / "mods"
-        mods_dir.mkdir(exist_ok=True)
-        return mods_dir
-    
+    # 1. Check modern post-v0.37 path: AppData/Local/BeamNG/BeamNG.drive/current/mods
+    modern_mods = pathlib.Path(local_app_data) / "BeamNG" / "BeamNG.drive" / "current" / "mods"
+    if modern_mods.parent.exists():
+        modern_mods.mkdir(parents=True, exist_ok=True)
+        return modern_mods
+
+    # 2. Check legacy path: AppData/Local/BeamNG.drive/<version>/mods
+    beamng_legacy = pathlib.Path(local_app_data) / "BeamNG.drive"
+    if beamng_legacy.exists():
+        version_dirs = [d for d in beamng_legacy.iterdir() if d.is_dir() and d.name.replace(".", "").isdigit()]
+        if version_dirs:
+            latest = sorted(version_dirs, key=lambda p: [int(x) for x in p.name.split(".") if x.isdigit()])[-1]
+            mods_dir = latest / "mods"
+            mods_dir.mkdir(parents=True, exist_ok=True)
+            return mods_dir
+
     return None
 
 
