@@ -6,6 +6,7 @@ Coordinates data fetching, geospatial processing, road carving, and level packag
 import math
 import pathlib
 from typing import Optional
+import numpy as np
 from PIL import Image
 
 from core.config import MapConfig

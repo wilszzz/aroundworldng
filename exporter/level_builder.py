@@ -45,26 +45,45 @@ class LevelBuilder:
 
         print(f"\n[LevelBuilder] Assembling level '{self.cfg.level_name}'...")
 
-        # 1. Export 16-bit Heightmap and Native Torque3D .ter binary
+        # 1. Export 16-bit Heightmap and Native Torque3D .ter binary (Version 9)
         terrain_dir = self.level_dir / "terrain"
         terrain_dir.mkdir(exist_ok=True)
         heightmap_proc.export_16bit_png(terrain_dir / "heightmap.png")
         heightmap_proc.export_16bit_png(self.level_dir / "theTerrain.terrainheightmap.png")
-        heightmap_proc.export_binary_ter(self.level_dir / "theTerrain.ter")
+        heightmap_proc.export_binary_ter(
+            self.level_dir / "theTerrain.ter",
+            materials=["Grass"],
+            level_name=self.cfg.level_name,
+        )
 
-        # 2. Export Satellite Texture and Previews
-        art_dir = self.level_dir / "art" / "textures"
-        art_dir.mkdir(parents=True, exist_ok=True)
+        # 2. Export Satellite Texture and Previews (Power-of-two 2048x2048 RGBA for PBR Terrain)
+        art_ter_dir = self.level_dir / "art" / "terrains"
+        art_ter_dir.mkdir(parents=True, exist_ok=True)
 
         if sat_image:
-            sat_path = art_dir / "satellite_ground.png"
-            sat_image.save(sat_path, format="PNG")
-            
+            # Resize satellite orthophoto to power-of-two
+            pot_size = 2048
+            sat_pot = sat_image.resize((pot_size, pot_size), Image.Resampling.LANCZOS).convert("RGBA")
+            sat_pot.save(art_ter_dir / "t_terrain_base_b.png", format="PNG")
+
+            # Generate companion PBR maps for terrain texture cooker
+            # Normal map: neutral flat tangent normal (128, 128, 255)
+            nm_img = Image.new("RGB", (pot_size, pot_size), color=(128, 128, 255))
+            nm_img.save(art_ter_dir / "t_terrain_base_nm.png", format="PNG")
+
+            # Roughness map: (200)
+            r_img = Image.new("L", (pot_size, pot_size), color=200)
+            r_img.save(art_ter_dir / "t_terrain_base_r.png", format="PNG")
+
+            # Ambient occlusion: (255)
+            ao_img = Image.new("L", (pot_size, pot_size), color=255)
+            ao_img.save(art_ter_dir / "t_terrain_base_ao.png", format="PNG")
+
             # Save 512x512 preview images for BeamNG UI
             preview_img = sat_image.resize((512, 512), Image.Resampling.LANCZOS)
             preview_img.save(self.level_dir / "info.png")
             preview_img.save(self.level_dir / "_preview.png")
-            print(f"[LevelBuilder] Saved satellite orthophoto & preview images.")
+            print(f"[LevelBuilder] Saved satellite orthophoto (2048x2048 PBR) & preview images.")
 
         # 3. Create 3D Building Base Mesh (.dae)
         building_dae_path = self.level_dir / "art" / "shapes" / "buildings" / "building_box.dae"
@@ -108,22 +127,25 @@ class LevelBuilder:
     def _find_spawn_point(
         self, osm_data: OSMData, heightmap: HeightmapProcessor
     ) -> Tuple[float, float, float]:
-        """Finds a road point closest to map center for spawning."""
-        best_pt = (self.cfg.size_meters / 2.0, self.cfg.size_meters / 2.0, 50.0)
+        """Finds a road point closest to map center (0, 0) for player vehicle spawning."""
+        best_pt = (0.0, 0.0, 50.0)
         min_dist = float("inf")
-        center_x = self.cfg.size_meters / 2.0
-        center_y = self.cfg.size_meters / 2.0
 
         for road in osm_data.roads:
             if road.is_bridge or road.is_tunnel:
                 continue
             for lat, lon in road.nodes:
                 x, y = lat_lon_to_meters(lat, lon, self.cfg.center_lat, self.cfg.center_lon)
-                dist = (x - center_x) ** 2 + (y - center_y) ** 2
+                dist = x ** 2 + y ** 2
                 if dist < min_dist:
                     min_dist = dist
-                    z = heightmap.get_elevation_at_meters(x, y) + 1.0
+                    z = heightmap.get_elevation_at_meters(x, y) + 0.8
                     best_pt = (x, y, z)
+
+        if min_dist == float("inf"):
+            # Fallback to map center
+            z = heightmap.get_elevation_at_meters(0.0, 0.0) + 1.0
+            best_pt = (0.0, 0.0, z)
 
         print(f"[LevelBuilder] Spawn point set at ({best_pt[0]:.1f}, {best_pt[1]:.1f}, {best_pt[2]:.1f})")
         return best_pt
@@ -222,10 +244,12 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "__parent": "MissionGroup",
                 "terrainFile": f"/levels/{self.cfg.level_name}/theTerrain.ter",
-                "position": [0.0, 0.0, specs.height_offset],
+                "position": [-self.cfg.size_meters / 2.0, -self.cfg.size_meters / 2.0, specs.height_offset],
                 "squareSize": specs.square_size,
                 "maxHeight": max(specs.max_elev - specs.min_elev, 10.0),
                 "baseTexSize": 2048,
+                "materialTextureSet": f"{self.cfg.level_name}TerrainMaterialTextureSet",
+                "minimapImage": f"levels/{self.cfg.level_name}/info.png",
                 "lightMapSize": 256,
             },
         ]
@@ -262,34 +286,56 @@ class LevelBuilder:
 
     def _write_materials_json(self):
         """
-        Writes main.materials.json and art/terrains/main.materials.json.
-        Defines TerrainMaterial for SatelliteGround, road materials, and building materials.
+        Writes art/terrains/main.materials.json, art/road/main.materials.json,
+        art/shapes/buildings/main.materials.json and root main.materials.json
+        strictly conforming to BeamNG.drive 0.40 PBR material standards.
         """
         import uuid
 
-        terrain_mat_id = str(uuid.uuid4())
-        ter_mats = {
-            f"SatelliteGround-{terrain_mat_id}": {
-                "internalName": "SatelliteGround",
-                "class": "TerrainMaterial",
-                "persistentId": terrain_mat_id,
-                "annotation": "TERRAIN",
-                "baseColorBaseTex": f"/levels/{self.cfg.level_name}/art/textures/satellite_ground.png",
-                "baseColorBaseTexSize": int(self.cfg.size_meters),
-                "groundmodelName": "ASPHALT",
-                "macroDistances": [0, 50, 500, 3000],
-                "roughnessBaseTexSize": 100,
-            }
-        }
-
-        # 1. art/terrains/main.materials.json (Standard location for TerrainMaterial)
+        # 1. art/terrains/main.materials.json: PBR Terrain Materials and Texture Set
         art_ter_dir = self.level_dir / "art" / "terrains"
         art_ter_dir.mkdir(parents=True, exist_ok=True)
+
+        ter_mats = {
+            f"{self.cfg.level_name}TerrainMaterialTextureSet": {
+                "name": f"{self.cfg.level_name}TerrainMaterialTextureSet",
+                "class": "TerrainMaterialTextureSet",
+                "baseTexSize": [2048, 2048],
+                "detailTexSize": [1024, 1024],
+                "macroTexSize": [1024, 1024],
+            },
+            "Grass": {
+                "internalName": "Grass",
+                "class": "TerrainMaterial",
+                "persistentId": str(uuid.uuid4()),
+                "annotation": "GRASS",
+                "groundmodelName": "GRASS",
+                "baseColorBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_b.png",
+                "baseColorBaseTexSize": int(self.cfg.size_meters),
+                "normalBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_nm.png",
+                "normalBaseTexSize": int(self.cfg.size_meters),
+                "roughnessBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_r.png",
+                "roughnessBaseTexSize": int(self.cfg.size_meters),
+                "aoBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_ao.png",
+                "aoBaseTexSize": int(self.cfg.size_meters),
+                "baseColorDetailTex": "/assets/materials/terrain/grass/ind_grass/t_ind_grass_b.png",
+                "baseColorDetailStrength": [0.25, 0.25],
+                "normalDetailTex": "/assets/materials/terrain/grass/ind_grass/t_ind_grass_nm.png",
+                "normalDetailStrength": [0.6, 0.2],
+                "roughnessDetailTex": "/assets/materials/terrain/grass/ind_grass/t_ind_grass_r.png",
+                "roughnessDetailStrength": [0.3, 0.3],
+                "macroDistances": [0, 10, 100, 3000],
+            },
+        }
+
         with open(art_ter_dir / "main.materials.json", "w", encoding="utf-8") as f:
             json.dump(ter_mats, f, indent=2)
 
-        # 2. Level root main.materials.json (DecalRoad and Building materials)
-        general_mats = {
+        # 2. art/road/main.materials.json: Photorealistic DecalRoad materials using BeamNG built-in core PBR maps
+        art_road_dir = self.level_dir / "art" / "road"
+        art_road_dir.mkdir(parents=True, exist_ok=True)
+
+        road_mats = {
             "road_asphalt": {
                 "name": "road_asphalt",
                 "mapTo": "road_asphalt",
@@ -297,14 +343,27 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "diffuseColor": [0.18, 0.18, 0.20, 1.0],
-                        "roughness": 0.85,
-                    }
+                        "ambientOcclusionMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_ao.data.dds",
+                        "baseColorFactor": [1.0, 1.0, 1.0, 0.95],
+                        "baseColorMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_b.color.dds",
+                        "normalMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_nm.normal.dds",
+                        "opacityMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_o.data.dds",
+                        "roughnessMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_r.data.dds",
+                    },
+                    {},
+                    {},
+                    {},
                 ],
-                "materialTag0": "RoadAndPath",
-                "translucent": True,
-                "translucentBlendOp": "LerpAlpha",
+                "alphaRef": 0,
                 "annotation": "ASPHALT",
+                "castShadows": False,
+                "groundType": "ASPHALT_OLD",
+                "materialTag0": "RoadAndPath",
+                "materialTag1": "beamng",
+                "specularStrength0": "0",
+                "translucent": True,
+                "translucentZWrite": True,
+                "version": 1.5,
             },
             "road_dirt": {
                 "name": "road_dirt",
@@ -313,15 +372,35 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "diffuseColor": [0.45, 0.35, 0.25, 1.0],
-                        "roughness": 0.95,
-                    }
+                        "ambientOcclusionMap": "/assets/materials/decalroad/dirt/DirtRoad_variation_01/t_dirt_variation_01_ao.data.dds",
+                        "baseColorFactor": [1.0, 1.0, 1.0, 0.95],
+                        "baseColorMap": "/assets/materials/decalroad/dirt/DirtRoad_variation_01/t_dirt_variation_01_b.color.dds",
+                        "normalMap": "/assets/materials/decalroad/dirt/DirtRoad_variation_01/t_dirt_variation_01_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/decalroad/dirt/DirtRoad_variation_01/t_dirt_variation_01_r.data.dds",
+                    },
+                    {},
+                    {},
+                    {},
                 ],
-                "materialTag0": "RoadAndPath",
-                "translucent": True,
-                "translucentBlendOp": "LerpAlpha",
                 "annotation": "DIRT",
+                "castShadows": False,
+                "groundType": "DIRT",
+                "materialTag0": "RoadAndPath",
+                "materialTag1": "beamng",
+                "translucent": True,
+                "translucentZWrite": True,
+                "version": 1.5,
             },
+        }
+
+        with open(art_road_dir / "main.materials.json", "w", encoding="utf-8") as f:
+            json.dump(road_mats, f, indent=2)
+
+        # 3. art/shapes/buildings/main.materials.json: 3D TSStatic Building materials
+        art_bld_dir = self.level_dir / "art" / "shapes" / "buildings"
+        art_bld_dir.mkdir(parents=True, exist_ok=True)
+
+        bld_mats = {
             "building_mat": {
                 "name": "building_mat",
                 "mapTo": "building_mat",
@@ -334,11 +413,20 @@ class LevelBuilder:
                     }
                 ],
                 "annotation": "BUILDINGS",
-            },
+            }
         }
 
+        with open(art_bld_dir / "main.materials.json", "w", encoding="utf-8") as f:
+            json.dump(bld_mats, f, indent=2)
+
+        # 4. Level root main.materials.json: Contains combined references for complete fallback compatibility
+        combined_mats = {}
+        combined_mats.update(road_mats)
+        combined_mats.update(bld_mats)
         with open(self.level_dir / "main.materials.json", "w", encoding="utf-8") as f:
-            json.dump(general_mats, f, indent=2)
+            json.dump(combined_mats, f, indent=2)
+
+        print(f"[LevelBuilder] Wrote terrain materials (v0.40 TextureSet), road PBR materials, and building materials.")
         print(f"[LevelBuilder] Wrote terrain materials and decal road materials.")
 
     def _write_info_json(self, sx: float, sy: float, sz: float):

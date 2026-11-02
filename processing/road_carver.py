@@ -35,10 +35,11 @@ class RoadCarver:
         self.origin_lat = origin_lat
         self.origin_lon = origin_lon
         self.margin = blend_margin_meters
+        self.half_span = (self.res - 1) * self.square_size / 2.0
 
     def sample_height(self, x_meters: float, y_meters: float) -> float:
-        px = np.clip(x_meters / self.square_size, 0, self.res - 1)
-        py = np.clip(y_meters / self.square_size, 0, self.res - 1)
+        px = np.clip((x_meters + self.half_span) / self.square_size, 0, self.res - 1)
+        py = np.clip((y_meters + self.half_span) / self.square_size, 0, self.res - 1)
         ix, iy = int(px), int(py)
         return float(self.heights[iy, ix])
 
@@ -88,15 +89,15 @@ class RoadCarver:
                 target_h = smooth_elevs[idx]
 
                 # Bounding box in pixels for this sample point
-                px_min = int(max(0, (pt.x - influence_radius) / self.square_size))
-                px_max = int(min(self.res - 1, (pt.x + influence_radius) / self.square_size))
-                py_min = int(max(0, (pt.y - influence_radius) / self.square_size))
-                py_max = int(min(self.res - 1, (pt.y + influence_radius) / self.square_size))
+                px_min = int(max(0, (pt.x - influence_radius + self.half_span) / self.square_size))
+                px_max = int(min(self.res - 1, (pt.x + influence_radius + self.half_span) / self.square_size))
+                py_min = int(max(0, (pt.y - influence_radius + self.half_span) / self.square_size))
+                py_max = int(min(self.res - 1, (pt.y + influence_radius + self.half_span) / self.square_size))
 
                 for py in range(py_min, py_max + 1):
                     for px in range(px_min, px_max + 1):
-                        gx = px * self.square_size
-                        gy = py * self.square_size
+                        gx = px * self.square_size - self.half_span
+                        gy = py * self.square_size - self.half_span
                         dist = np.hypot(gx - pt.x, gy - pt.y)
 
                         if dist <= half_width:

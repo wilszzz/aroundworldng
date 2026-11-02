@@ -13,12 +13,8 @@ from processing.heightmap import HeightmapProcessor
 def get_road_material(surface: str, highway_type: str) -> str:
     """Selects suitable BeamNG material name based on surface and classification."""
     surface = (surface or "").lower()
-    if surface in {"dirt", "ground", "earth"}:
+    if surface in {"dirt", "ground", "earth", "gravel", "compacted", "fine_gravel", "unpaved", "sand"}:
         return "road_dirt"
-    elif surface in {"gravel", "compacted", "fine_gravel"}:
-        return "road_gravel"
-    elif highway_type in {"motorway", "trunk", "primary"}:
-        return "road_asphalt_clean"
     else:
         return "road_asphalt"
 
@@ -31,7 +27,7 @@ class RoadExporter:
         heightmap_processor: HeightmapProcessor,
         origin_lat: float,
         origin_lon: float,
-        z_offset: float = 0.05,
+        z_offset: float = 0.08,
     ):
         self.heightmap = heightmap_processor
         self.origin_lat = origin_lat
@@ -88,6 +84,9 @@ class RoadExporter:
                     "drivability": 1,
                     "renderPriority": 10,
                     "breakAngle": 3.0,
+                    "improvedSpline": True,
+                    "textureLength": 10.0,
+                    "startEndFade": [5.0, 5.0],
                     "nodes": nodes_data,
                 })
 

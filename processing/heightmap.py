@@ -34,9 +34,13 @@ class HeightmapProcessor:
         self.elevations = elevations.copy()
 
     def get_elevation_at_meters(self, x_meters: float, y_meters: float) -> float:
-        """Samples elevation at local coordinates (meters from bottom-left corner)."""
-        px = x_meters / self.square_size
-        py = y_meters / self.square_size
+        """
+        Samples elevation at local world coordinates (X = East, Y = North),
+        where (0, 0) is the center of the bounding box.
+        """
+        half_w = (self.res - 1) * self.square_size / 2.0
+        px = (x_meters + half_w) / self.square_size
+        py = (y_meters + half_w) / self.square_size
         px = max(0.0, min(float(self.res - 1), px))
         py = max(0.0, min(float(self.res - 1), py))
         
@@ -92,16 +96,18 @@ class HeightmapProcessor:
         self,
         output_ter_path: pathlib.Path,
         materials: list = None,
+        level_name: str = "",
     ):
         """
-        Exports native Torque3D binary .ter file (version 7) and .terrain.json descriptor.
-        This provides instant native physical collision mesh in BeamNG.
+        Exports native Torque3D binary .ter file (Version 9 for modern BeamNG.drive)
+        and modern .terrain.json descriptor.
+        This provides instant native physical collision mesh and PBR groundmodels in BeamNG.
         """
         import struct
         import json
 
         if materials is None:
-            materials = ["SatelliteGround", "Asphalt"]
+            materials = ["Grass"]
 
         specs = self.compute_specs()
         normalized = (self.elevations - specs.height_offset) / specs.height_scale
@@ -113,9 +119,9 @@ class HeightmapProcessor:
 
         layer_map = np.zeros((ter_size, ter_size), dtype=np.uint8)
 
-        # Binary .ter packing
+        # Binary .ter packing (Modern BeamNG Version 9)
         ter_data = bytearray()
-        ter_data.append(7)  # Version 7
+        ter_data.append(9)  # Version 9 for BeamNG >= 0.3x/0.40
         ter_data.extend(struct.pack("<I", ter_size))
         ter_data.extend(cropped_u16.tobytes())
         ter_data.extend(layer_map.tobytes())
@@ -130,21 +136,24 @@ class HeightmapProcessor:
         with open(output_ter_path, "wb") as f:
             f.write(ter_data)
 
-        # Write .terrain.json descriptor
+        # Write modern .terrain.json descriptor matching official template
         terrain_json_path = output_ter_path.parent / f"{output_ter_path.stem}.terrain.json"
-        rel_ter = output_ter_path.name
+        datafile_path = f"/levels/{level_name}/theTerrain.ter" if level_name else f"/{output_ter_path.name}"
+        heightmap_img = f"/levels/{level_name}/theTerrain.terrainheightmap.png" if level_name else f"{output_ter_path.stem}.terrainheightmap.png"
+        
         desc = {
-            "binaryFormat": "version(char), size(unsigned int), heightMap(heightMapSize * heightMapItemSize), layerMap (layerMapSize * layerMapItemSize), materialNames",
-            "datafile": rel_ter,
+            "binaryFormat": "version(char), size(unsigned int), heightMap(heightMapSize * heightMapItemSize), layerMap(layerMapSize * layerMapItemSize), layerTextureMap(layerMapSize * layerMapItemSize), materialNames",
+            "datafile": datafile_path,
             "heightMapItemSize": 2,
             "heightMapSize": ter_size * ter_size,
-            "heightmapImage": f"{output_ter_path.stem}.terrainheightmap.png",
+            "heightmapImage": heightmap_img,
             "layerMapItemSize": 1,
             "layerMapSize": ter_size * ter_size,
             "materials": materials,
             "size": ter_size,
+            "version": 9,
         }
         with open(terrain_json_path, "w", encoding="utf-8") as f:
             json.dump(desc, f, indent=2)
 
-        print(f"[Heightmap] Saved native Torque3D binary terrain ({ter_size}x{ter_size}) to {output_ter_path}")
+        print(f"[Heightmap] Saved native Torque3D v9 binary terrain ({ter_size}x{ter_size}) to {output_ter_path}")
