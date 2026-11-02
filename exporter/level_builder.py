@@ -145,7 +145,10 @@ class LevelBuilder:
             origin_lon=self.cfg.center_lon,
             specs=terrain_specs,
         )
-        water_items = water_builder.generate_water_items(osm_data.waters)
+        water_items = water_builder.generate_water_items(
+            osm_data.waters,
+            has_coastline=osm_data.has_coastline,
+        )
 
         # 9. Determine Player Spawn Point (On a real road near map center)
         spawn_x, spawn_y, spawn_z = self._find_spawn_point(osm_data, heightmap_proc)
@@ -475,11 +478,12 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "ambientOcclusionMap": "/assets/materials/decalroad/dirt/DirtRoad_variation_01/t_dirt_variation_01_ao.data.dds",
+                        "ambientOcclusionMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_ao.data.dds",
                         "baseColorFactor": [1.0, 1.0, 1.0, 0.95],
-                        "baseColorMap": "/assets/materials/decalroad/dirt/DirtRoad_variation_01/t_dirt_variation_01_b.color.dds",
-                        "normalMap": "/assets/materials/decalroad/dirt/DirtRoad_variation_01/t_dirt_variation_01_nm.normal.dds",
-                        "roughnessMap": "/assets/materials/decalroad/dirt/DirtRoad_variation_01/t_dirt_variation_01_r.data.dds",
+                        "baseColorMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_b.color.dds",
+                        "normalMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_nm.normal.dds",
+                        "opacityMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_o.data.dds",
+                        "roughnessMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_r.data.dds",
                     },
                     {}, {}, {}
                 ],

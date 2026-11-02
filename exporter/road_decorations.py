@@ -65,12 +65,10 @@ class RoadDecorationBuilder:
 
                     ux, uy = dx / seg_len, dy / seg_len
                     # Normal vector pointing to the right side of the road
-                    nx, ny = -uy, ux
+                    nx, ny = uy, -ux
 
-                    # Calculate yaw angle facing toward the road
-                    yaw = math.atan2(-nx, -ny)
-                    rot_z = math.sin(yaw / 2.0)
-                    rot_w = math.cos(yaw / 2.0)
+                    # Orient streetlight so its arm (extending along -Y in local mesh) hangs over the road
+                    yaw = math.atan2(-nx, ny)
 
                     while cur_dist < seg_len:
                         sx = p1[0] + ux * cur_dist + nx * (road.width / 2.0 + 1.2)

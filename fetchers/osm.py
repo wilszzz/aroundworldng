@@ -39,6 +39,7 @@ class OSMData:
     buildings: List[List[Tuple[float, float]]] = field(default_factory=list)  # Polygons [(lat, lon), ...]
     forests: List[List[Tuple[float, float]]] = field(default_factory=list)    # Polygons [(lat, lon), ...]
     waters: List[List[Tuple[float, float]]] = field(default_factory=list)     # Polygons [(lat, lon), ...]
+    has_coastline: bool = False
 
 
 def estimate_road_width(highway_type: str, lanes: int, tags: Dict[str, str]) -> float:
@@ -172,6 +173,10 @@ class OSMFetcher:
             elif (tags.get("natural") == "water" or tags.get("waterway") in {"river", "stream"}) and len(way_nodes) >= 2:
                 osm_result.waters.append(way_nodes)
 
+            # Coastline / Sea
+            elif tags.get("natural") == "coastline" or tags.get("place") in {"sea", "ocean"}:
+                osm_result.has_coastline = True
+
         print(
             f"[OSM] Parsed: {len(osm_result.roads)} roads, {len(osm_result.buildings)} buildings, "
             f"{len(osm_result.forests)} forest polygons, {len(osm_result.waters)} water bodies."
@@ -187,6 +192,7 @@ class OSMFetcher:
           way["landuse"="forest"]({bbox_str});
           way["natural"="wood"]({bbox_str});
           way["natural"="water"]({bbox_str});
+          way["natural"="coastline"]({bbox_str});
           way["waterway"="river"]({bbox_str});
         );
         out body;
@@ -228,4 +234,6 @@ class OSMFetcher:
                 osm_result.forests.append(coords)
             elif tags.get("natural") == "water" and len(coords) >= 3:
                 osm_result.waters.append(coords)
+            elif tags.get("natural") == "coastline":
+                osm_result.has_coastline = True
         return osm_result

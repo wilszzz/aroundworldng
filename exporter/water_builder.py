@@ -27,7 +27,9 @@ class WaterBuilder:
         self.specs = specs
 
     def generate_water_items(
-        self, water_polygons: List[List[Tuple[float, float]]]
+        self,
+        water_polygons: List[List[Tuple[float, float]]],
+        has_coastline: bool = False,
     ) -> List[Dict[str, Any]]:
         """Generates list of WaterBlock and WaterPlane SimObjects."""
         items: List[Dict[str, Any]] = []
@@ -53,7 +55,7 @@ class WaterBuilder:
                 cx = (minx + maxx) / 2.0
                 cy = (miny + maxy) / 2.0
 
-                # Sample average water elevation
+                # Sample water surface elevation (slightly below surrounding banks)
                 z = self.heightmap.get_elevation_at_meters(cx, cy)
 
                 items.append({
@@ -61,7 +63,7 @@ class WaterBuilder:
                     "class": "WaterBlock",
                     "persistentId": str(uuid.uuid4()),
                     "__parent": "MissionGroup",
-                    "position": [round(minx, 2), round(miny, 2), round(z + 0.5, 2)],
+                    "position": [round(minx, 2), round(miny, 2), round(z - 0.2, 2)],
                     "scale": [round(w, 2), round(d, 2), 15.0],
                     "baseColor": [18, 90, 125, 220],
                     "clarity": 0.4,
@@ -77,14 +79,16 @@ class WaterBuilder:
             except Exception:
                 continue
 
-        # 2. Ocean WaterPlane (if map elevation reaches near or below sea level)
-        if self.specs.min_elev <= 1.0:
+        # 2. Ocean WaterPlane ONLY if actual coastline/sea is present in the area
+        # and positioned safely at or below min elevation so roads are never submerged
+        if has_coastline:
+            ocean_z = min(self.specs.min_elev, 0.0)
             items.append({
                 "name": "Ocean",
                 "class": "WaterPlane",
                 "persistentId": str(uuid.uuid4()),
                 "__parent": "MissionGroup",
-                "position": [0.0, 0.0, 0.0],
+                "position": [0.0, 0.0, round(ocean_z, 2)],
                 "baseColor": [15, 75, 115, 240],
                 "clarity": 0.35,
                 "viscosity": 0.001,
@@ -93,7 +97,7 @@ class WaterBuilder:
                 "overallWaveMagnitude": 0.25,
                 "overallRippleMagnitude": 1.0,
             })
-            print("[WaterBuilder] Added global ocean WaterPlane at Z = 0.0m.")
+            print(f"[WaterBuilder] Added ocean WaterPlane at Z = {ocean_z:.1f}m for coastline.")
 
         print(f"[WaterBuilder] Created {len(items)} physical water bodies.")
         return items
