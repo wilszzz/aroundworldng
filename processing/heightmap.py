@@ -96,6 +96,7 @@ class HeightmapProcessor:
         self,
         output_ter_path: pathlib.Path,
         materials: list = None,
+        layer_map: np.ndarray = None,
         level_name: str = "",
     ):
         """
@@ -107,7 +108,7 @@ class HeightmapProcessor:
         import json
 
         if materials is None:
-            materials = ["Grass"]
+            materials = ["Grass", "Asphalt", "Dirt", "Rock"]
 
         specs = self.compute_specs()
         normalized = (self.elevations - specs.height_offset) / specs.height_scale
@@ -117,14 +118,17 @@ class HeightmapProcessor:
         ter_size = self.res - 1 if (self.res - 1) & (self.res - 2) == 0 else self.res
         cropped_u16 = uint16_data[:ter_size, :ter_size]
 
-        layer_map = np.zeros((ter_size, ter_size), dtype=np.uint8)
+        if layer_map is not None:
+            cropped_layer_map = layer_map[:ter_size, :ter_size].astype(np.uint8)
+        else:
+            cropped_layer_map = np.zeros((ter_size, ter_size), dtype=np.uint8)
 
         # Binary .ter packing (Modern BeamNG Version 9)
         ter_data = bytearray()
         ter_data.append(9)  # Version 9 for BeamNG >= 0.3x/0.40
         ter_data.extend(struct.pack("<I", ter_size))
         ter_data.extend(cropped_u16.tobytes())
-        ter_data.extend(layer_map.tobytes())
+        ter_data.extend(cropped_layer_map.tobytes())
 
         ter_data.extend(struct.pack("<I", len(materials)))
         for mat in materials:

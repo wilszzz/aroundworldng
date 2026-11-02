@@ -1,8 +1,10 @@
 """
-3D Building Exporter for BeamNG.drive.
-Generates TSStatic building instances matching OpenStreetMap building footprints.
+3D Architectural Building Exporter for BeamNG.drive.
+Generates TSStatic building instances from OpenStreetMap building footprints,
+mapping each footprint to suitable architectural archetypes with orientation and foundation skirts.
 """
 
+import math
 import random
 from typing import Any, Dict, List, Tuple
 import uuid
@@ -11,9 +13,32 @@ from shapely.geometry import Polygon
 from core.projection import lat_lon_to_meters
 from processing.heightmap import HeightmapProcessor
 
+ARCHETYPES = {
+    "house": {
+        "file": "bld_house_small.dae",
+        "bw": 10.0, "bd": 12.0, "bh": 7.0,
+    },
+    "apartment": {
+        "file": "bld_apartment_block.dae",
+        "bw": 24.0, "bd": 14.0, "bh": 16.0,
+    },
+    "commercial": {
+        "file": "bld_commercial_glass.dae",
+        "bw": 20.0, "bd": 20.0, "bh": 26.0,
+    },
+    "plaza": {
+        "file": "bld_commercial_plaza.dae",
+        "bw": 30.0, "bd": 16.0, "bh": 8.0,
+    },
+    "warehouse": {
+        "file": "bld_industrial_warehouse.dae",
+        "bw": 35.0, "bd": 20.0, "bh": 10.0,
+    },
+}
+
 
 class BuildingExporter:
-    """Translates OSM building polygons into BeamNG TSStatic objects."""
+    """Translates OSM building polygons into oriented, textured BeamNG TSStatic objects."""
 
     def __init__(
         self,
@@ -32,7 +57,7 @@ class BuildingExporter:
         building_polygons: List[List[Tuple[float, float]]],
         max_buildings: int = 500,
     ) -> List[Dict[str, Any]]:
-        """Converts building footprint polygons to 3D TSStatic scene objects."""
+        """Converts building footprint polygons to oriented 3D TSStatic scene objects."""
         items: List[Dict[str, Any]] = []
 
         for idx, b_poly in enumerate(building_polygons):
@@ -49,38 +74,64 @@ class BuildingExporter:
                 if not poly.is_valid:
                     poly = poly.buffer(0)
 
+                area = poly.area
+                if area < 25.0:  # Skip tiny sheds or artifacts
+                    continue
+
                 minx, miny, maxx, maxy = poly.bounds
-                w = max(maxx - minx, 5.0)
-                d = max(maxy - miny, 5.0)
                 cx = (minx + maxx) / 2.0
                 cy = (miny + maxy) / 2.0
 
-                z = self.heightmap.get_elevation_at_meters(cx, cy)
-                
-                # Height estimation: area-based or realistic variation
-                if poly.area > 500:
-                    h = random.uniform(14.0, 28.0)  # Large apartment / commercial building
-                else:
-                    h = random.uniform(6.0, 12.0)   # 2-3 story house
+                w = max(maxx - minx, 6.0)
+                d = max(maxy - miny, 6.0)
 
-                # Scale of our 10x10x10 cube
-                sx = w / 10.0
-                sy = d / 10.0
-                sz = h / 10.0
+                # Estimate building orientation from first wall segment
+                p0 = metric_pts[0]
+                p1 = metric_pts[1]
+                yaw = math.atan2(p1[1] - p0[1], p1[0] - p0[0])
+
+                # Select archetype based on footprint dimensions and area
+                if area < 160.0:
+                    atype_key = "house"
+                    h = random.uniform(6.0, 8.5)
+                elif area < 650.0:
+                    atype_key = "apartment"
+                    h = random.uniform(12.0, 18.0)
+                elif area < 1500.0:
+                    atype_key = random.choice(["commercial", "plaza"])
+                    h = random.uniform(15.0, 28.0) if atype_key == "commercial" else random.uniform(7.0, 11.0)
+                else:
+                    atype_key = "warehouse" if w > 40.0 or d > 40.0 else "commercial"
+                    h = random.uniform(10.0, 15.0) if atype_key == "warehouse" else random.uniform(22.0, 36.0)
+
+                spec = ARCHETYPES[atype_key]
+                sx = round(w / spec["bw"], 3)
+                sy = round(d / spec["bd"], 3)
+                sz = round(h / spec["bh"], 3)
+
+                z = self.heightmap.get_elevation_at_meters(cx, cy)
+
+                cos_y = math.cos(yaw)
+                sin_y = math.sin(yaw)
 
                 bld_obj = {
-                    "name": f"building_{idx}",
+                    "name": f"building_{atype_key}_{idx}",
                     "class": "TSStatic",
                     "persistentId": str(uuid.uuid4()),
                     "__parent": "MissionGroup",
                     "position": [round(cx, 2), round(cy, 2), round(z, 2)],
-                    "scale": [round(sx, 3), round(sy, 3), round(sz, 3)],
-                    "shapeName": f"/levels/{self.level_name}/art/shapes/buildings/building_box.dae",
+                    "rotationMatrix": [
+                        round(cos_y, 4), round(-sin_y, 4), 0.0,
+                        round(sin_y, 4), round(cos_y, 4), 0.0,
+                        0.0, 0.0, 1.0,
+                    ],
+                    "scale": [sx, sy, sz],
+                    "shapeName": f"/levels/{self.level_name}/art/shapes/buildings/{spec['file']}",
                     "collisionType": "Visible Mesh Final",
                 }
                 items.append(bld_obj)
             except Exception:
                 continue
 
-        print(f"[BuildingExporter] Generated {len(items)} 3D solid buildings.")
+        print(f"[BuildingExporter] Generated {len(items)} oriented architectural 3D buildings.")
         return items
