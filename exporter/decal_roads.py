@@ -56,18 +56,20 @@ class RoadExporter:
 
             mat_name = get_road_material(road.surface, road.highway_type)
             road_id = str(uuid.uuid4())
+            first_pos = [nodes_data[0][0], nodes_data[0][1], nodes_data[0][2]]
 
             if road.is_bridge:
                 # MeshRoad for bridges
                 mesh_nodes = []
                 for node in nodes_data:
-                    # [x, y, z, width, depth, normal_x, normal_y, normal_z]
                     mesh_nodes.append([node[0], node[1], node[2] + 1.0, node[3], 0.6, 0.0, 0.0, 1.0])
 
                 items.append({
                     "name": f"bridge_{road.osm_id}_{idx}",
                     "class": "MeshRoad",
                     "persistentId": road_id,
+                    "__parent": "MissionGroup",
+                    "position": first_pos,
                     "topMaterial": mat_name,
                     "bottomMaterial": "concrete_plain",
                     "sideMaterial": "concrete_plain",
@@ -80,6 +82,8 @@ class RoadExporter:
                     "name": f"road_{road.osm_id}_{idx}",
                     "class": "DecalRoad",
                     "persistentId": road_id,
+                    "__parent": "MissionGroup",
+                    "position": first_pos,
                     "material": mat_name,
                     "drivability": 1,
                     "renderPriority": 10,
