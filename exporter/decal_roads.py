@@ -3,7 +3,7 @@ DecalRoad and MeshRoad Generator for BeamNG.drive.
 Converts OSM road segments into Torque3D road splines.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import uuid
 from core.projection import lat_lon_to_meters
 from fetchers.osm import RoadSegment
@@ -13,10 +13,10 @@ from processing.heightmap import HeightmapProcessor
 def get_road_material(surface: str, highway_type: str) -> str:
     """Selects suitable BeamNG material name based on surface and classification."""
     surface = (surface or "").lower()
-    if surface in {"dirt", "ground", "earth", "gravel", "compacted", "fine_gravel", "unpaved", "sand"}:
+    if surface in {"dirt", "ground", "earth", "gravel", "compacted", "fine_gravel", "sand"}:
         return "road_dirt"
     else:
-        return "road_asphalt"
+        return "AsphaltRoad_variation_01"
 
 
 class RoadExporter:
@@ -28,27 +28,47 @@ class RoadExporter:
         origin_lat: float,
         origin_lon: float,
         z_offset: float = 0.08,
+        size_meters: Optional[float] = None,
     ):
         self.heightmap = heightmap_processor
         self.origin_lat = origin_lat
         self.origin_lon = origin_lon
         self.z_offset = z_offset
+        self.size_meters = size_meters
 
     def export_roads(self, roads: List[RoadSegment]) -> List[Dict[str, Any]]:
         """Generates list of DecalRoad and MeshRoad JSON objects for items.level.json."""
         items: List[Dict[str, Any]] = []
+        half = (self.size_meters / 2.0 - 2.0) if self.size_meters else None
 
         for idx, road in enumerate(roads):
             if len(road.nodes) < 2:
                 continue
 
-            nodes_data = []
+            raw_nodes = []
             for lat, lon in road.nodes:
                 x, y = lat_lon_to_meters(lat, lon, self.origin_lat, self.origin_lon)
-                # Sample smoothed height
+                if half is not None:
+                    x = max(-half, min(half, x))
+                    y = max(-half, min(half, y))
                 z = self.heightmap.get_elevation_at_meters(x, y) + self.z_offset
                 w = road.width
-                nodes_data.append([round(x, 3), round(y, 3), round(z, 3), round(w, 2)])
+                raw_nodes.append([round(x, 3), round(y, 3), round(z, 3), round(w, 2)])
+
+            # Discard if entire road is pegged to bounding borders
+            if half is not None and all(abs(n[0]) >= half - 0.1 or abs(n[1]) >= half - 0.1 for n in raw_nodes):
+                continue
+
+            # Deduplicate closely spaced consecutive clamped nodes
+            nodes_data = [raw_nodes[0]]
+            for n in raw_nodes[1:]:
+                dx = n[0] - nodes_data[-1][0]
+                dy = n[1] - nodes_data[-1][1]
+                if (dx * dx + dy * dy) > 0.25:  # at least 0.5m apart
+                    nodes_data.append(n)
+
+            if len(nodes_data) < 2:
+                continue
 
             mat_name = get_road_material(road.surface, road.highway_type)
             road_id = str(uuid.uuid4())
@@ -73,7 +93,7 @@ class RoadExporter:
                     "widthSubdivisions": 1,
                 })
             else:
-                # Standard DecalRoad
+                # Standard DecalRoad with official BeamNG properties
                 items.append({
                     "name": f"road_{road.osm_id}_{idx}",
                     "class": "DecalRoad",
@@ -82,10 +102,13 @@ class RoadExporter:
                     "position": first_pos,
                     "material": mat_name,
                     "drivability": 1,
-                    "renderPriority": 10,
+                    "overObjects": True,
+                    "detail": 0.2,
+                    "distanceFade": [500, 100],
+                    "renderPriority": 1,
                     "breakAngle": 3.0,
                     "improvedSpline": True,
-                    "textureLength": 10.0,
+                    "textureLength": 60.0,
                     "startEndFade": [5.0, 5.0],
                     "nodes": nodes_data,
                 })

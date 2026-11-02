@@ -71,28 +71,32 @@ class LevelBuilder:
             level_name=self.cfg.level_name,
         )
 
-        # 3. Export Satellite Macro Texture and UI Previews (Power-of-two 2048x2048 RGBA)
+        # 3. Export Base Terrain Textures and UI Previews (Power-of-two 2048x2048)
         art_ter_dir = self.level_dir / "art" / "terrains"
         art_ter_dir.mkdir(parents=True, exist_ok=True)
 
+        pot_size = 2048
+        # Create standard PBR base textures for Torque3D terrain cell shader
+        base_img = Image.new("RGB", (pot_size, pot_size), color=(126, 116, 100))
+        base_img.save(art_ter_dir / "t_terrain_base_b.png", format="PNG")
+
+        nm_img = Image.new("RGB", (pot_size, pot_size), color=(128, 128, 255))
+        nm_img.save(art_ter_dir / "t_terrain_base_nm.png", format="PNG")
+
+        r_img = Image.new("L", (pot_size, pot_size), color=235)
+        r_img.save(art_ter_dir / "t_terrain_base_r.png", format="PNG")
+
+        ao_img = Image.new("L", (pot_size, pot_size), color=255)
+        ao_img.save(art_ter_dir / "t_terrain_base_ao.png", format="PNG")
+
+        h_img = Image.new("L", (pot_size, pot_size), color=128)
+        h_img.save(art_ter_dir / "t_terrain_base_h.png", format="PNG")
+
         if sat_image:
-            pot_size = 2048
-            sat_pot = sat_image.resize((pot_size, pot_size), Image.Resampling.LANCZOS).convert("RGBA")
-            sat_pot.save(art_ter_dir / "t_terrain_base_b.png", format="PNG")
-
-            nm_img = Image.new("RGB", (pot_size, pot_size), color=(128, 128, 255))
-            nm_img.save(art_ter_dir / "t_terrain_base_nm.png", format="PNG")
-
-            r_img = Image.new("L", (pot_size, pot_size), color=200)
-            r_img.save(art_ter_dir / "t_terrain_base_r.png", format="PNG")
-
-            ao_img = Image.new("L", (pot_size, pot_size), color=255)
-            ao_img.save(art_ter_dir / "t_terrain_base_ao.png", format="PNG")
-
             preview_img = sat_image.resize((512, 512), Image.Resampling.LANCZOS)
             preview_img.save(self.level_dir / "info.png")
             preview_img.save(self.level_dir / "_preview.png")
-            print(f"[LevelBuilder] Saved macro satellite orthophoto & preview images.")
+            print(f"[LevelBuilder] Saved UI preview and minimap textures.")
 
         # 4. Generate Architectural 3D Building Archetypes & Instances
         shapes_dir = self.level_dir / "art" / "shapes"
@@ -113,6 +117,7 @@ class LevelBuilder:
             heightmap_processor=heightmap_proc,
             origin_lat=self.cfg.center_lat,
             origin_lon=self.cfg.center_lon,
+            size_meters=self.cfg.size_meters,
         )
         road_items = road_exporter.export_roads(osm_data.roads) if self.cfg.generate_roads else []
 
@@ -337,7 +342,8 @@ class LevelBuilder:
     def _write_materials_json(self):
         """
         Writes art/terrains/main.materials.json, art/road/main.materials.json,
-        art/shapes/buildings/main.materials.json, and level root main.materials.json.
+        art/shapes/buildings/main.materials.json, art/forest/main.materials.json,
+        art/shapes/trees/main.materials.json, and level root main.materials.json.
         """
         import uuid
 
@@ -345,163 +351,62 @@ class LevelBuilder:
         art_ter_dir = self.level_dir / "art" / "terrains"
         art_ter_dir.mkdir(parents=True, exist_ok=True)
 
-        ter_mats = {
+        terrain_mats_path = pathlib.Path(__file__).parent / "terrain_materials.json"
+        if terrain_mats_path.exists():
+            with open(terrain_mats_path, "r", encoding="utf-8") as f:
+                raw_ter_json = f.read()
+            raw_ter_json = raw_ter_json.replace("{LEVEL}", self.cfg.level_name)
+            ter_mats = json.loads(raw_ter_json)
+        else:
+            ter_mats = {}
+
+        full_ter_mats = {
             f"{self.cfg.level_name}TerrainMaterialTextureSet": {
                 "name": f"{self.cfg.level_name}TerrainMaterialTextureSet",
                 "class": "TerrainMaterialTextureSet",
                 "baseTexSize": [2048, 2048],
                 "detailTexSize": [1024, 1024],
                 "macroTexSize": [1024, 1024],
-            },
-            "Grass": {
-                "internalName": "Grass",
-                "class": "TerrainMaterial",
-                "persistentId": str(uuid.uuid4()),
-                "annotation": "GRASS",
-                "groundmodelName": "GRASS",
-                "baseColorBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_b.png",
-                "baseColorBaseTexSize": 2048,
-                "normalBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_nm.png",
-                "normalBaseTexSize": 2048,
-                "roughnessBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_r.png",
-                "roughnessBaseTexSize": 2048,
-                "aoBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_ao.png",
-                "aoBaseTexSize": 2048,
-                "baseColorDetailTex": "/assets/materials/terrain/grass/ind_grass/t_ind_grass_b.png",
-                "baseColorDetailStrength": [0.25, 0.25],
-                "normalDetailTex": "/assets/materials/terrain/grass/ind_grass/t_ind_grass_nm.png",
-                "normalDetailStrength": [0.6, 0.2],
-                "roughnessDetailTex": "/assets/materials/terrain/grass/ind_grass/t_ind_grass_r.png",
-                "roughnessDetailStrength": [0.3, 0.3],
-                "macroDistances": [0, 10, 100, 3000],
-            },
-            "Asphalt": {
-                "internalName": "Asphalt",
-                "class": "TerrainMaterial",
-                "persistentId": str(uuid.uuid4()),
-                "annotation": "ASPHALT",
-                "groundmodelName": "ASPHALT",
-                "baseColorBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_b.png",
-                "baseColorBaseTexSize": 2048,
-                "normalBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_nm.png",
-                "normalBaseTexSize": 2048,
-                "roughnessBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_r.png",
-                "roughnessBaseTexSize": 2048,
-                "aoBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_ao.png",
-                "aoBaseTexSize": 2048,
-                "baseColorDetailTex": "/assets/materials/terrain/asphalt/asphalt/t_asphalt_b.png",
-                "baseColorDetailStrength": [0.4, 0.3],
-                "normalDetailTex": "/assets/materials/terrain/asphalt/asphalt/t_asphalt_nm.png",
-                "normalDetailStrength": [0.7, 0.3],
-                "roughnessDetailTex": "/assets/materials/terrain/asphalt/asphalt/t_asphalt_r.png",
-                "macroDistances": [0, 10, 80, 2000],
-            },
-            "Dirt": {
-                "internalName": "Dirt",
-                "class": "TerrainMaterial",
-                "persistentId": str(uuid.uuid4()),
-                "annotation": "DIRT",
-                "groundmodelName": "DIRT",
-                "baseColorBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_b.png",
-                "baseColorBaseTexSize": 2048,
-                "normalBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_nm.png",
-                "normalBaseTexSize": 2048,
-                "roughnessBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_r.png",
-                "roughnessBaseTexSize": 2048,
-                "aoBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_ao.png",
-                "aoBaseTexSize": 2048,
-                "baseColorDetailTex": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_b.png",
-                "baseColorDetailStrength": [0.5, 0.4],
-                "normalDetailTex": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_nm.png",
-                "macroDistances": [0, 10, 100, 3000],
-            },
-            "Rock": {
-                "internalName": "Rock",
-                "class": "TerrainMaterial",
-                "persistentId": str(uuid.uuid4()),
-                "annotation": "ROCK",
-                "groundmodelName": "ROCK",
-                "baseColorBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_b.png",
-                "baseColorBaseTexSize": 2048,
-                "normalBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_nm.png",
-                "normalBaseTexSize": 2048,
-                "roughnessBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_r.png",
-                "roughnessBaseTexSize": 2048,
-                "aoBaseTex": f"/levels/{self.cfg.level_name}/art/terrains/t_terrain_base_ao.png",
-                "aoBaseTexSize": 2048,
-                "baseColorDetailTex": "/assets/materials/terrain/rock/terrain_dirt_rocky_large/t_dirt_rocks_large_b.png",
-                "baseColorDetailStrength": [0.6, 0.5],
-                "normalDetailTex": "/assets/materials/terrain/rock/terrain_dirt_rocky_large/t_dirt_rocks_large_nm.png",
-                "macroDistances": [0, 15, 150, 3000],
-            },
+            }
         }
+        full_ter_mats.update(ter_mats)
 
         with open(art_ter_dir / "main.materials.json", "w", encoding="utf-8") as f:
-            json.dump(ter_mats, f, indent=2)
+            json.dump(full_ter_mats, f, indent=2)
 
-        # 2. Photorealistic DecalRoad materials
+        # 2. Photorealistic DecalRoad materials (West Coast USA official standard)
         art_road_dir = self.level_dir / "art" / "road"
         art_road_dir.mkdir(parents=True, exist_ok=True)
 
-        road_mats = {
-            "road_asphalt": {
-                "name": "road_asphalt",
-                "mapTo": "road_asphalt",
-                "class": "Material",
-                "persistentId": str(uuid.uuid4()),
-                "Stages": [
-                    {
-                        "ambientOcclusionMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_ao.data.dds",
-                        "baseColorFactor": [1.0, 1.0, 1.0, 0.95],
-                        "baseColorMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_b.color.dds",
-                        "normalMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_nm.normal.dds",
-                        "opacityMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_o.data.dds",
-                        "roughnessMap": "/assets/materials/decalroad/asphalt/AsphaltRoad_variation_02/t_asphalt_variation_02_r.data.dds",
-                    },
-                    {}, {}, {}
-                ],
-                "alphaRef": 0,
-                "annotation": "ASPHALT",
-                "castShadows": False,
-                "groundType": "ASPHALT_OLD",
-                "materialTag0": "RoadAndPath",
-                "materialTag1": "beamng",
-                "specularStrength0": "0",
-                "translucent": True,
-                "translucentZWrite": True,
-                "version": 1.5,
-            },
-            "road_dirt": {
-                "name": "road_dirt",
-                "mapTo": "road_dirt",
-                "class": "Material",
-                "persistentId": str(uuid.uuid4()),
-                "Stages": [
-                    {
-                        "ambientOcclusionMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_ao.data.dds",
-                        "baseColorFactor": [1.0, 1.0, 1.0, 0.95],
-                        "baseColorMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_b.color.dds",
-                        "normalMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_nm.normal.dds",
-                        "opacityMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_o.data.dds",
-                        "roughnessMap": "/assets/materials/decalroad/dirt/m_dirt_variation_01/t_dirt_variation_01_r.data.dds",
-                    },
-                    {}, {}, {}
-                ],
-                "annotation": "DIRT",
-                "castShadows": False,
-                "groundType": "DIRT",
-                "materialTag0": "RoadAndPath",
-                "materialTag1": "beamng",
-                "translucent": True,
-                "translucentZWrite": True,
-                "version": 1.5,
-            },
-        }
+        road_mats_path = pathlib.Path(__file__).parent / "road_materials.json"
+        if road_mats_path.exists():
+            with open(road_mats_path, "r", encoding="utf-8") as f:
+                road_mats = json.load(f)
+        else:
+            road_mats = {}
 
         with open(art_road_dir / "main.materials.json", "w", encoding="utf-8") as f:
             json.dump(road_mats, f, indent=2)
 
-        # 3. 3D Architectural Building Facade & Roof materials
+        # 3. Tree & Foliage materials (26 complete species and leaf/bark symbols)
+        art_forest_dir = self.level_dir / "art" / "forest"
+        art_forest_dir.mkdir(parents=True, exist_ok=True)
+        art_trees_dir = self.level_dir / "art" / "shapes" / "trees"
+        art_trees_dir.mkdir(parents=True, exist_ok=True)
+
+        tree_mats_path = pathlib.Path(__file__).parent / "tree_materials.json"
+        if tree_mats_path.exists():
+            with open(tree_mats_path, "r", encoding="utf-8") as f:
+                tree_mats = json.load(f)
+        else:
+            tree_mats = {}
+
+        with open(art_forest_dir / "main.materials.json", "w", encoding="utf-8") as f:
+            json.dump(tree_mats, f, indent=2)
+        with open(art_trees_dir / "main.materials.json", "w", encoding="utf-8") as f:
+            json.dump(tree_mats, f, indent=2)
+
+        # 4. 3D Architectural Building Facade & Roof materials (100% PBR core assets)
         art_bld_dir = self.level_dir / "art" / "shapes" / "buildings"
         art_bld_dir.mkdir(parents=True, exist_ok=True)
 
@@ -528,10 +433,9 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "diffuseColor": [0.25, 0.42, 0.58, 1.0],
-                        "roughness": 0.1,
-                        "metallic": 0.8,
-                        "clearCoat": 1.0,
+                        "baseColorMap": "/assets/materials/tileable/glass/modernstripwindow/t_window_strips_01_b.color.dds",
+                        "normalMap": "/assets/materials/tileable/glass/modernstripwindow/t_window_strips_01_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/tileable/glass/modernstripwindow/t_window_strips_01_r.data.dds",
                     }
                 ],
                 "annotation": "BUILDINGS",
@@ -543,8 +447,10 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "diffuseColor": [0.88, 0.85, 0.82, 1.0],
-                        "roughness": 0.75,
+                        "baseColorMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_b.color.dds",
+                        "normalMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_r.data.dds",
+                        "ambientOcclusionMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_ao.data.dds",
                     }
                 ],
                 "annotation": "BUILDINGS",
@@ -556,9 +462,10 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "diffuseColor": [0.65, 0.68, 0.72, 1.0],
-                        "roughness": 0.4,
-                        "metallic": 0.6,
+                        "baseColorMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_b.color.dds",
+                        "normalMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_r.data.dds",
+                        "ambientOcclusionMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_ao.data.dds",
                     }
                 ],
                 "annotation": "BUILDINGS",
@@ -570,8 +477,9 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "diffuseColor": [0.28, 0.28, 0.30, 1.0],
-                        "roughness": 0.9,
+                        "baseColorMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_b.color.dds",
+                        "normalMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_r.data.dds",
                     }
                 ],
                 "annotation": "BUILDINGS",
@@ -583,8 +491,9 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "diffuseColor": [0.65, 0.32, 0.22, 1.0],
-                        "roughness": 0.8,
+                        "baseColorMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_b.color.dds",
+                        "normalMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_r.data.dds",
                     }
                 ],
                 "annotation": "BUILDINGS",
@@ -594,14 +503,15 @@ class LevelBuilder:
         with open(art_bld_dir / "main.materials.json", "w", encoding="utf-8") as f:
             json.dump(bld_mats, f, indent=2)
 
-        # 4. Root main.materials.json fallback
+        # 5. Root main.materials.json fallback (bundles all materials for immediate lookup)
         combined_mats = {}
+        combined_mats.update(tree_mats)
         combined_mats.update(road_mats)
         combined_mats.update(bld_mats)
         with open(self.level_dir / "main.materials.json", "w", encoding="utf-8") as f:
             json.dump(combined_mats, f, indent=2)
 
-        print(f"[LevelBuilder] Wrote full PBR multi-layer terrain, road, and architectural facade materials.")
+        print(f"[LevelBuilder] Wrote full PBR multi-layer terrain, road, foliage, and architectural facade materials.")
 
     def _write_info_json(self, sx: float, sy: float, sz: float):
         """Writes info.json for BeamNG Free Roam level selector."""

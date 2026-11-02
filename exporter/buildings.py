@@ -75,15 +75,17 @@ class BuildingExporter:
                     poly = poly.buffer(0)
 
                 area = poly.area
-                if area < 25.0:  # Skip tiny sheds or artifacts
+                # Skip tiny sheds or giant open grounds/stadium zones (> 5000 m2)
+                if area < 30.0 or area > 5000.0:
                     continue
 
                 minx, miny, maxx, maxy = poly.bounds
                 cx = (minx + maxx) / 2.0
                 cy = (miny + maxy) / 2.0
 
-                w = max(maxx - minx, 6.0)
-                d = max(maxy - miny, 6.0)
+                # Clamp width and depth to realistic building bounds
+                w = min(max(maxx - minx, 8.0), 45.0)
+                d = min(max(maxy - miny, 8.0), 35.0)
 
                 # Estimate building orientation from first wall segment
                 p0 = metric_pts[0]
@@ -91,23 +93,23 @@ class BuildingExporter:
                 yaw = math.atan2(p1[1] - p0[1], p1[0] - p0[0])
 
                 # Select archetype based on footprint dimensions and area
-                if area < 160.0:
+                if area < 180.0:
                     atype_key = "house"
-                    h = random.uniform(6.0, 8.5)
+                    h = random.uniform(6.5, 8.5)
                 elif area < 650.0:
                     atype_key = "apartment"
                     h = random.uniform(12.0, 18.0)
-                elif area < 1500.0:
+                elif area < 1600.0:
                     atype_key = random.choice(["commercial", "plaza"])
-                    h = random.uniform(15.0, 28.0) if atype_key == "commercial" else random.uniform(7.0, 11.0)
+                    h = random.uniform(16.0, 24.0) if atype_key == "commercial" else random.uniform(7.5, 10.0)
                 else:
-                    atype_key = "warehouse" if w > 40.0 or d > 40.0 else "commercial"
-                    h = random.uniform(10.0, 15.0) if atype_key == "warehouse" else random.uniform(22.0, 36.0)
+                    atype_key = "warehouse" if w > 30.0 or d > 30.0 else "commercial"
+                    h = random.uniform(9.0, 13.0) if atype_key == "warehouse" else random.uniform(18.0, 26.0)
 
                 spec = ARCHETYPES[atype_key]
-                sx = round(w / spec["bw"], 3)
-                sy = round(d / spec["bd"], 3)
-                sz = round(h / spec["bh"], 3)
+                sx = round(max(0.5, min(2.5, w / spec["bw"])), 3)
+                sy = round(max(0.5, min(2.5, d / spec["bd"])), 3)
+                sz = round(max(0.6, min(2.0, h / spec["bh"])), 3)
 
                 z = self.heightmap.get_elevation_at_meters(cx, cy)
 
