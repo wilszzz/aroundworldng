@@ -101,7 +101,7 @@ class HeightmapProcessor:
         import json
 
         if materials is None:
-            materials = ["Asphalt", "Grass"]
+            materials = ["SatelliteGround", "Asphalt"]
 
         specs = self.compute_specs()
         normalized = (self.elevations - specs.height_offset) / specs.height_scale

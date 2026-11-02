@@ -95,7 +95,7 @@ class LevelBuilder:
         # 7. Generate Scene Hierarchy (main/items.level.json and main/MissionGroup/items.level.json)
         self._write_scene_ndjson(terrain_specs, road_items, building_items, spawn_x, spawn_y, spawn_z)
 
-        # 8. Generate main.materials.json
+        # 8. Generate main.materials.json and art/terrains/main.materials.json
         self._write_materials_json()
 
         # 9. Generate info.json
@@ -261,57 +261,85 @@ class LevelBuilder:
             json.dump(main_json, f, indent=2)
 
     def _write_materials_json(self):
-        """Writes main.materials.json defining ground, building, and road materials."""
-        mat_json = {
-            "satellite_ground": {
-                "name": "satellite_ground",
-                "mapTo": "satellite_ground",
-                "class": "Material",
-                "Stages": [
-                    {
-                        "colorMap": f"/levels/{self.cfg.level_name}/art/textures/satellite_ground.png",
-                        "useAnisotropic": True,
-                    }
-                ],
-            },
-            "building_mat": {
-                "name": "building_mat",
-                "mapTo": "building_mat",
-                "class": "Material",
-                "Stages": [
-                    {
-                        "colorMap": f"/levels/{self.cfg.level_name}/art/textures/satellite_ground.png",
-                        "diffuseColor": [0.85, 0.82, 0.8, 1.0],
-                        "roughness": 0.8,
-                    }
-                ],
-            },
+        """
+        Writes main.materials.json and art/terrains/main.materials.json.
+        Defines TerrainMaterial for SatelliteGround, road materials, and building materials.
+        """
+        import uuid
+
+        terrain_mat_id = str(uuid.uuid4())
+        ter_mats = {
+            f"SatelliteGround-{terrain_mat_id}": {
+                "internalName": "SatelliteGround",
+                "class": "TerrainMaterial",
+                "persistentId": terrain_mat_id,
+                "annotation": "TERRAIN",
+                "baseColorBaseTex": f"/levels/{self.cfg.level_name}/art/textures/satellite_ground.png",
+                "baseColorBaseTexSize": int(self.cfg.size_meters),
+                "groundmodelName": "ASPHALT",
+                "macroDistances": [0, 50, 500, 3000],
+                "roughnessBaseTexSize": 100,
+            }
+        }
+
+        # 1. art/terrains/main.materials.json (Standard location for TerrainMaterial)
+        art_ter_dir = self.level_dir / "art" / "terrains"
+        art_ter_dir.mkdir(parents=True, exist_ok=True)
+        with open(art_ter_dir / "main.materials.json", "w", encoding="utf-8") as f:
+            json.dump(ter_mats, f, indent=2)
+
+        # 2. Level root main.materials.json (DecalRoad and Building materials)
+        general_mats = {
             "road_asphalt": {
                 "name": "road_asphalt",
                 "mapTo": "road_asphalt",
                 "class": "Material",
+                "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
                         "diffuseColor": [0.18, 0.18, 0.20, 1.0],
-                        "roughness": 0.9,
+                        "roughness": 0.85,
                     }
                 ],
+                "materialTag0": "RoadAndPath",
+                "translucent": True,
+                "translucentBlendOp": "LerpAlpha",
+                "annotation": "ASPHALT",
             },
             "road_dirt": {
                 "name": "road_dirt",
                 "mapTo": "road_dirt",
                 "class": "Material",
+                "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "diffuseColor": [0.42, 0.32, 0.22, 1.0],
+                        "diffuseColor": [0.45, 0.35, 0.25, 1.0],
                         "roughness": 0.95,
                     }
                 ],
+                "materialTag0": "RoadAndPath",
+                "translucent": True,
+                "translucentBlendOp": "LerpAlpha",
+                "annotation": "DIRT",
+            },
+            "building_mat": {
+                "name": "building_mat",
+                "mapTo": "building_mat",
+                "class": "Material",
+                "persistentId": str(uuid.uuid4()),
+                "Stages": [
+                    {
+                        "diffuseColor": [0.82, 0.80, 0.78, 1.0],
+                        "roughness": 0.75,
+                    }
+                ],
+                "annotation": "BUILDINGS",
             },
         }
+
         with open(self.level_dir / "main.materials.json", "w", encoding="utf-8") as f:
-            json.dump(mat_json, f, indent=2)
-        print(f"[LevelBuilder] Wrote main.materials.json")
+            json.dump(general_mats, f, indent=2)
+        print(f"[LevelBuilder] Wrote terrain materials and decal road materials.")
 
     def _write_info_json(self, sx: float, sy: float, sz: float):
         """Writes info.json for BeamNG Free Roam level selector."""
