@@ -1,0 +1,1 @@
+"""AroundWorldNG Core Package"""

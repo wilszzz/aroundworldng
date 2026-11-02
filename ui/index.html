@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>AroundWorldNG — Генератор карт BeamNG.drive</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { display: flex; height: 100vh; background: #121316; color: #e4e7eb; }
+    #sidebar { width: 380px; padding: 24px; background: #1a1c22; border-right: 1px solid #2b2e38; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+    #map { flex: 1; height: 100%; }
+    h1 { font-size: 20px; color: #ff5722; display: flex; align-items: center; gap: 8px; }
+    .subtitle { font-size: 13px; color: #8e95a5; line-height: 1.4; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 13px; font-weight: 500; color: #b0b7c3; }
+    input, select { background: #262933; border: 1px solid #363a47; border-radius: 6px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none; }
+    input:focus, select:focus { border-color: #ff5722; }
+    .row { display: flex; gap: 10px; }
+    .row .form-group { flex: 1; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+    .checkbox-group input { width: 16px; height: 16px; cursor: pointer; }
+    button#generate-btn { background: #ff5722; color: #fff; border: none; border-radius: 6px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+    button#generate-btn:hover { background: #f4511e; }
+    button#generate-btn:disabled { background: #555; cursor: not-allowed; }
+    #console-box { background: #0c0d10; border: 1px solid #2b2e38; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; height: 140px; overflow-y: auto; color: #6be285; white-space: pre-wrap; }
+    .badge { background: #2a2d39; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #ff9800; font-weight: normal; }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar">
+    <div>
+      <h1>AroundWorldNG <span class="badge">v1.0</span></h1>
+      <p class="subtitle">Генератор локаций BeamNG.drive по данным Яндекс Карт и OpenStreetMap с защитой от помех.</p>
+    </div>
+
+    <div class="form-group">
+      <label>Поиск города / места (Россия)</label>
+      <input type="text" id="search-input" placeholder="Например: Сочи, Красная Поляна" />
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label>Широта (Lat)</label>
+        <input type="text" id="lat-input" value="55.751244" />
+      </div>
+      <div class="form-group">
+        <label>Долгота (Lon)</label>
+        <input type="text" id="lon-input" value="37.618423" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label>Размер области</label>
+        <select id="size-select">
+          <option value="1024">1 x 1 км (Быстро)</option>
+          <option value="2048" selected>2 x 2 км (Стандарт)</option>
+          <option value="4096">4 x 4 км (Огромный)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Детализация</label>
+        <select id="res-select">
+          <option value="1025" selected>1025 x 1025</option>
+          <option value="2049">2049 x 2049 (Ultra)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Название уровня (ID)</label>
+      <input type="text" id="level-name" value="russia_custom_track" />
+    </div>
+
+    <div class="form-group">
+      <label>Отображаемое название в игре</label>
+      <input type="text" id="level-title" value="Живописная трасса (Яндекс Карты)" />
+    </div>
+
+    <div class="checkbox-group">
+      <input type="checkbox" id="install-beamng" checked />
+      <label for="install-beamng">Установить прямо в папку BeamNG.drive /mods</label>
+    </div>
+
+    <button id="generate-btn" onclick="startGeneration()">🚀 Сгенерировать карту</button>
+
+    <div class="form-group">
+      <label>Статус генерации</label>
+      <div id="console-box">Кликните на карте или выберите место, затем нажмите «Сгенерировать карту».</div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script>
+    const map = L.map('map').setView([55.751244, 37.618423], 15);
+
+    // OpenStreetMap & Carto tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let centerMarker = L.marker([55.751244, 37.618423], { draggable: true }).addTo(map);
+    let boxPolygon = null;
+
+    function updateBox() {
+      const lat = parseFloat(document.getElementById('lat-input').value);
+      const lon = parseFloat(document.getElementById('lon-input').value);
+      const sizeMeters = parseFloat(document.getElementById('size-select').value);
+
+      centerMarker.setLatLng([lat, lon]);
+
+      // Calculate approximate bbox in degrees
+      const dLat = (sizeMeters / 2.0) / 111132.0;
+      const dLon = (sizeMeters / 2.0) / (111412.0 * Math.cos(lat * Math.PI / 180.0));
+
+      const bounds = [
+        [lat - dLat, lon - dLon],
+        [lat + dLat, lon + dLon]
+      ];
+
+      if (boxPolygon) {
+        boxPolygon.setBounds(bounds);
+      } else {
+        boxPolygon = L.rectangle(bounds, { color: "#ff5722", weight: 2, fillOpacity: 0.2 }).addTo(map);
+      }
+    }
+
+    map.on('click', function(e) {
+      document.getElementById('lat-input').value = e.latlng.lat.toFixed(6);
+      document.getElementById('lon-input').value = e.latlng.lng.toFixed(6);
+      updateBox();
+    });
+
+    centerMarker.on('dragend', function(e) {
+      const pos = e.target.getLatLng();
+      document.getElementById('lat-input').value = pos.lat.toFixed(6);
+      document.getElementById('lon-input').value = pos.lng.toFixed(6);
+      updateBox();
+    });
+
+    document.getElementById('size-select').addEventListener('change', updateBox);
+
+    // City search via Nominatim
+    document.getElementById('search-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        const query = this.value;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.length > 0) {
+              const item = data[0];
+              const lat = parseFloat(item.lat);
+              const lon = parseFloat(item.lon);
+              map.setView([lat, lon], 14);
+              document.getElementById('lat-input').value = lat.toFixed(6);
+              document.getElementById('lon-input').value = lon.toFixed(6);
+              updateBox();
+            }
+          });
+      }
+    });
+
+    updateBox();
+
+    function log(msg) {
+      const box = document.getElementById('console-box');
+      box.textContent += "\n" + msg;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function startGeneration() {
+      const btn = document.getElementById('generate-btn');
+      btn.disabled = true;
+      btn.textContent = "⏳ Идет генерация...";
+
+      const payload = {
+        lat: parseFloat(document.getElementById('lat-input').value),
+        lon: parseFloat(document.getElementById('lon-input').value),
+        size: parseFloat(document.getElementById('size-select').value),
+        res: parseInt(document.getElementById('res-select').value),
+        name: document.getElementById('level-name').value,
+        title: document.getElementById('level-title').value,
+        install: document.getElementById('install-beamng').checked
+      };
+
+      document.getElementById('console-box').textContent = "Запуск пайплайна генерации...";
+
+      fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        log(data.message || "Генерация завершена!");
+        btn.disabled = false;
+        btn.textContent = "🚀 Сгенерировать карту";
+      })
+      .catch(err => {
+        log("Ошибка: " + err);
+        btn.disabled = false;
+        btn.textContent = "🚀 Сгенерировать карту";
+      });
+    }
+  </script>
+</body>
+</html>

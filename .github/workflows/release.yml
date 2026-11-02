@@ -1,0 +1,45 @@
+name: Build and Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build standalone executable with PyInstaller
+        run: |
+          pyinstaller --noconfirm --onedir --windowed --name AroundWorldNG --add-data "ui/index.html;ui" main.py
+          # Copy readme and requirements into dist folder
+          copy README.md dist\AroundWorldNG\
+          Compress-Archive -Path dist\AroundWorldNG\* -DestinationPath AroundWorldNG-Windows-x64.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: AroundWorldNG-Windows-x64.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
