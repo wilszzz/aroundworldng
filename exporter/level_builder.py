@@ -71,6 +71,10 @@ class LevelBuilder:
             level_name=self.cfg.level_name,
         )
 
+        # 2b. Export collision fluid depth map for BeamNG physics engine
+        depth_img = Image.new("L", (heightmap_proc.res - 1, heightmap_proc.res - 1), color=0)
+        depth_img.save(self.level_dir / "theTerrain.ter.depth.png")
+
         # 3. Export Base Terrain Textures and UI Previews (Power-of-two 2048x2048)
         art_ter_dir = self.level_dir / "art" / "terrains"
         art_ter_dir.mkdir(parents=True, exist_ok=True)
@@ -250,25 +254,25 @@ class LevelBuilder:
                 "gravity": -9.81,
                 "visibleDistance": 10000.0,
             },
-            # Daylight Atmosphere & Sun
+            # Daylight Atmosphere & Sun (Crisp High-Noon Lighting)
             {
                 "name": "sunsky",
                 "class": "ScatterSky",
                 "persistentId": str(uuid.uuid4()),
                 "__parent": "MissionGroup",
                 "position": [spawn_x, spawn_y, spawn_z + 100.0],
-                "azimuth": 57.3,
-                "elevation": 144.0,
-                "skyBrightness": 40.0,
+                "azimuth": 80.0,
+                "elevation": 50.0,
+                "skyBrightness": 30.0,
                 "colorize": [0.22, 0.35, 0.61, 1.0],
-                "sunScale": [1.0, 0.81, 0.71, 1.0],
-                "ambientScale": [1.0, 0.89, 0.78, 1.0],
+                "sunScale": [1.0, 0.85, 0.75, 1.0],
+                "ambientScale": [0.8, 0.85, 0.9, 1.0],
                 "rayleighScattering": 0.01,
                 "mieScattering": 0.00043,
-                "exposure": 15.0,
+                "exposure": 14.0,
                 "useNightCubemap": True,
             },
-            # Time of Day
+            # Time of Day (12:00 PM Midday)
             {
                 "name": "tod",
                 "class": "TimeOfDay",
@@ -277,8 +281,8 @@ class LevelBuilder:
                 "position": [spawn_x, spawn_y, spawn_z],
                 "axisTilt": 10.0,
                 "play": False,
-                "startTime": 0.15,
-                "time": 0.15,
+                "startTime": 0.5,
+                "time": 0.5,
             },
             # Default Spawn Sphere
             {
@@ -298,7 +302,7 @@ class LevelBuilder:
                 "class": "TerrainBlock",
                 "persistentId": str(uuid.uuid4()),
                 "__parent": "MissionGroup",
-                "terrainFile": f"/levels/{self.cfg.level_name}/theTerrain.ter",
+                "terrainFile": f"levels/{self.cfg.level_name}/theTerrain.ter",
                 "position": [-self.cfg.size_meters / 2.0, -self.cfg.size_meters / 2.0, specs.height_offset],
                 "squareSize": specs.square_size,
                 "maxHeight": max(specs.max_elev - specs.min_elev, 10.0),
@@ -364,6 +368,7 @@ class LevelBuilder:
             f"{self.cfg.level_name}TerrainMaterialTextureSet": {
                 "name": f"{self.cfg.level_name}TerrainMaterialTextureSet",
                 "class": "TerrainMaterialTextureSet",
+                "persistentId": str(uuid.uuid4()),
                 "baseTexSize": [2048, 2048],
                 "detailTexSize": [1024, 1024],
                 "macroTexSize": [1024, 1024],
