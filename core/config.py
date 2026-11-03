@@ -127,7 +127,7 @@ class MapConfig:
     
     # Road properties & Carving
     road_carve_smoothing: float = 2.0    # Gaussian sigma for smoothing terrain along roads
-    road_exclusion_buffer: float = 4.0   # Meters around roads where buildings & trees cannot spawn
+    road_exclusion_buffer: float = 0.8   # Meters around roads where buildings & trees cannot spawn
     
     # Output
     output_dir: pathlib.Path = field(default_factory=lambda: pathlib.Path("build"))

@@ -23,6 +23,7 @@ from exporter.building_mesh import (
     create_all_building_archetypes,
     clean_ring,
     triangulate,
+    is_convex_quad,
     ProceduralBuildingMesh,
     write_sector_dae,
 )
@@ -243,15 +244,17 @@ class TestRoadDecorations(unittest.TestCase):
 
         for lamp in lamps:
             self.assertEqual(lamp["class"], "TSStatic")
+            self.assertEqual(lamp["collisionType"], "Collision Mesh")
+            self.assertEqual(lamp["decalType"], "Collision Mesh")
             # Lamp should be placed to the right (+X, East) of the road
             self.assertGreater(lamp["position"][0], 0.0)
 
 
 class TestProceduralBuildings(unittest.TestCase):
     def test_clean_ring(self):
-        # 1. Nearly collinear vertices on straight edge
+        # 1. Nearly collinear vertices on straight edge simplified with 0.08m tol
         ring = [(0, 0), (5, 0.02), (10, 0), (10, 10), (0, 10), (0, 0)]
-        cleaned = clean_ring(ring, tol=0.35)
+        cleaned = clean_ring(ring, tol=0.08)
         self.assertIsNotNone(cleaned)
         self.assertEqual(len(cleaned), 4)
 
@@ -267,6 +270,33 @@ class TestProceduralBuildings(unittest.TestCase):
         # 3. Tiny polygon should be rejected (< 12 m2)
         tiny_ring = [(0, 0), (2, 0), (2, 2), (0, 2)]
         self.assertIsNone(clean_ring(tiny_ring))
+
+        # 4. Real 90-degree corner indent (0.3m setback) must NOT be cut with tol=0.08
+        corner_ring = [(0, 0), (5, 0), (5, 0.3), (5.3, 0.3), (5.3, 10), (0, 10)]
+        cleaned_corner = clean_ring(corner_ring, tol=0.08)
+        self.assertIsNotNone(cleaned_corner)
+        self.assertEqual(len(cleaned_corner), 6)
+
+    def test_is_convex_quad(self):
+        # 1. Rectangle
+        rect = [(0, 0), (10, 0), (10, 8), (0, 8)]
+        self.assertTrue(is_convex_quad(rect))
+
+        # 2. Trapezoid
+        trap = [(0, 0), (10, 0), (8, 6), (2, 6)]
+        self.assertTrue(is_convex_quad(trap))
+
+        # 3. Boomerang / reflex corner (concave 4-gon)
+        boomerang = [(0, 0), (10, 0), (4, 4), (0, 10)]
+        self.assertFalse(is_convex_quad(boomerang))
+
+        # 4. L-shape (6 vertices)
+        l_shape = [(0, 0), (10, 0), (10, 5), (5, 5), (5, 10), (0, 10)]
+        self.assertFalse(is_convex_quad(l_shape))
+
+        # 5. Triangle (3 vertices)
+        tri = [(0, 0), (10, 0), (5, 5)]
+        self.assertFalse(is_convex_quad(tri))
 
     def test_triangulate(self):
         # Convex box
@@ -309,7 +339,9 @@ class TestProceduralBuildings(unittest.TestCase):
 
             item = items[0]
             self.assertEqual(item["class"], "TSStatic")
-            self.assertEqual(item["collisionType"], "Visible Mesh")
+            self.assertEqual(item["collisionType"], "Collision Mesh")
+            self.assertEqual(item["decalType"], "Collision Mesh")
+            self.assertTrue(item["prebuildCollisionData"])
             self.assertIn("bld_sector_", item["shapeName"])
 
             # Check exported DAE
@@ -323,34 +355,42 @@ class TestProceduralBuildings(unittest.TestCase):
             up_axis = tree.find(".//c:up_axis", ns)
             self.assertEqual(up_axis.text, "Z_UP")
 
-            # Validate geometry has both Building-mesh and Col-mesh
+            # Validate geometry has both Building-mesh and Colmesh-mesh
             geom_ids = [g.attrib.get("id") for g in tree.findall(".//c:geometry", ns)]
             self.assertIn("Building-mesh", geom_ids)
-            self.assertIn("Col-mesh", geom_ids)
+            self.assertIn("Colmesh-mesh", geom_ids)
+
+            # Validate Torque3D collision node hierarchy: base00 -> start01 -> Colmesh-1
+            col_node = tree.find(".//c:node[@id='base00']/c:node[@id='start01']/c:node[@id='Colmesh-1']", ns)
+            self.assertIsNotNone(col_node)
+            self.assertEqual(col_node.attrib.get("name"), "Colmesh-1")
+
+            visual_node = tree.find(".//c:node[@id='base00']/c:node[@id='start01']/c:node[@id='BuildingNode']", ns)
+            self.assertIsNotNone(visual_node)
 
             # Check materials include facade_plaster and roof_gravel
             mat_ids = [m.attrib.get("id") for m in tree.findall(".//c:material", ns)]
             self.assertIn("facade_plaster-mat", mat_ids)
 
-            # Check that foundation skirt goes down to min_elevation - 3.0m
+            # Check that foundation skirt goes down to min_elevation - 0.5m
             pos_node = tree.find(".//c:geometry[@id='Building-mesh']//c:source[@id='Building-pos']//c:float_array", ns)
             pos_floats = [float(x) for x in pos_node.text.strip().split()]
             zs = pos_floats[2::3]
             min_local_z = min(zs)
             global_min_z = min_local_z + item["position"][2]
-            # Heightmap around origin is ~10-15m, so skirt must reach under 10m - 3m = 7m
-            self.assertLessEqual(global_min_z, 12.0)
+            # Heightmap around origin has z_min=15.0m, skirt reaches z_min - 0.5m = 14.5m
+            self.assertAlmostEqual(global_min_z, 14.5, places=1)
 
     def test_building_pitched_and_flat_roofs(self):
         from exporter.building_mesh import ProceduralBuildingMesh, write_sector_dae
 
-        # 1. House with pitched/gabled roof
+        # 1. House with pitched/gabled roof (convex 4-gon)
         house_mesh = ProceduralBuildingMesh()
         rect_ring = [(-6.0, -4.0), (6.0, -4.0), (6.0, 4.0), (-6.0, 4.0)]
         house_mesh.extrude_building(
             ring=rect_ring,
             base_z=10.0,
-            z_base=7.0,
+            z_base=9.5,
             z_eave=16.0,
             floors=2,
             floor_h=3.0,
@@ -368,7 +408,7 @@ class TestProceduralBuildings(unittest.TestCase):
         office_mesh.extrude_building(
             ring=rect_ring,
             base_z=10.0,
-            z_base=7.0,
+            z_base=9.5,
             z_eave=28.0,
             floors=6,
             floor_h=3.0,
@@ -377,12 +417,36 @@ class TestProceduralBuildings(unittest.TestCase):
         )
         # Should have roof_gravel
         self.assertGreater(len(office_mesh.triangles_by_mat.get("roof_gravel", [])), 0)
-        # Verify UV coordinates are valid non-zero numbers
+        # Parapet height ~0.35m
+        max_office_z = max(v[2] for v in office_mesh.verts)
+        self.assertAlmostEqual(max_office_z, 28.35, places=2)
+
+        # 3. L-shaped house (concave, N=6) must strictly use flat roof + parapet (no wigwam/peaks!)
+        l_mesh = ProceduralBuildingMesh()
+        l_ring = [(-6.0, -4.0), (6.0, -4.0), (6.0, 0.0), (0.0, 0.0), (0.0, 4.0), (-6.0, 4.0)]
+        l_mesh.extrude_building(
+            ring=l_ring,
+            base_z=10.0,
+            z_base=9.5,
+            z_eave=16.0,
+            floors=2,
+            floor_h=3.0,
+            band_idx=2,
+            is_house=True,
+        )
+        # Should NOT have roof_tiles or sharp ridge peak!
+        self.assertEqual(len(l_mesh.triangles_by_mat.get("roof_tiles", [])), 0)
+        self.assertGreater(len(l_mesh.triangles_by_mat.get("roof_gravel", [])), 0)
+        # Peak must NOT exceed eave + parapet (16.35m), strictly no wigwam
+        max_l_z = max(v[2] for v in l_mesh.verts)
+        self.assertLessEqual(max_l_z, 16.5)
+
+        # 4. Verify UV coordinates are valid non-zero numbers
         for u, v in house_mesh.uvs:
             self.assertFalse(math.isnan(u) or math.isnan(v))
             self.assertFalse(math.isinf(u) or math.isinf(v))
 
-        # 3. Verify DAE generation with set="0" on TEXCOORD
+        # 5. Verify DAE generation with set="0" on TEXCOORD and Colmesh-1 node
         with tempfile.TemporaryDirectory() as tmp_dir:
             dae_path = pathlib.Path(tmp_dir) / "test_roof.dae"
             write_sector_dae(dae_path, house_mesh, sector_origin=(0.0, 0.0, 10.0))
@@ -392,6 +456,9 @@ class TestProceduralBuildings(unittest.TestCase):
             tex_input = tree.find(".//c:triangles//c:input[@semantic='TEXCOORD']", ns)
             self.assertIsNotNone(tex_input)
             self.assertEqual(tex_input.attrib.get("set"), "0")
+
+            col_input = tree.find(".//c:node[@id='base00']/c:node[@id='start01']/c:node[@id='Colmesh-1']", ns)
+            self.assertIsNotNone(col_input)
 
 
 class TestPhysicsAndCollision(unittest.TestCase):
@@ -481,8 +548,10 @@ class TestPhysicsAndCollision(unittest.TestCase):
                         break
 
             self.assertIsNotNone(terrain_item)
-            self.assertEqual(terrain_item.get("terrainFile"), f"levels/{cfg.level_name}/theTerrain.ter")
+            self.assertEqual(terrain_item.get("terrainFile"), f"/levels/{cfg.level_name}/theTerrain.ter")
             self.assertAlmostEqual(terrain_item.get("maxHeight"), specs.height_scale, places=6)
+            self.assertTrue(terrain_item.get("hasCollision"))
+            self.assertEqual(terrain_item.get("collisionType"), "Collision Mesh")
 
             # Check main.level.json
             main_file = builder.level_dir / "main.level.json"
@@ -491,8 +560,56 @@ class TestPhysicsAndCollision(unittest.TestCase):
                 main_json = json.load(f)
             level_objs = main_json["childs"][0]["childs"]
             main_terrain = next(item for item in level_objs if item.get("name") == "theTerrain")
-            self.assertEqual(main_terrain.get("terrainFile"), f"levels/{cfg.level_name}/theTerrain.ter")
+            self.assertEqual(main_terrain.get("terrainFile"), f"/levels/{cfg.level_name}/theTerrain.ter")
             self.assertAlmostEqual(main_terrain.get("maxHeight"), specs.height_scale, places=6)
+            self.assertTrue(main_terrain.get("hasCollision"))
+            self.assertEqual(main_terrain.get("collisionType"), "Collision Mesh")
+
+    def test_exclusion_building_clipping(self):
+        from processing.exclusion import SpatialExclusionEngine
+        from fetchers.osm import BuildingPolygon, RoadSegment
+        from core.projection import meters_to_lat_lon
+
+        origin_lat, origin_lon = 55.75, 37.62
+        r0 = meters_to_lat_lon(0.0, -100.0, origin_lat, origin_lon)
+        r1 = meters_to_lat_lon(0.0, 100.0, origin_lat, origin_lon)
+        road = RoadSegment(osm_id=1, highway_type="primary", nodes=[r0, r1], width=10.0)
+        exclusion = SpatialExclusionEngine([road], origin_lat, origin_lon, clearance_meters=0.8, min_building_area_sqm=12.0)
+
+        # 1. Clear building away from road
+        b_clear = [
+            meters_to_lat_lon(20.0, 10.0, origin_lat, origin_lon),
+            meters_to_lat_lon(30.0, 10.0, origin_lat, origin_lon),
+            meters_to_lat_lon(30.0, 20.0, origin_lat, origin_lon),
+            meters_to_lat_lon(20.0, 20.0, origin_lat, origin_lon),
+        ]
+
+        # 2. Overlapping road: clipped and preserved
+        b_overlap = [
+            meters_to_lat_lon(4.0, 30.0, origin_lat, origin_lon),
+            meters_to_lat_lon(15.0, 30.0, origin_lat, origin_lon),
+            meters_to_lat_lon(15.0, 40.0, origin_lat, origin_lon),
+            meters_to_lat_lon(4.0, 40.0, origin_lat, origin_lon),
+        ]
+
+        # 3. Completely inside road
+        b_on_road = [
+            meters_to_lat_lon(-2.0, 50.0, origin_lat, origin_lon),
+            meters_to_lat_lon(2.0, 50.0, origin_lat, origin_lon),
+            meters_to_lat_lon(2.0, 55.0, origin_lat, origin_lon),
+            meters_to_lat_lon(-2.0, 55.0, origin_lat, origin_lon),
+        ]
+
+        # 4. Tiny (< 12 sqm)
+        b_tiny = [
+            meters_to_lat_lon(40.0, 0.0, origin_lat, origin_lon),
+            meters_to_lat_lon(42.0, 0.0, origin_lat, origin_lon),
+            meters_to_lat_lon(42.0, 2.0, origin_lat, origin_lon),
+            meters_to_lat_lon(40.0, 2.0, origin_lat, origin_lon),
+        ]
+
+        result = exclusion.filter_buildings([b_clear, b_overlap, b_on_road, b_tiny])
+        self.assertEqual(len(result), 2)
 
 
 class TestForestBuilder(unittest.TestCase):
@@ -507,11 +624,11 @@ class TestForestBuilder(unittest.TestCase):
         from exporter.forest_builder import DEFAULT_TREE_MODELS
         shape_files = {v["shapeFile"] for v in DEFAULT_TREE_MODELS.values()}
         required_shapes = [
-            "/assets/meshes/foliage/trees_library/oak/tree_oak_large_a.dae",
-            "/assets/meshes/foliage/trees_library/oak/tree_oak_sml_a.dae",
-            "/assets/meshes/foliage/trees_library/beech/tree_beech_large_a.dae",
-            "/assets/meshes/foliage/trees_library/beech/tree_beech_large_b.dae",
-            "/assets/meshes/foliage/trees_library/cypress/tree_cypress_a.dae",
+            "assets/meshes/foliage/trees_library/oak/tree_oak_large_a.dae",
+            "assets/meshes/foliage/trees_library/oak/tree_oak_sml_a.dae",
+            "assets/meshes/foliage/trees_library/beech/tree_beech_large_b.dae",
+            "assets/meshes/foliage/trees_library/birch/tree_aspen_large_a.dae",
+            "assets/meshes/foliage/trees_library/cork_oak/cork_oak_bush_large.dae",
         ]
         for shape in required_shapes:
             self.assertIn(shape, shape_files, f"Expected shapeFile {shape} in DEFAULT_TREE_MODELS")
@@ -553,10 +670,16 @@ class TestForestBuilder(unittest.TestCase):
             # Green trees spawned
             green_counts = {
                 k: len(v) for k, v in forest_data["instances"].items()
-                if k in ["tree_oak_large", "tree_oak_small", "tree_beech_large_a", "tree_beech_large_b", "tree_cypress"]
+                if k in ["tree_oak_large", "tree_oak_small", "tree_beech_large_b", "tree_beech_large_c"]
             }
             total_green = sum(green_counts.values())
             self.assertGreater(total_green, 0, "Urban road should spawn green street trees")
+
+            # Modern BeamNG NDJSON v4 files created in forest/
+            forest_dir = level_dir / "forest"
+            self.assertTrue(forest_dir.exists())
+            f4_files = list(forest_dir.glob("*.forest4.json"))
+            self.assertGreater(len(f4_files), 0, "Modern BeamNG .forest4.json files must be generated")
 
             # Check organic jitter (perpendicular and step positions vary)
             all_pts = []

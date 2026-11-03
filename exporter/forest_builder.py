@@ -20,47 +20,42 @@ from processing.heightmap import HeightmapProcessor
 # Built-in BeamNG tree models available in core assets
 DEFAULT_TREE_MODELS = {
     "tree_oak_large": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/oak/tree_oak_large_a.dae",
+        "shapeFile": "assets/meshes/foliage/trees_library/oak/tree_oak_large_a.dae",
         "radius": 1.5,
         "annotation": "TREE",
     },
     "tree_oak_small": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/oak/tree_oak_sml_a.dae",
+        "shapeFile": "assets/meshes/foliage/trees_library/oak/tree_oak_sml_a.dae",
         "radius": 1.0,
-        "annotation": "TREE",
-    },
-    "tree_beech_large_a": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/beech/tree_beech_large_a.dae",
-        "radius": 1.4,
         "annotation": "TREE",
     },
     "tree_beech_large_b": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/beech/tree_beech_large_b.dae",
+        "shapeFile": "assets/meshes/foliage/trees_library/beech/tree_beech_large_b.dae",
         "radius": 1.4,
         "annotation": "TREE",
     },
-    "tree_beech_large": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/beech/tree_beech_large_b.dae",
+    "tree_beech_large_c": {
+        "shapeFile": "assets/meshes/foliage/trees_library/beech/tree_beech_large_c.dae",
         "radius": 1.4,
         "annotation": "TREE",
     },
-    "tree_cypress": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/cypress/tree_cypress_a.dae",
-        "radius": 1.0,
-        "annotation": "TREE",
-    },
-    "tree_cypress_a": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/cypress/tree_cypress_a.dae",
-        "radius": 1.0,
-        "annotation": "TREE",
-    },
-    "tree_aspen_large": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/birch/tree_aspen_large_a.dae",
+    "tree_aspen_large_a": {
+        "shapeFile": "assets/meshes/foliage/trees_library/birch/tree_aspen_large_a.dae",
         "radius": 1.2,
         "annotation": "TREE",
     },
+    "tree_aspen_large": {
+        "shapeFile": "assets/meshes/foliage/trees_library/birch/tree_aspen_large_a.dae",
+        "radius": 1.2,
+        "annotation": "TREE",
+    },
+    "cork_oak_bush_large": {
+        "shapeFile": "assets/meshes/foliage/trees_library/cork_oak/cork_oak_bush_large.dae",
+        "radius": 1.1,
+        "annotation": "BUSH",
+    },
     "bush_large": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/oak/tree_oak_bush_a.dae",
+        "shapeFile": "assets/meshes/foliage/trees_library/oak/tree_oak_bush_a.dae",
         "radius": 0.8,
         "annotation": "BUSH",
     },
@@ -70,9 +65,8 @@ DEFAULT_TREE_MODELS = {
 GREEN_STREET_TREES = [
     "tree_oak_large",
     "tree_oak_small",
-    "tree_beech_large_a",
     "tree_beech_large_b",
-    "tree_cypress",
+    "tree_beech_large_c",
 ]
 
 # Highway classification filters for street trees
@@ -161,9 +155,9 @@ class ForestBuilder:
                             [
                                 "tree_oak_large",
                                 "tree_oak_small",
-                                "tree_beech_large_a",
                                 "tree_beech_large_b",
-                                "tree_cypress",
+                                "tree_beech_large_c",
+                                "tree_aspen_large_a",
                             ]
                         )
                         instances[tree_type].append(inst)
@@ -174,7 +168,8 @@ class ForestBuilder:
                             by = ry + random.uniform(-2.5, 2.5)
                             if self.exclusion.is_point_clear(bx, by):
                                 bz = self.heightmap.get_elevation_at_meters(bx, by)
-                                instances["bush_large"].append(self._create_tree_instance(bx, by, bz, scale_range=(0.7, 1.1)))
+                                bush_type = random.choice(["bush_large", "cork_oak_bush_large"])
+                                instances[bush_type].append(self._create_tree_instance(bx, by, bz, scale_range=(0.7, 1.1)))
             except Exception:
                 continue
 
@@ -257,7 +252,34 @@ class ForestBuilder:
         with open(art_forest_dir / "managedItemData.json", "w", encoding="utf-8") as f:
             json.dump(managed_items, f, indent=2)
 
-        # 4. Write <level_name>.forest.json
+        # 4. Write modern BeamNG NDJSON v4 files in forest/<item_type>.forest4.json
+        forest_dir = level_dir / "forest"
+        forest_dir.mkdir(parents=True, exist_ok=True)
+        for item_type, inst_list in instances.items():
+            if not inst_list:
+                continue
+            f4_file = forest_dir / f"{item_type}.forest4.json"
+            with open(f4_file, "w", encoding="utf-8") as f:
+                for inst in inst_list:
+                    x, y, z = inst[0], inst[1], inst[2]
+                    rot_z, rot_w = inst[5], inst[6]
+                    scale = inst[7]
+                    cos_y = round(rot_w * rot_w - rot_z * rot_z, 4)
+                    sin_y = round(2.0 * rot_z * rot_w, 4)
+                    rot_matrix = [
+                        cos_y, -sin_y, 0.0,
+                        sin_y, cos_y, 0.0,
+                        0.0, 0.0, 1.0,
+                    ]
+                    row = {
+                        "pos": [round(x, 3), round(y, 3), round(z, 3)],
+                        "rotationMatrix": rot_matrix,
+                        "scale": round(scale, 3),
+                        "ctxid": 0,
+                    }
+                    f.write(json.dumps(row) + "\n")
+
+        # 5. Write legacy <level_name>.forest.json for backward compatibility
         forest_file = level_dir / f"{self.level_name}.forest.json"
         forest_data = {
             "header": {
@@ -271,13 +293,14 @@ class ForestBuilder:
         with open(forest_file, "w", encoding="utf-8") as f:
             json.dump(forest_data, f, indent=2)
 
-        # 5. Return Forest SimObject item
+        # 6. Return Forest SimObject item
         forest_obj = {
             "name": "theForest",
             "class": "Forest",
             "persistentId": str(uuid.uuid4()),
             "__parent": "MissionGroup",
-            "dataFile": f"levels/{self.level_name}/{self.level_name}.forest.json",
+            "position": [0.0, 0.0, 0.0],
+            "rotationMatrix": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
         }
         return forest_obj
 

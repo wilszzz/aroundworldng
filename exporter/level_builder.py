@@ -308,13 +308,15 @@ class LevelBuilder:
                 "class": "TerrainBlock",
                 "persistentId": str(uuid.uuid4()),
                 "__parent": "MissionGroup",
-                "terrainFile": f"levels/{self.cfg.level_name}/theTerrain.ter",
+                "terrainFile": f"/levels/{self.cfg.level_name}/theTerrain.ter",
                 "position": [-self.cfg.size_meters / 2.0, -self.cfg.size_meters / 2.0, specs.height_offset],
                 "squareSize": specs.square_size,
                 "maxHeight": specs.height_scale,
+                "hasCollision": True,
+                "collisionType": "Collision Mesh",
                 "baseTexSize": 2048,
                 "materialTextureSet": f"{self.cfg.level_name}TerrainMaterialTextureSet",
-                "minimapImage": f"levels/{self.cfg.level_name}/info.png",
+                "minimapImage": f"/levels/{self.cfg.level_name}/info.png",
                 "lightMapSize": 256,
             },
         ]
@@ -427,6 +429,7 @@ class LevelBuilder:
                 "mapTo": "facade_brick",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.dds",
@@ -443,6 +446,7 @@ class LevelBuilder:
                 "mapTo": "facade_glass",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/tileable/glass/modernstripwindow/t_window_strips_01_b.color.dds",
@@ -457,6 +461,7 @@ class LevelBuilder:
                 "mapTo": "facade_plaster",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.dds",
@@ -473,6 +478,7 @@ class LevelBuilder:
                 "mapTo": "bne_bld_facade",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.dds",
@@ -489,6 +495,7 @@ class LevelBuilder:
                 "mapTo": "facade_metal",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_b.color.dds",
@@ -504,6 +511,7 @@ class LevelBuilder:
                 "mapTo": "roof_gravel",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_b.color.dds",
@@ -518,6 +526,7 @@ class LevelBuilder:
                 "mapTo": "roof_tiles",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_b.color.dds",
@@ -532,6 +541,7 @@ class LevelBuilder:
                 "mapTo": "bne_bld_roof_flat",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_b.color.dds",
@@ -546,6 +556,7 @@ class LevelBuilder:
                 "mapTo": "bne_bld_roof_slate",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
+                "version": 1.5,
                 "Stages": [
                     {
                         "baseColorMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_b.color.dds",

@@ -38,6 +38,7 @@ class RoadDecorationBuilder:
 
         lamp_idx = 0
         barrel_idx = 0
+        guardrail_idx = 0
 
         for road in roads:
             if len(road.nodes) < 2:
@@ -89,7 +90,8 @@ class RoadDecorationBuilder:
                                 ],
                                 "scale": [1.0, 1.0, 1.0],
                                 "shapeName": LAMP_POST_DAE,
-                                "collisionType": "Visible Mesh Final",
+                                "collisionType": "Collision Mesh",
+                                "decalType": "Collision Mesh",
                             })
                             lamp_idx += 1
 
@@ -127,9 +129,51 @@ class RoadDecorationBuilder:
                                 "position": [round(bx, 2), round(by, 2), round(bz, 2)],
                                 "scale": [1.0, 1.0, 1.0],
                                 "shapeName": TRAFFIC_BARREL_DAE,
-                                "collisionType": "Visible Mesh Final",
+                                "collisionType": "Collision Mesh",
+                                "decalType": "Collision Mesh",
                             })
                             barrel_idx += 1
 
-        print(f"[RoadDecorations] Placed {lamp_idx} streetlights and {barrel_idx} safety barrels/props.")
+            # 3. Guardrails along roads tagged with has_guardrail
+            if road.has_guardrail and not road.is_tunnel:
+                guard_step = 8.0
+                cur_dist = 0.0
+                for i in range(len(pts) - 1):
+                    p1, p2 = pts[i], pts[i + 1]
+                    dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+                    seg_len = math.hypot(dx, dy)
+                    if seg_len < 2.0:
+                        continue
+
+                    ux, uy = dx / seg_len, dy / seg_len
+                    yaw = math.atan2(uy, ux)
+
+                    while cur_dist < seg_len:
+                        for side in [-1, 1]:
+                            nx, ny = -uy * side, ux * side
+                            gx = p1[0] + ux * cur_dist + nx * (road.width / 2.0 + 0.4)
+                            gy = p1[1] + uy * cur_dist + ny * (road.width / 2.0 + 0.4)
+                            if abs(gx) < self.size / 2.0 and abs(gy) < self.size / 2.0:
+                                gz = self.heightmap.get_elevation_at_meters(gx, gy)
+                                items.append({
+                                    "name": f"guardrail_{guardrail_idx}",
+                                    "class": "TSStatic",
+                                    "persistentId": str(uuid.uuid4()),
+                                    "__parent": "MissionGroup",
+                                    "position": [round(gx, 2), round(gy, 2), round(gz, 2)],
+                                    "rotationMatrix": [
+                                        round(math.cos(yaw), 4), round(-math.sin(yaw), 4), 0.0,
+                                        round(math.sin(yaw), 4), round(math.cos(yaw), 4), 0.0,
+                                        0.0, 0.0, 1.0,
+                                    ],
+                                    "scale": [1.0, 1.0, 1.0],
+                                    "shapeName": GUARDRAIL_DAE,
+                                    "collisionType": "Collision Mesh",
+                                    "decalType": "Collision Mesh",
+                                })
+                                guardrail_idx += 1
+                        cur_dist += guard_step
+                    cur_dist -= seg_len
+
+        print(f"[RoadDecorations] Placed {lamp_idx} streetlights, {guardrail_idx} guardrails, and {barrel_idx} safety barrels/props.")
         return items

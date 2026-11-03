@@ -98,11 +98,93 @@ class TestDecalRoads(unittest.TestCase):
         self.assertTrue(marking["overObjects"])
         self.assertTrue(marking["improvedSpline"])
         self.assertEqual(marking["detail"], 0.2)
-        self.assertEqual(marking["drivability"], 1)
+        self.assertEqual(marking["drivability"], -1)
 
         for node in marking["nodes"]:
             self.assertAlmostEqual(node[2], 15.05, places=2)
             self.assertEqual(node[3], 0.25)
+
+    def test_boundary_clipping_and_preservation(self):
+        """Ensure roads near or touching boundary are not deleted entirely."""
+        from exporter.decal_roads import clip_segment_to_box, clip_polyline_to_box
+
+        # Segment along border at y = 497.95 inside [-498, 498]
+        seg = clip_segment_to_box((100.0, 497.95), (200.0, 497.95), half=498.0)
+        self.assertIsNotNone(seg)
+        self.assertAlmostEqual(seg[0][1], 497.95)
+        self.assertAlmostEqual(seg[1][1], 497.95)
+
+        # Polyline near boundary
+        pts = [(100.0, 497.95), (200.0, 497.95)]
+        resampled = resample_polyline(pts, target_step=10.0, half=498.0)
+        self.assertGreater(len(resampled), 0)
+
+        # Segment crossing boundary: (400, 0) to (600, 0) clipped to half=500
+        seg_cross = clip_segment_to_box((400.0, 0.0), (600.0, 0.0), half=500.0)
+        self.assertIsNotNone(seg_cross)
+        self.assertAlmostEqual(seg_cross[0][0], 400.0)
+        self.assertAlmostEqual(seg_cross[1][0], 500.0)
+
+    def test_multi_lane_road_markings(self):
+        """Test that multi-lane roads (lanes >= 2) generate lane divider markings."""
+        nodes = [(43.4057, 39.9572), (43.4066, 39.9572)]
+        
+        # 4-lane road: should generate 1 main road + 3 markings
+        road_4lane = RoadSegment(
+            osm_id=4444,
+            highway_type="primary",
+            nodes=nodes,
+            lanes=4,
+            width=14.0,
+            surface="asphalt",
+        )
+        items = self.exporter.export_roads([road_4lane])
+        self.assertEqual(len(items), 4)  # 1 main road + 3 lane lines
+        self.assertEqual(items[0]["class"], "DecalRoad")
+        for m in items[1:]:
+            self.assertEqual(m["class"], "DecalRoad")
+            self.assertEqual(m["material"], "line_white")
+            self.assertEqual(m["drivability"], -1)
+
+        # 1-lane road: should generate 1 main road and 0 markings
+        road_1lane = RoadSegment(
+            osm_id=1111,
+            highway_type="residential",
+            nodes=nodes,
+            lanes=1,
+            width=3.5,
+            surface="asphalt",
+        )
+        items_1lane = self.exporter.export_roads([road_1lane])
+        self.assertEqual(len(items_1lane), 1)
+        self.assertEqual(items_1lane[0]["name"], f"road_{road_1lane.osm_id}_0")
+
+    def test_bridge_elevation_smoothing(self):
+        """Test that bridge nodes do not dip into a deep valley/riverbed."""
+        # Create heightmap processor with riverbed trench in the middle
+        elevs = np.full((100, 100), 50.0, dtype=np.float32)
+        # Deep riverbed at y around 50
+        elevs[45:55, :] = 10.0  # 40m drop
+        proc = HeightmapProcessor(elevs, square_size=1.0)
+        exporter = RoadExporter(proc, self.origin_lat, self.origin_lon, z_offset=0.05, size_meters=100.0)
+
+        # Bridge crossing the trench
+        nodes = [(43.4054, 39.9572), (43.4060, 39.9572)]
+        bridge = RoadSegment(
+            osm_id=9999,
+            highway_type="primary",
+            nodes=nodes,
+            is_bridge=True,
+            width=8.0,
+        )
+        items = exporter.export_roads([bridge])
+        self.assertEqual(len(items), 1)
+        bridge_item = items[0]
+        self.assertEqual(bridge_item["class"], "MeshRoad")
+        # Every node's elevation should remain close to 50.0 (bank height) and NOT drop to 10.0
+        for node in bridge_item["nodes"]:
+            z = node[2]
+            self.assertGreaterEqual(z, 48.0, f"Bridge node at z={z} dropped into riverbed!")
 
     def test_road_and_bridge_materials_ground_types(self):
         """Verify PBR groundType friction tags and valid textures in road_materials.json."""

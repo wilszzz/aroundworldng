@@ -18,6 +18,18 @@ import urllib.request
 import webbrowser
 from typing import Any, Dict, List, Optional
 
+# Ensure UTF-8 output encoding on Windows consoles and protect against None stdout in GUI/noconsole
+if sys.stdout is not None and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+if sys.stderr is not None and hasattr(sys.stderr, 'reconfigure'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 from core.config import MapConfig, get_resource_path
 from generator import AroundWorldGenerator
 
@@ -29,7 +41,7 @@ PRESETS = [
     {
         "id": "sochi_autodrom",
         "name": "Сочи Автодром / Олимпийский парк",
-        "badge": "🏁 Трасса F1",
+        "badge": "Трасса F1",
         "lat": 43.4056,
         "lon": 39.9547,
         "size": 2048,
@@ -41,7 +53,7 @@ PRESETS = [
     {
         "id": "krasnaya_polyana",
         "name": "Красная Поляна / Роза Хутор",
-        "badge": "⛰️ Горный серпантин",
+        "badge": "Горный серпантин",
         "lat": 43.6744,
         "lon": 40.2974,
         "size": 2048,
@@ -53,7 +65,7 @@ PRESETS = [
     {
         "id": "nurburgring",
         "name": "Нюрбургринг Нордшляйфе (Зелёный ад)",
-        "badge": "👑 Легендарный трек",
+        "badge": "Легендарный трек",
         "lat": 50.3341,
         "lon": 6.9427,
         "size": 4096,
@@ -65,7 +77,7 @@ PRESETS = [
     {
         "id": "monaco_gp",
         "name": "Монте-Карло / Монако",
-        "badge": "🏎️ Городской трек",
+        "badge": "Городской трек",
         "lat": 43.7384,
         "lon": 7.4246,
         "size": 2048,
@@ -77,7 +89,7 @@ PRESETS = [
     {
         "id": "mount_haruna",
         "name": "Гора Харуна / Акина (Touge)",
-        "badge": "🚗 Дрифт & Touge",
+        "badge": "Дрифт & Touge",
         "lat": 36.4770,
         "lon": 138.8770,
         "size": 4096,
@@ -89,7 +101,7 @@ PRESETS = [
     {
         "id": "moscow_msu",
         "name": "Москва, Воробьёвы горы / МГУ",
-        "badge": "🏙️ Городская локация",
+        "badge": "Городская локация",
         "lat": 55.7029,
         "lon": 37.5309,
         "size": 2048,
@@ -101,7 +113,7 @@ PRESETS = [
     {
         "id": "transfagarasan",
         "name": "Серпантин Трансфэгэрашан (Румыния)",
-        "badge": "🌲 Высокогорье",
+        "badge": "Высокогорье",
         "lat": 45.5982,
         "lon": 24.6166,
         "size": 4096,
@@ -113,7 +125,7 @@ PRESETS = [
     {
         "id": "vladivostok",
         "name": "Владивосток — Золотой Рог",
-        "badge": "🌊 Побережье",
+        "badge": "Побережье",
         "lat": 43.1155,
         "lon": 131.8855,
         "size": 2048,
@@ -204,7 +216,7 @@ class TaskState:
                 "installed": installed,
                 "elapsed_sec": self.elapsed_sec,
             }
-            self.logs.append(f"[{time.strftime('%H:%M:%S')}] ✅ [OK] Готово! Архив мода: {pkg_path.resolve()}")
+            self.logs.append(f"[{time.strftime('%H:%M:%S')}] [OK] Готово! Архив мода: {pkg_path.resolve()}")
 
     def finish_error(self, err_message: str):
         with self.lock:
@@ -213,7 +225,7 @@ class TaskState:
             self.error = err_message
             if self.start_time:
                 self.elapsed_sec = round(time.time() - self.start_time, 1)
-            self.logs.append(f"[{time.strftime('%H:%M:%S')}] ❌ [ERROR] {err_message}")
+            self.logs.append(f"[{time.strftime('%H:%M:%S')}] [ERROR] {err_message}")
 
     def get_snapshot(self, since: int = 0) -> Dict[str, Any]:
         with self.lock:
@@ -250,11 +262,12 @@ class StreamInterceptor:
         self._lock = threading.Lock()
 
     def write(self, s):
-        try:
-            self.original.write(s)
-            self.original.flush()
-        except Exception:
-            pass
+        if self.original is not None:
+            try:
+                self.original.write(s)
+                self.original.flush()
+            except Exception:
+                pass
 
         with self._lock:
             self._buffer += s
@@ -265,10 +278,11 @@ class StreamInterceptor:
                     self.callback(clean)
 
     def flush(self):
-        try:
-            self.original.flush()
-        except Exception:
-            pass
+        if self.original is not None:
+            try:
+                self.original.flush()
+            except Exception:
+                pass
 
         with self._lock:
             clean = self._buffer.strip("\r\n ")
@@ -276,8 +290,18 @@ class StreamInterceptor:
                 self.callback(clean)
                 self._buffer = ""
 
+    def isatty(self):
+        if self.original is not None and hasattr(self.original, "isatty"):
+            try:
+                return self.original.isatty()
+            except Exception:
+                pass
+        return False
+
     def __getattr__(self, name):
-        return getattr(self.original, name)
+        if self.original is not None:
+            return getattr(self.original, name)
+        raise AttributeError(f"'StreamInterceptor' object has no attribute '{name}'")
 
 
 def _run_generator_thread(cfg: MapConfig):

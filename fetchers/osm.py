@@ -196,6 +196,7 @@ class OSMFetcher:
         (
           way["highway"]({bbox_str});
           way["building"]({bbox_str});
+          relation["building"]({bbox_str});
           way["landuse"="forest"]({bbox_str});
           way["natural"="wood"]({bbox_str});
           way["natural"="water"]({bbox_str});
@@ -216,31 +217,88 @@ class OSMFetcher:
         return OSMData()
 
     def _parse_overpass_json(self, data: Dict[str, Any]) -> OSMData:
-        # Fallback parser for overpass json if needed
+        # Robust Overpass JSON parser extracting full road attributes, buildings, and multipolygons
         nodes = {el["id"]: (el["lat"], el["lon"]) for el in data.get("elements", []) if el.get("type") == "node"}
+        ways_dict = {el["id"]: el for el in data.get("elements", []) if el.get("type") == "way"}
         osm_result = OSMData()
-        for way in [el for el in data.get("elements", []) if el.get("type") == "way"]:
+
+        # Pass 1: Parse ways (Roads, standard building footprints, forests, waters)
+        for way in ways_dict.values():
             tags = way.get("tags", {})
             coords = [nodes[nid] for nid in way.get("nodes", []) if nid in nodes]
             if len(coords) < 2:
                 continue
+
+            # Roads & Highways with comprehensive lane and attribute extraction
             if "highway" in tags:
                 hw = tags["highway"]
-                if hw not in {"footway", "path", "cycleway", "steps", "pedestrian"}:
+                if hw not in {"footway", "path", "cycleway", "steps", "pedestrian", "corridor", "bridleway"}:
+                    lanes_str = tags.get("lanes", "2")
+                    try:
+                        lanes = int(lanes_str.split(";")[0])
+                    except (ValueError, IndexError):
+                        lanes = 2
+
+                    width = estimate_road_width(hw, lanes, tags)
+                    surface = tags.get("surface", "asphalt")
+                    is_bridge = tags.get("bridge") in {"yes", "true", "1", "viaduct", "aqueduct"}
+                    is_tunnel = tags.get("tunnel") in {"yes", "true", "1", "building_passage", "culvert"}
+                    name = tags.get("name", "")
+
+                    try:
+                        speed = int(tags.get("maxspeed", "60").split()[0])
+                    except (ValueError, IndexError):
+                        speed = 60
+
+                    has_guardrail = "barrier" in tags or tags.get("guardrail") == "yes"
+                    is_lit = tags.get("lit") == "yes"
+
                     osm_result.roads.append(
                         RoadSegment(
                             osm_id=way["id"],
                             highway_type=hw,
                             nodes=coords,
-                            name=tags.get("name", ""),
+                            lanes=lanes,
+                            width=width,
+                            surface=surface,
+                            is_bridge=is_bridge,
+                            is_tunnel=is_tunnel,
+                            name=name,
+                            speed_limit=speed,
+                            has_guardrail=has_guardrail,
+                            is_lit=is_lit,
                         )
                     )
-            elif "building" in tags and len(coords) >= 3:
+
+            # Buildings (must have at least 3 points)
+            elif ("building" in tags or "building:part" in tags) and len(coords) >= 3:
                 osm_result.buildings.append(BuildingPolygon(coords, tags=dict(tags)))
+
+            # Forests / Woods
             elif (tags.get("landuse") == "forest" or tags.get("natural") == "wood") and len(coords) >= 3:
                 osm_result.forests.append(coords)
-            elif tags.get("natural") == "water" and len(coords) >= 3:
+
+            # Waters / Rivers
+            elif (tags.get("natural") == "water" or tags.get("waterway") in {"river", "stream"}) and len(coords) >= 2:
                 osm_result.waters.append(coords)
+
             elif tags.get("natural") == "coastline":
                 osm_result.has_coastline = True
+
+        # Pass 2: Parse multipolygon relations (Large complexes, malls, U-shaped and courtyard buildings)
+        for rel in [el for el in data.get("elements", []) if el.get("type") == "relation"]:
+            tags = rel.get("tags", {})
+            if "building" in tags and tags.get("type") == "multipolygon":
+                # Find outer ways
+                for member in rel.get("members", []):
+                    if member.get("type") == "way" and member.get("role") == "outer":
+                        ref_way = ways_dict.get(member.get("ref"))
+                        if ref_way:
+                            coords = [nodes[nid] for nid in ref_way.get("nodes", []) if nid in nodes]
+                            if len(coords) >= 3:
+                                # Merge relation tags with way tags
+                                merged_tags = dict(ref_way.get("tags", {}))
+                                merged_tags.update(tags)
+                                osm_result.buildings.append(BuildingPolygon(coords, tags=merged_tags))
+
         return osm_result

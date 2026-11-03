@@ -14,6 +14,7 @@ from core.projection import lat_lon_to_meters
 from processing.heightmap import HeightmapProcessor
 from exporter.building_mesh import (
     clean_ring,
+    is_convex_quad,
     ProceduralBuildingMesh,
     write_sector_dae,
     SKIRT_DEPTH_M,
@@ -141,15 +142,17 @@ class BuildingExporter:
             floor_h = 3.0
             total_height = floors * floor_h
 
-            # Skirt depth: 3.0m under lowest terrain point under building
-            base_z = z_max
+            # Base Z is the average ground elevation under footprint to avoid giant pedestals.
+            # Skirt depth: foundation extends down to z_min - 0.5m to embed into slope without gaps.
+            base_z = (z_min + z_max) / 2.0
             z_base = z_min - SKIRT_DEPTH_M
             z_eave = base_z + total_height
 
             # Band styling
             band_idx = (seed >> 3) % 4
             is_house = (is_house_type or (poly_area < 260.0 and floors <= 2)) and not is_highrise_type
-            z_roof_top = z_eave + (3.5 if is_house else 0.5)
+            can_pitch = is_house and (len(ring) == 4) and is_convex_quad(ring)
+            z_roof_top = z_eave + (3.5 if can_pitch else 0.5)
 
             # Find spatial sector
             sx = int(math.floor(cx / self.sector_size))
@@ -216,12 +219,14 @@ class BuildingExporter:
                 ],
                 "scale": [1.0, 1.0, 1.0],
                 "shapeName": f"/levels/{self.level_name}/art/shapes/buildings/{dae_filename}",
-                "collisionType": "Visible Mesh",
+                "collisionType": "Collision Mesh",
+                "decalType": "Collision Mesh",
+                "prebuildCollisionData": True,
             }
             items.append(ts_static)
 
         print(
             f"[BuildingExporter] Successfully generated {count} procedural buildings "
-            f"across {len(items)} sector DAEs with Visible Mesh collision."
+            f"across {len(items)} sector DAEs with Collision Mesh collision."
         )
         return items

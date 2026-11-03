@@ -72,7 +72,7 @@ class AroundWorldGenerator:
             origin_lat=self.cfg.center_lat,
             origin_lon=self.cfg.center_lon,
             clearance_meters=self.cfg.road_exclusion_buffer,
-            min_building_area_sqm=35.0,
+            min_building_area_sqm=12.0,
         )
 
         # Clean OSM buildings (filters out small noise and anything on roads)

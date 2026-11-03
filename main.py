@@ -6,11 +6,15 @@ import argparse
 import pathlib
 import sys
 
-# Ensure UTF-8 output encoding on Windows consoles
-if sys.platform == "win32":
+# Ensure UTF-8 output encoding on Windows consoles and protect against None stdout in GUI/noconsole
+if sys.stdout is not None and hasattr(sys.stdout, 'reconfigure'):
     try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+if sys.stderr is not None and hasattr(sys.stderr, 'reconfigure'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
     except Exception:
         pass
 
@@ -38,10 +42,10 @@ def main():
     try:
         if len(sys.argv) == 1:
             print("=" * 70)
-            print("  AroundWorldNG — Генератор карт реального мира для BeamNG.drive")
+            print("  AroundWorldNG - Генератор карт реального мира для BeamNG.drive")
             print("=" * 70)
-            print(" Запуск интерактивного визуального веб-интерфейса карты...")
-            print(" (Для использования через командную строку: AroundWorldNG.exe --help)")
+            print("  Запуск интерактивного визуального веб-интерфейса карты...")
+            print("  (Для использования через командную строку: AroundWorldNG.exe --help)")
             print("=" * 70 + "\n")
             from ui.web_server import start_web_ui
             start_web_ui()

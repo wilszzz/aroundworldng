@@ -92,13 +92,14 @@ class WaterBuilder:
                                 min_road_z = min(self.heightmap.get_elevation_at_meters(rx, ry) for rx, ry in coords)
                                 water_z = min(water_z, min_road_z - 1.0)
 
+                water_depth = 15.0
                 items.append({
                     "name": f"water_lake_{idx}",
                     "class": "WaterBlock",
                     "persistentId": str(uuid.uuid4()),
                     "__parent": "MissionGroup",
-                    "position": [round(minx, 2), round(miny, 2), round(water_z, 2)],
-                    "scale": [round(w, 2), round(d, 2), 15.0],
+                    "position": [round(minx, 2), round(miny, 2), round(water_z - water_depth, 2)],
+                    "scale": [round(w, 2), round(d, 2), water_depth],
                     "baseColor": [18, 90, 125, 220],
                     "clarity": 0.4,
                     "viscosity": 0.001,

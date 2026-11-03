@@ -24,13 +24,13 @@ BANDS_PER_1024 = [3, 4, 5, 5]
 TILE_PX_M = 12.0
 CORNICE_OUT_M = 0.28
 CORNICE_DOWN_M = 0.45
-CORNICE_UP_M = 0.20
-SKIRT_DEPTH_M = 3.0
+CORNICE_UP_M = 0.35
+SKIRT_DEPTH_M = 0.5
 
 
 def clean_ring(
     pts: List[Tuple[float, float]],
-    tol: float = 0.35,
+    tol: float = 0.08,
     max_verts: int = 64,
 ) -> Optional[List[Tuple[float, float]]]:
     """
@@ -38,7 +38,7 @@ def clean_ring(
     - Removes closing duplicate vertex
     - Ensures counter-clockwise (CCW) winding
     - Filters degenerate/tiny polygons (< 12 m2)
-    - Removes collinear and nearly redundant vertices
+    - Removes collinear vertices within tol=0.08m (preserving 90-degree corners)
     """
     if len(pts) < 3:
         return None
@@ -113,6 +113,45 @@ def clean_ring(
         ring = keep
 
     return ring if len(ring) >= 3 else None
+
+
+def is_convex_quad(ring: List[Tuple[float, float]]) -> bool:
+    """
+    Checks if a 4-vertex CCW ring represents a strictly convex quadrilateral.
+    (e.g., rectangle, square, trapezoid, parallelogram).
+    Returns False if N != 4, self-intersecting, reflex, or degenerate.
+    """
+    if len(ring) != 4:
+        return False
+
+    # Check for duplicate vertices or zero-length edges
+    for i in range(4):
+        p0 = ring[i]
+        p1 = ring[(i + 1) % 4]
+        if math.hypot(p1[0] - p0[0], p1[1] - p0[1]) < 0.1:
+            return False
+
+    # For CCW winding, all 4 cross products must be strictly positive
+    for i in range(4):
+        p_prev = ring[(i - 1) % 4]
+        p_curr = ring[i]
+        p_next = ring[(i + 1) % 4]
+        dx1 = p_curr[0] - p_prev[0]
+        dy1 = p_curr[1] - p_prev[1]
+        dx2 = p_next[0] - p_curr[0]
+        dy2 = p_next[1] - p_curr[1]
+        cross = dx1 * dy2 - dy1 * dx2
+        if cross <= 1e-4:
+            return False
+
+    try:
+        poly = Polygon(ring)
+        if not poly.is_valid or poly.area < 1.0:
+            return False
+    except Exception:
+        return False
+
+    return True
 
 
 def triangulate(pts: List[Tuple[float, float]]) -> List[Tuple[int, int, int]]:
@@ -351,10 +390,11 @@ class ProceduralBuildingMesh:
             )
 
         # 2. Roof surface and architecture
-        if is_house:
+        can_pitch = is_house and (n == 4) and is_convex_quad(ring)
+        if can_pitch:
             self._add_pitched_roof(ring, z_eave, wall_mat, roof_mat)
         else:
-            self._add_flat_roof_and_parapet(ring, z_eave, roof_mat)
+            self._add_flat_roof_and_parapet(ring, z_eave, "roof_gravel")
 
         # 3. Bottom skirt collision cap (facing down)
         col_bot_start = len(self.col_verts)
@@ -375,13 +415,15 @@ class ProceduralBuildingMesh:
     ):
         """
         Generates realistic pitched/gabled roof for cottages and residential houses:
-        - 4-vertex rectangular footprint: classic gabled roof with triangular wall gables
-        - N-vertex footprint: hipped roof with elevated ridge/apex
+        - Strictly permitted ONLY for simple convex 4-gons (squares, rectangles, trapezoids)
+        - For all other shapes (N != 4 or non-convex): automatically delegates to flat roof + parapet
+        - Classic gabled roof with 2 slopes and 2 vertical wall gables
         - UV mapping scaled to realistic roof tile dimensions (~2.0m tile repeat)
         - Synchronized collision geometry
         """
         n = len(ring)
-        if n < 3:
+        if n != 4 or not is_convex_quad(ring):
+            self._add_flat_roof_and_parapet(ring, z_eave, "roof_gravel")
             return
 
         cx = sum(p[0] for p in ring) / n
@@ -419,66 +461,57 @@ class ProceduralBuildingMesh:
             self.col_verts.extend([va, vb, vc])
             self.col_triangles.extend([col_start, col_start + 1, col_start + 2])
 
-        if n == 4:
-            # Rectangular footprint: Classic Gabled Roof with 2 slopes and 2 vertical wall gables
-            p0, p1, p2, p3 = ring[0], ring[1], ring[2], ring[3]
-            l01 = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
-            l12 = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-            l23 = math.hypot(p3[0] - p2[0], p3[1] - p2[1])
-            l30 = math.hypot(p0[0] - p3[0], p0[1] - p3[1])
+        # Rectangular / trapezoidal footprint: Classic Gabled Roof with 2 slopes and 2 vertical wall gables
+        p0, p1, p2, p3 = ring[0], ring[1], ring[2], ring[3]
+        l01 = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+        l12 = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+        l23 = math.hypot(p3[0] - p2[0], p3[1] - p2[1])
+        l30 = math.hypot(p0[0] - p3[0], p0[1] - p3[1])
 
-            avg_l0 = (l01 + l23) / 2.0
-            avg_l1 = (l12 + l30) / 2.0
+        avg_l0 = (l01 + l23) / 2.0
+        avg_l1 = (l12 + l30) / 2.0
 
-            p0_eave = (p0[0], p0[1], z_eave)
-            p1_eave = (p1[0], p1[1], z_eave)
-            p2_eave = (p2[0], p2[1], z_eave)
-            p3_eave = (p3[0], p3[1], z_eave)
+        p0_eave = (p0[0], p0[1], z_eave)
+        p1_eave = (p1[0], p1[1], z_eave)
+        p2_eave = (p2[0], p2[1], z_eave)
+        p3_eave = (p3[0], p3[1], z_eave)
 
-            if avg_l0 >= avg_l1:
-                # Longer axis along edge 0 (p0->p1) and edge 2 (p2->p3)
-                m1 = ((p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0, z_ridge)
-                m3 = ((p3[0] + p0[0]) / 2.0, (p3[1] + p0[1]) / 2.0, z_ridge)
+        if avg_l0 >= avg_l1:
+            # Longer axis along edge 0 (p0->p1) and edge 2 (p2->p3)
+            m1 = ((p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0, z_ridge)
+            m3 = ((p3[0] + p0[0]) / 2.0, (p3[1] + p0[1]) / 2.0, z_ridge)
 
-                # Roof Slope 1 (over edge 0)
-                add_roof_tri(roof_mat, p0_eave, p1_eave, m1)
-                add_roof_tri(roof_mat, p0_eave, m1, m3)
+            # Roof Slope 1 (over edge 0)
+            add_roof_tri(roof_mat, p0_eave, p1_eave, m1)
+            add_roof_tri(roof_mat, p0_eave, m1, m3)
 
-                # Roof Slope 2 (over edge 2)
-                add_roof_tri(roof_mat, p2_eave, p3_eave, m3)
-                add_roof_tri(roof_mat, p2_eave, m3, m1)
+            # Roof Slope 2 (over edge 2)
+            add_roof_tri(roof_mat, p2_eave, p3_eave, m3)
+            add_roof_tri(roof_mat, p2_eave, m3, m1)
 
-                # Gable 1 (vertical triangular wall over edge 1)
-                add_roof_tri(wall_mat, p1_eave, p2_eave, m1)
+            # Gable 1 (vertical triangular wall over edge 1)
+            add_roof_tri(wall_mat, p1_eave, p2_eave, m1)
 
-                # Gable 2 (vertical triangular wall over edge 3)
-                add_roof_tri(wall_mat, p3_eave, p0_eave, m3)
-            else:
-                # Longer axis along edge 1 (p1->p2) and edge 3 (p3->p0)
-                m0 = ((p0[0] + p1[0]) / 2.0, (p0[1] + p1[1]) / 2.0, z_ridge)
-                m2 = ((p2[0] + p3[0]) / 2.0, (p2[1] + p3[1]) / 2.0, z_ridge)
-
-                # Roof Slope 1 (over edge 1)
-                add_roof_tri(roof_mat, p1_eave, p2_eave, m2)
-                add_roof_tri(roof_mat, p1_eave, m2, m0)
-
-                # Roof Slope 2 (over edge 3)
-                add_roof_tri(roof_mat, p3_eave, p0_eave, m0)
-                add_roof_tri(roof_mat, p3_eave, m0, m2)
-
-                # Gable 1 (vertical triangular wall over edge 0)
-                add_roof_tri(wall_mat, p0_eave, p1_eave, m0)
-
-                # Gable 2 (vertical triangular wall over edge 2)
-                add_roof_tri(wall_mat, p2_eave, p3_eave, m2)
+            # Gable 2 (vertical triangular wall over edge 3)
+            add_roof_tri(wall_mat, p3_eave, p0_eave, m3)
         else:
-            # General N-gon hipped roof: elevated central apex
-            apex = (cx, cy, z_ridge)
-            for i in range(n):
-                va = (ring[i][0], ring[i][1], z_eave)
-                vb = (ring[(i + 1) % n][0], ring[(i + 1) % n][1], z_eave)
-                vc = apex
-                add_roof_tri(roof_mat, va, vb, vc)
+            # Longer axis along edge 1 (p1->p2) and edge 3 (p3->p0)
+            m0 = ((p0[0] + p1[0]) / 2.0, (p0[1] + p1[1]) / 2.0, z_ridge)
+            m2 = ((p2[0] + p3[0]) / 2.0, (p2[1] + p3[1]) / 2.0, z_ridge)
+
+            # Roof Slope 1 (over edge 1)
+            add_roof_tri(roof_mat, p1_eave, p2_eave, m2)
+            add_roof_tri(roof_mat, p1_eave, m2, m0)
+
+            # Roof Slope 2 (over edge 3)
+            add_roof_tri(roof_mat, p3_eave, p0_eave, m0)
+            add_roof_tri(roof_mat, p3_eave, m0, m2)
+
+            # Gable 1 (vertical triangular wall over edge 0)
+            add_roof_tri(wall_mat, p0_eave, p1_eave, m0)
+
+            # Gable 2 (vertical triangular wall over edge 2)
+            add_roof_tri(wall_mat, p2_eave, p3_eave, m2)
 
     def _add_flat_roof_and_parapet(
         self,
@@ -689,21 +722,21 @@ def write_sector_dae(
 {chr(10).join(tri_elements)}
       </mesh>
     </geometry>
-    <geometry id="Col-mesh" name="Col">
+    <geometry id="Colmesh-mesh" name="Colmesh">
       <mesh>
-        <source id="Col-pos">
-          <float_array id="Col-pos-array" count="{len(col_verts_local)*3}">{col_vert_floats}</float_array>
+        <source id="Colmesh-pos">
+          <float_array id="Colmesh-pos-array" count="{len(col_verts_local)*3}">{col_vert_floats}</float_array>
           <technique_common>
-            <accessor source="#Col-pos-array" count="{len(col_verts_local)}" stride="3">
+            <accessor source="#Colmesh-pos-array" count="{len(col_verts_local)}" stride="3">
               <param name="X" type="float"/><param name="Y" type="float"/><param name="Z" type="float"/>
             </accessor>
           </technique_common>
         </source>
-        <vertices id="Col-vertices">
-          <input semantic="POSITION" source="#Col-pos"/>
+        <vertices id="Colmesh-vertices">
+          <input semantic="POSITION" source="#Colmesh-pos"/>
         </vertices>
         <triangles count="{col_tri_count}">
-          <input semantic="VERTEX" source="#Col-vertices" offset="0"/>
+          <input semantic="VERTEX" source="#Colmesh-vertices" offset="0"/>
           <p>{col_p_str}</p>
         </triangles>
       </mesh>
@@ -711,16 +744,20 @@ def write_sector_dae(
   </library_geometries>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
-      <node id="BuildingNode" name="Building" type="NODE">
-        <instance_geometry url="#Building-mesh">
-          <bind_material>
-            <technique_common>
+      <node id="base00" name="base00" type="NODE">
+        <node id="start01" name="start01" type="NODE">
+          <node id="BuildingNode" name="BuildingNode" type="NODE">
+            <instance_geometry url="#Building-mesh">
+              <bind_material>
+                <technique_common>
 {chr(10).join(inst_mats)}
-            </technique_common>
-          </bind_material>
-        </instance_geometry>
-        <node id="Col-1" name="Col-1" type="NODE">
-          <instance_geometry url="#Col-mesh"/>
+                </technique_common>
+              </bind_material>
+            </instance_geometry>
+          </node>
+          <node id="Colmesh-1" name="Colmesh-1" type="NODE">
+            <instance_geometry url="#Colmesh-mesh"/>
+          </node>
         </node>
       </node>
     </visual_scene>
@@ -745,7 +782,7 @@ def write_building_dae(
     height: float,
     wall_mat: str = "facade_brick",
     roof_mat: str = "roof_gravel",
-    skirt_depth: float = 3.0,
+    skirt_depth: float = 0.5,
     has_gabled_roof: bool = False,
 ):
     """Legacy archetype generator for backward compatibility with unit tests."""
@@ -776,30 +813,30 @@ def create_all_building_archetypes(art_shapes_dir: pathlib.Path):
         bld_dir / "bld_house_small.dae",
         width=10.0, depth=12.0, height=7.0,
         wall_mat="facade_plaster", roof_mat="roof_tiles",
-        skirt_depth=3.0, has_gabled_roof=True,
+        skirt_depth=0.5, has_gabled_roof=True,
     )
     write_building_dae(
         bld_dir / "bld_apartment_block.dae",
         width=24.0, depth=14.0, height=16.0,
         wall_mat="facade_brick", roof_mat="roof_gravel",
-        skirt_depth=3.5,
+        skirt_depth=0.5,
     )
     write_building_dae(
         bld_dir / "bld_commercial_glass.dae",
         width=20.0, depth=20.0, height=26.0,
         wall_mat="facade_plaster", roof_mat="roof_gravel",
-        skirt_depth=4.0,
+        skirt_depth=0.5,
     )
     write_building_dae(
         bld_dir / "bld_industrial_warehouse.dae",
         width=35.0, depth=20.0, height=10.0,
         wall_mat="facade_plaster", roof_mat="roof_gravel",
-        skirt_depth=3.0,
+        skirt_depth=0.5,
     )
     write_building_dae(
         bld_dir / "bld_commercial_plaza.dae",
         width=30.0, depth=16.0, height=8.0,
         wall_mat="facade_plaster", roof_mat="roof_gravel",
-        skirt_depth=3.0,
+        skirt_depth=0.5,
     )
     print(f"[BuildingMesh] Created 5 architectural building archetypes in {bld_dir}")
