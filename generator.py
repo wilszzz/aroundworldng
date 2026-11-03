@@ -3,6 +3,7 @@ Main Generator Orchestrator.
 Coordinates data fetching, geospatial processing, road carving, and level packaging.
 """
 
+import gc
 import math
 import pathlib
 from typing import Optional
@@ -45,9 +46,12 @@ class AroundWorldGenerator:
         sat_image: Optional[Image.Image] = None
         if self.cfg.save_orthophoto:
             try:
-                sat_image = self.yandex_fetcher.fetch_bbox(min_lat, min_lon, max_lat, max_lon)
+                sat_image = self.yandex_fetcher.fetch_bbox(
+                    min_lat, min_lon, max_lat, max_lon, max_resolution=self.cfg.sat_max_res
+                )
             except Exception as e:
                 print(f"[Generator] Warning: Could not download satellite tiles: {e}")
+        gc.collect()
 
         # 3. Fetch Elevation Grid (DEM)
         try:
@@ -57,6 +61,7 @@ class AroundWorldGenerator:
         except Exception as e:
             print(f"[Generator] Error fetching DEM ({e}), using default terrain plane.")
             raw_elevations = 50.0 + np.zeros((self.cfg.heightmap_res, self.cfg.heightmap_res), dtype=np.float32)
+        gc.collect()
 
         # 4. Fetch OpenStreetMap Vectors
         osm_data = self.osm_fetcher.fetch_bbox_data(min_lat, min_lon, max_lat, max_lon)

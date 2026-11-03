@@ -330,7 +330,8 @@ class AroundWorldWebHandler(SimpleHTTPRequestHandler):
     """Handles static files, API requests, real-time logging, and geocoding."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(UI_DIR), **kwargs)
+        ui_dir = get_resource_path("ui")
+        super().__init__(*args, directory=str(ui_dir), **kwargs)
 
     def _send_json(self, data: Any, status_code: int = 200):
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
@@ -348,6 +349,8 @@ class AroundWorldWebHandler(SimpleHTTPRequestHandler):
 
         if path in {"/", "/index.html"}:
             index_path = get_resource_path("ui/index.html")
+            if not index_path.exists():
+                index_path = get_resource_path("index.html")
             if not index_path.exists():
                 self.send_error(404, "index.html not found")
                 return
@@ -512,12 +515,36 @@ class AroundWorldWebHandler(SimpleHTTPRequestHandler):
         super().log_message(format, *args)
 
 
-def start_web_ui(port: int = PORT, open_browser: bool = True):
-    """Starts the web server and opens the browser interface."""
-    server = HTTPServer(("127.0.0.1", port), AroundWorldWebHandler)
-    url = f"http://127.0.0.1:{port}"
+def create_web_server(start_port: int = PORT, max_port: int = 8090) -> tuple[HTTPServer, int]:
+    """
+    Attempts to bind HTTPServer to start_port, trying ports sequentially up to max_port (e.g. 8080..8090).
+    Returns (server_instance, bound_port).
+    """
+    candidate_ports = list(range(start_port, max(max_port, start_port) + 1))
+    for p in candidate_ports:
+        try:
+            server = HTTPServer(("127.0.0.1", p), AroundWorldWebHandler)
+            return server, p
+        except OSError as e:
+            # WinError 10048 / Errno 98: Address already in use
+            print(f"[WebUI] Порт {p} занят или недоступен ({e}). Пробуем следующий порт...")
+            continue
+
+    raise OSError(
+        f"Не удалось занять ни один из портов в диапазоне {start_port}..{max_port}. "
+        f"Убедитесь, что порты свободны или закройте предыдущие запущенные процессы AroundWorldNG."
+    )
+
+
+def start_web_ui(port: int = PORT, max_port: int = 8090, open_browser: bool = True):
+    """
+    Starts the web server with automatic port retry (8080..8090)
+    and opens the browser at the actual bound port.
+    """
+    server, actual_port = create_web_server(start_port=port, max_port=max_port)
+    url = f"http://127.0.0.1:{actual_port}"
     print(f"\n=======================================================")
-    print(f" AroundWorldNG Web UI v1.1.3 запущен по адресу: {url}")
+    print(f" AroundWorldNG Web UI v1.1.4 запущен по адресу: {url}")
     print(f" Нажмите Ctrl+C для остановки сервера.")
     print(f"=======================================================\n")
     if open_browser:
@@ -526,3 +553,5 @@ def start_web_ui(port: int = PORT, open_browser: bool = True):
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n[WebUI] Сервер остановлен.")
+    finally:
+        server.server_close()

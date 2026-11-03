@@ -97,6 +97,7 @@ class HeightmapProcessor:
         output_ter_path: pathlib.Path,
         materials: list = None,
         layer_map: np.ndarray = None,
+        layer_texture_map: np.ndarray = None,
         level_name: str = "",
     ):
         """
@@ -124,21 +125,37 @@ class HeightmapProcessor:
             cropped_layer_map = np.zeros((ter_size, ter_size), dtype=np.uint8)
 
         # Binary .ter packing (Modern BeamNG Version 9)
-        ter_data = bytearray()
-        ter_data.append(9)  # Version 9 for BeamNG >= 0.3x/0.40
-        ter_data.extend(struct.pack("<I", ter_size))
-        ter_data.extend(cropped_u16.tobytes())
-        ter_data.extend(cropped_layer_map.tobytes())
-
-        ter_data.extend(struct.pack("<I", len(materials)))
-        for mat in materials:
-            enc = mat.encode("ascii", errors="ignore")
-            ter_data.append(len(enc))
-            ter_data.extend(enc)
-
+        # Format: version(char), size(unsigned int),
+        #         heightMap(heightMapSize * heightMapItemSize),
+        #         layerMap(layerMapSize * layerMapItemSize),
+        #         layerTextureMap(layerMapSize * layerMapItemSize),
+        #         materialNames
         output_ter_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_ter_path, "wb") as f:
-            f.write(ter_data)
+            f.write(bytes([9]))  # Version 9 for BeamNG >= 0.3x/0.40
+            f.write(struct.pack("<I", ter_size))
+            f.write(cropped_u16.tobytes())
+            f.write(cropped_layer_map.tobytes())
+
+            # layerTextureMap (ter_size * ter_size bytes, uint8)
+            if layer_texture_map is not None:
+                f.write(layer_texture_map[:ter_size, :ter_size].astype(np.uint8).tobytes())
+            else:
+                # Stream zeros in 64KB chunks to keep memory usage minimal
+                chunk_size = 65536
+                zero_chunk = bytes(chunk_size)
+                remaining = ter_size * ter_size
+                while remaining > 0:
+                    write_size = min(remaining, chunk_size)
+                    f.write(zero_chunk if write_size == chunk_size else bytes(write_size))
+                    remaining -= write_size
+
+            # materialNames: count (uint32), then foreach: length (uint8) + ascii string
+            f.write(struct.pack("<I", len(materials)))
+            for mat in materials:
+                enc = mat.encode("ascii", errors="ignore")
+                f.write(bytes([len(enc)]))
+                f.write(enc)
 
         # Write modern .terrain.json descriptor matching official template
         terrain_json_path = output_ter_path.parent / f"{output_ter_path.stem}.terrain.json"

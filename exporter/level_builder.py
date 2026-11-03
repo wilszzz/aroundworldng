@@ -75,7 +75,8 @@ class LevelBuilder:
         # In BeamNG theTerrain.ter.depth.png defines fluid/mud depth:
         # 255 = 0 mud/fluid depth (100% solid monolithic ground).
         # 0 = maximum mud depth (quicksand), causing vehicles to sink into terrain!
-        depth_img = Image.new("L", (heightmap_proc.res - 1, heightmap_proc.res - 1), color=255)
+        ter_size = heightmap_proc.res - 1 if (heightmap_proc.res - 1) & (heightmap_proc.res - 2) == 0 else heightmap_proc.res
+        depth_img = Image.new("L", (ter_size, ter_size), color=255)
         depth_img.save(self.level_dir / "theTerrain.ter.depth.png")
 
         # 3. Export Base Terrain Textures and UI Previews (Power-of-two 2048x2048)
@@ -205,11 +206,11 @@ class LevelBuilder:
                 dist = x ** 2 + y ** 2
                 if dist < min_dist:
                     min_dist = dist
-                    z = heightmap.get_elevation_at_meters(x, y) + 1.2
+                    z = heightmap.get_elevation_at_meters(x, y) + 1.5
                     best_pt = (x, y, z)
 
         if min_dist == float("inf"):
-            z = heightmap.get_elevation_at_meters(0.0, 0.0) + 1.2
+            z = heightmap.get_elevation_at_meters(0.0, 0.0) + 1.5
             best_pt = (0.0, 0.0, z)
 
         print(f"[LevelBuilder] Spawn point set at ({best_pt[0]:.1f}, {best_pt[1]:.1f}, {best_pt[2]:.1f})")
@@ -310,7 +311,7 @@ class LevelBuilder:
                 "terrainFile": f"levels/{self.cfg.level_name}/theTerrain.ter",
                 "position": [-self.cfg.size_meters / 2.0, -self.cfg.size_meters / 2.0, specs.height_offset],
                 "squareSize": specs.square_size,
-                "maxHeight": max(specs.max_elev - specs.min_elev, 10.0),
+                "maxHeight": specs.height_scale,
                 "baseTexSize": 2048,
                 "materialTextureSet": f"{self.cfg.level_name}TerrainMaterialTextureSet",
                 "minimapImage": f"levels/{self.cfg.level_name}/info.png",

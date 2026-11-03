@@ -4,6 +4,7 @@ Downloads satellite tiles from Yandex and stitches them into a georeferenced ort
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import gc
 import io
 import math
 from typing import Dict, List, Optional, Tuple
@@ -54,10 +55,12 @@ class YandexSatFetcher:
         min_lon: float,
         max_lat: float,
         max_lon: float,
+        max_resolution: int = 2048,
     ) -> Image.Image:
         """
-        Fetches all satellite tiles covering the bounding box and crops
-        to the exact bounding box in Yandex projection space.
+        Fetches satellite tiles covering the bounding box and stitches directly
+        into a target texture canvas (up to max_resolution x max_resolution)
+        to prevent excessive memory consumption.
         """
         # Get pixel bounds at target zoom
         # Note: In Yandex projection, max_lat has smaller pixel Y than min_lat
@@ -85,8 +88,18 @@ class YandexSatFetcher:
         total_tiles = len(tile_coords)
         print(f"[YandexSat] Fetching {total_tiles} tiles (Zoom {self.zoom})...")
 
-        # Download tiles concurrently
-        tiles: Dict[Tuple[int, int], Image.Image] = {}
+        full_w = max(1, px_right - px_left)
+        full_h = max(1, px_bottom - px_top)
+
+        # Target dimensions (capped at max_resolution, default 2048, up to 4096)
+        max_res = min(max(256, max_resolution), 4096)
+        scale = min(1.0, float(max_res) / float(max(full_w, full_h)))
+        target_w = max(1, int(round(full_w * scale)))
+        target_h = max(1, int(round(full_h * scale)))
+
+        canvas = Image.new("RGB", (target_w, target_h), color=(30, 30, 30))
+
+        # Download tiles concurrently and stream-paste directly into target canvas
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_coord = {
                 executor.submit(self.download_tile, tx, ty): (tx, ty)
@@ -94,25 +107,51 @@ class YandexSatFetcher:
             }
             for future in tqdm(as_completed(future_to_coord), total=total_tiles, desc="Tiles"):
                 res = future.result()
-                if res:
-                    tx, ty, img = res
-                    tiles[(tx, ty)] = img
+                if not res:
+                    continue
+                tx, ty, img = res
+                try:
+                    t_x0 = tx * 256
+                    t_y0 = ty * 256
+                    t_x1 = (tx + 1) * 256
+                    t_y1 = (ty + 1) * 256
 
-        # Stitch full canvas
-        canvas_width = (tile_x_max - tile_x_min + 1) * 256
-        canvas_height = (tile_y_max - tile_y_min + 1) * 256
-        canvas = Image.new("RGB", (canvas_width, canvas_height), color=(30, 30, 30))
+                    ix0 = max(t_x0, px_left)
+                    iy0 = max(t_y0, px_top)
+                    ix1 = min(t_x1, px_right)
+                    iy1 = min(t_y1, px_bottom)
 
-        for (tx, ty), img in tiles.items():
-            offset_x = (tx - tile_x_min) * 256
-            offset_y = (ty - tile_y_min) * 256
-            canvas.paste(img, (offset_x, offset_y))
+                    if ix1 <= ix0 or iy1 <= iy0:
+                        continue
 
-        # Crop to exact pixel bounding box
-        crop_left = int(px_left - tile_x_min * 256)
-        crop_top = int(px_top - tile_y_min * 256)
-        crop_right = int(px_right - tile_x_min * 256)
-        crop_bottom = int(px_bottom - tile_y_min * 256)
+                    crop_x0 = int(round(ix0 - t_x0))
+                    crop_y0 = int(round(iy0 - t_y0))
+                    crop_x1 = int(round(ix1 - t_x0))
+                    crop_y1 = int(round(iy1 - t_y0))
 
-        cropped = canvas.crop((crop_left, crop_top, crop_right, crop_bottom))
-        return cropped
+                    tile_patch = img.crop((crop_x0, crop_y0, crop_x1, crop_y1))
+
+                    dest_x0 = int(round((ix0 - px_left) * scale))
+                    dest_y0 = int(round((iy0 - px_top) * scale))
+                    dest_x1 = int(round((ix1 - px_left) * scale))
+                    dest_y1 = int(round((iy1 - px_top) * scale))
+
+                    dw = max(1, dest_x1 - dest_x0)
+                    dh = max(1, dest_y1 - dest_y0)
+
+                    if tile_patch.size != (dw, dh):
+                        tile_resized = tile_patch.resize((dw, dh), Image.Resampling.BILINEAR)
+                        tile_patch.close()
+                        canvas.paste(tile_resized, (dest_x0, dest_y0))
+                        tile_resized.close()
+                        del tile_resized
+                    else:
+                        canvas.paste(tile_patch, (dest_x0, dest_y0))
+                        tile_patch.close()
+                        del tile_patch
+                finally:
+                    img.close()
+                    del img
+
+        gc.collect()
+        return canvas

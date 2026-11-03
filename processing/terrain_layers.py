@@ -2,12 +2,14 @@
 Multi-Layer Procedural Terrain Biome Engine for BeamNG.drive.
 Generates layerMap for theTerrain.ter assigning realistic surface materials
 (Grass, Asphalt, Dirt, Rock) based on slopes, road corridors, and building footprints.
+Optimized for low RAM consumption with float32 arrays and fast C-accelerated rasterization.
 """
 
+import gc
 import math
 from typing import List, Tuple
 import numpy as np
-from shapely.geometry import LineString, Point, Polygon
+from PIL import Image, ImageDraw
 
 from core.projection import lat_lon_to_meters
 from fetchers.osm import OSMData, RoadSegment
@@ -31,9 +33,9 @@ class TerrainLayerEngine:
         origin_lon: float,
         size_meters: float,
     ):
-        self.elevations = elevations
-        self.res = elevations.shape[0]
-        self.square_size = square_size
+        self.elevations = np.asarray(elevations, dtype=np.float32)
+        self.res = self.elevations.shape[0]
+        self.square_size = float(square_size)
         self.origin_lat = origin_lat
         self.origin_lon = origin_lon
         self.size = size_meters
@@ -42,82 +44,61 @@ class TerrainLayerEngine:
     def compute_layer_map(self, osm_data: OSMData) -> np.ndarray:
         """
         Computes 2D uint8 array (res, res) with material layer indices.
+        Uses float32 slopes and fast PIL rasterization for zero-overhead stamping.
         """
         layer_map = np.zeros((self.res, self.res), dtype=np.uint8)  # Default: Grass (0)
 
-        # 1. Slope Analysis: Slopes > 25 degrees become Rock (3)
-        gy, gx = np.gradient(self.elevations, self.square_size)
+        # 1. Slope Analysis in float32: Slopes > 25 degrees become Rock (3)
+        gy, gx = np.gradient(self.elevations, np.float32(self.square_size))
         slope = np.hypot(gx, gy)
         steep_mask = slope > 0.466  # tan(25 deg) ≈ 0.466
         layer_map[steep_mask] = 3
+        del gy, gx, slope, steep_mask
+        gc.collect()
 
-        # 2. Paint Roads onto LayerMap (Asphalt or Dirt)
+        # 2. Fast C-accelerated stamping of roads and buildings using PIL
+        img = Image.fromarray(layer_map, mode="L")
+        draw = ImageDraw.Draw(img)
+
+        # 2a. Paint Roads onto LayerMap (Asphalt=1 or Dirt=2)
         for road in osm_data.roads:
             if road.is_bridge or road.is_tunnel:
                 continue
             if len(road.nodes) < 2:
                 continue
 
-            pts = [
-                lat_lon_to_meters(lat, lon, self.origin_lat, self.origin_lon)
-                for lat, lon in road.nodes
-            ]
-
             is_dirt = road.surface in {"dirt", "ground", "earth", "gravel", "unpaved"}
             mat_idx = 2 if is_dirt else 1
-            half_w = (road.width / 2.0) + 1.0  # slight apron margin
+            width_px = max(1, int(round((road.width + 2.0) / self.square_size)))
 
-            # Stamp road segments onto grid
-            for i in range(len(pts) - 1):
-                p1, p2 = pts[i], pts[i + 1]
-                dx, dy = p2[0] - p1[0], p2[1] - p1[1]
-                seg_len = math.hypot(dx, dy)
-                if seg_len < 1.0:
-                    continue
+            pts_px = []
+            for lat, lon in road.nodes:
+                x, y = lat_lon_to_meters(lat, lon, self.origin_lat, self.origin_lon)
+                px = (x + self.half_span) / self.square_size
+                py = (y + self.half_span) / self.square_size
+                pts_px.append((px, py))
 
-                steps = max(int(seg_len / 2.0), 2)
-                for s in range(steps + 1):
-                    t = s / steps
-                    cx = p1[0] + dx * t
-                    cy = p1[1] + dy * t
+            if len(pts_px) >= 2:
+                draw.line(pts_px, fill=mat_idx, width=width_px, joint="curve")
 
-                    px_min = int(max(0, (cx - half_w + self.half_span) / self.square_size))
-                    px_max = int(min(self.res - 1, (cx + half_w + self.half_span) / self.square_size))
-                    py_min = int(max(0, (cy - half_w + self.half_span) / self.square_size))
-                    py_max = int(min(self.res - 1, (cy + half_w + self.half_span) / self.square_size))
-
-                    for py in range(py_min, py_max + 1):
-                        for px in range(px_min, px_max + 1):
-                            gx_pt = px * self.square_size - self.half_span
-                            gy_pt = py * self.square_size - self.half_span
-                            if math.hypot(gx_pt - cx, gy_pt - cy) <= half_w:
-                                layer_map[py, px] = mat_idx
-
-        # 3. Paint Ground under Buildings as Asphalt/Concrete base pads (1)
+        # 2b. Paint Ground under Buildings as Asphalt/Concrete base pads (1)
         for b_poly in osm_data.buildings:
             if len(b_poly) < 3:
                 continue
-            metric_pts = [
-                lat_lon_to_meters(lat, lon, self.origin_lat, self.origin_lon)
-                for lat, lon in b_poly
-            ]
-            xs = [p[0] for p in metric_pts]
-            ys = [p[1] for p in metric_pts]
-            minx, maxx = min(xs), max(xs)
-            miny, maxy = min(ys), max(ys)
+            b_pts_px = []
+            for lat, lon in b_poly:
+                x, y = lat_lon_to_meters(lat, lon, self.origin_lat, self.origin_lon)
+                px = (x + self.half_span) / self.square_size
+                py = (y + self.half_span) / self.square_size
+                b_pts_px.append((px, py))
 
-            px_min = int(max(0, (minx + self.half_span) / self.square_size))
-            px_max = int(min(self.res - 1, (maxx + self.half_span) / self.square_size))
-            py_min = int(max(0, (miny + self.half_span) / self.square_size))
-            py_max = int(min(self.res - 1, (maxy + self.half_span) / self.square_size))
+            if len(b_pts_px) >= 3:
+                draw.polygon(b_pts_px, fill=1)
 
-            poly = Polygon(metric_pts)
-            for py in range(py_min, py_max + 1):
-                for px in range(px_min, px_max + 1):
-                    gx_pt = px * self.square_size - self.half_span
-                    gy_pt = py * self.square_size - self.half_span
-                    if poly.contains(Point(gx_pt, gy_pt)):
-                        layer_map[py, px] = 1
+        layer_map = np.asarray(img, dtype=np.uint8).copy()
+        img.close()
+        del img, draw
+        gc.collect()
 
         print(
             f"[TerrainLayers] Multi-layer mapping: Grass={np.sum(layer_map == 0)}, "

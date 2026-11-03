@@ -35,39 +35,53 @@ def parse_args():
 
 
 def main():
-    if len(sys.argv) == 1:
+    try:
+        if len(sys.argv) == 1:
+            print("=" * 70)
+            print("  AroundWorldNG — Генератор карт реального мира для BeamNG.drive")
+            print("=" * 70)
+            print(" Запуск интерактивного визуального веб-интерфейса карты...")
+            print(" (Для использования через командную строку: AroundWorldNG.exe --help)")
+            print("=" * 70 + "\n")
+            from ui.web_server import start_web_ui
+            start_web_ui()
+            return
+
+        args = parse_args()
+
+        if args.web:
+            from ui.web_server import start_web_ui
+            start_web_ui()
+            return
+
+        config = MapConfig(
+            level_name=args.name,
+            title=args.title,
+            center_lat=args.lat,
+            center_lon=args.lon,
+            size_meters=args.size,
+            heightmap_res=args.res,
+            sat_zoom=args.zoom,
+            install_to_beamng=args.install,
+            output_dir=pathlib.Path("build"),
+        )
+
+        generator = AroundWorldGenerator(config)
+        generator.generate()
+    except KeyboardInterrupt:
+        print("\n[AroundWorldNG] Работа завершена пользователем.")
+    except Exception as e:
+        import traceback
+        print("\n" + "=" * 70)
+        print("  [AroundWorldNG] КРИТИЧЕСКАЯ ОШИБКА ПРИ ЗАПУСКЕ:")
         print("=" * 70)
-        print("  AroundWorldNG — Генератор карт реального мира для BeamNG.drive")
+        traceback.print_exc()
         print("=" * 70)
-        print(" Запуск интерактивного визуального веб-интерфейса карты...")
-        print(" Открываем браузер: http://localhost:8080/")
-        print(" (Для использования через командную строку: AroundWorldNG.exe --help)")
-        print("=" * 70 + "\n")
-        from ui.web_server import start_web_ui
-        start_web_ui()
-        return
-
-    args = parse_args()
-
-    if args.web:
-        from ui.web_server import start_web_ui
-        start_web_ui()
-        return
-
-    config = MapConfig(
-        level_name=args.name,
-        title=args.title,
-        center_lat=args.lat,
-        center_lon=args.lon,
-        size_meters=args.size,
-        heightmap_res=args.res,
-        sat_zoom=args.zoom,
-        install_to_beamng=args.install,
-        output_dir=pathlib.Path("build"),
-    )
-
-    generator = AroundWorldGenerator(config)
-    generator.generate()
+        try:
+            input("\nНажмите Enter для выхода...")
+        except Exception:
+            pass
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ from ui.web_server import (
     AroundWorldWebHandler,
     TaskState,
     _run_generator_thread,
+    create_web_server,
     current_task,
 )
 
@@ -227,6 +228,27 @@ class TestWebHandlerEndpoints(unittest.TestCase):
 
         snapshot = state.get_snapshot()
         self.assertEqual(len(snapshot["logs"]), 100)
+
+
+    def test_port_collision_fallback(self):
+        """When the primary port is occupied, create_web_server should try the next port."""
+        import socket
+        # Occupy a test port with a raw socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(("127.0.0.1", 0))
+        busy_port = sock.getsockname()[1]
+        sock.listen(1)
+
+        try:
+            # Tell create_web_server to start at busy_port
+            server, actual_port = create_web_server(start_port=busy_port, max_port=busy_port + 5)
+            try:
+                self.assertNotEqual(actual_port, busy_port)
+                self.assertEqual(actual_port, busy_port + 1)
+            finally:
+                server.server_close()
+        finally:
+            sock.close()
 
 
 if __name__ == "__main__":

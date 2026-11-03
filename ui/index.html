@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>AroundWorldNG v1.1.3 — Генератор карт BeamNG.drive</title>
+  <title>AroundWorldNG v1.1.4 — Генератор карт BeamNG.drive</title>
   
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -649,6 +649,16 @@
       background: #2cfc94;
     }
 
+    .section-hint {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      line-height: 1.4;
+      margin: -4px 0 2px;
+    }
+    .section-hint b {
+      color: #e2e8f0;
+    }
+
     /* ==========================================================================
        Map Area & Overlays
        ========================================================================== */
@@ -658,11 +668,13 @@
       min-height: 0;
       height: 100%;
       position: relative;
+      overflow: hidden;
     }
 
     #map {
       width: 100%;
       height: 100%;
+      min-height: 100%;
       background: #141720;
     }
 
@@ -674,27 +686,30 @@
       z-index: 999;
       display: flex;
       gap: 8px;
+      pointer-events: auto;
     }
 
     .map-btn {
-      background: rgba(19, 22, 31, 0.92);
+      background: rgba(19, 22, 31, 0.94);
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
       padding: 8px 14px;
       border-radius: var(--radius-sm);
       font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
       display: flex;
       align-items: center;
       gap: 6px;
       transition: var(--transition);
+      user-select: none;
     }
     .map-btn:hover {
-      background: rgba(33, 38, 55, 0.95);
+      background: rgba(33, 38, 55, 0.98);
       border-color: var(--primary);
+      transform: translateY(-1px);
     }
 
     /* Bounding Box Info Badge on Map */
@@ -703,19 +718,21 @@
       bottom: 24px;
       left: 16px;
       z-index: 999;
-      background: rgba(19, 22, 31, 0.92);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(19, 22, 31, 0.94);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: var(--radius-sm);
       padding: 8px 14px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-family: var(--font-mono);
       color: #cbd5e1;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
       display: flex;
       align-items: center;
       gap: 12px;
       pointer-events: none;
+      max-width: calc(100% - 140px);
+      flex-wrap: wrap;
     }
     .map-info-badge .tag {
       color: var(--primary);
@@ -726,8 +743,8 @@
     #sidebar-toggle {
       display: none;
       position: absolute;
-      top: 16px;
-      right: 16px;
+      top: 14px;
+      left: 14px;
       z-index: 1001;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
@@ -739,17 +756,43 @@
       justify-content: center;
       cursor: pointer;
       font-size: 18px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      transition: var(--transition);
+    }
+    #sidebar-toggle:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--primary);
+    }
+
+    .sidebar-close-btn {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 16px;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    .sidebar-close-btn:hover {
+      background: var(--bg-card-hover);
+      color: #fff;
+      border-color: var(--primary);
     }
 
     /* Custom Leaflet Controls Theme */
     .leaflet-bar {
-      border: 1px solid rgba(255,255,255,0.12) !important;
+      border: 1px solid rgba(255,255,255,0.14) !important;
       border-radius: 8px !important;
       overflow: hidden;
       box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
     }
     .leaflet-bar a {
-      background-color: rgba(19, 22, 31, 0.92) !important;
+      background-color: rgba(19, 22, 31, 0.94) !important;
       backdrop-filter: blur(8px);
       color: #f1f5f9 !important;
       border-bottom: 1px solid rgba(255,255,255,0.08) !important;
@@ -777,6 +820,10 @@
     }
     .leaflet-control-attribution a {
       color: #94a3b8 !important;
+    }
+    .leaflet-bottom.leaflet-right {
+      margin-bottom: 8px;
+      margin-right: 12px;
     }
 
     /* Custom Animated Marker Pin */
@@ -819,6 +866,20 @@
       80%, 100% { transform: scale(1.6); opacity: 0; }
     }
 
+    .custom-tooltip {
+      background: rgba(19, 22, 31, 0.95) !important;
+      border: 1px solid rgba(255, 87, 34, 0.6) !important;
+      color: #fff !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      border-radius: 4px !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+      padding: 4px 8px !important;
+    }
+    .custom-tooltip:before {
+      border-top-color: rgba(255, 87, 34, 0.6) !important;
+    }
+
     /* Responsive Queries */
     @media (max-width: 900px) {
       #sidebar {
@@ -827,14 +888,31 @@
         top: 0;
         bottom: 0;
         width: 100%;
-        max-width: 400px;
+        max-width: 420px;
         transform: translateX(0);
+        z-index: 2000;
+        box-shadow: 8px 0 35px rgba(0, 0, 0, 0.75);
       }
       #sidebar.collapsed {
         transform: translateX(-100%);
       }
       #sidebar-toggle {
         display: flex;
+      }
+      .sidebar-close-btn {
+        display: flex;
+      }
+      .map-floating-bar {
+        top: 14px;
+        left: 64px;
+      }
+      .map-info-badge {
+        bottom: 12px;
+        left: 12px;
+        font-size: 10.5px;
+        gap: 8px;
+        padding: 6px 10px;
+        max-width: calc(100% - 24px);
       }
     }
   </style>
@@ -849,10 +927,11 @@
         <div class="brand-group">
           <div class="brand-icon">🏎️</div>
           <div class="brand-titles">
-            <h1>AroundWorldNG <span class="badge-version">v1.1.3</span></h1>
+            <h1>AroundWorldNG <span class="badge-version">v1.1.4</span></h1>
             <p>Генератор локаций BeamNG.drive из реального мира</p>
           </div>
         </div>
+        <button id="sidebar-close-btn" class="sidebar-close-btn" onclick="toggleSidebar()" title="Скрыть панель">✕</button>
       </div>
 
       <!-- Main Config Body -->
@@ -863,16 +942,17 @@
           <div class="card-title">
             <span><span class="icon">🔍</span>Поиск локации / Города</span>
           </div>
+          <p class="section-hint">💡 Выберите <b>любое место на планете</b> кликом по карте, поиском или введите координаты. Пресеты — быстрые примеры.</p>
           <div class="search-container">
             <div class="input-wrapper has-icon">
               <span class="input-icon">📍</span>
-              <input type="text" id="search-input" placeholder="Например: Сочи, Нюрбургринг, Монако..." />
+              <input type="text" id="search-input" placeholder="Введите город или место: Сочи, Токио, Париж..." autocomplete="off" />
             </div>
             <button class="search-btn" onclick="executeSearch()">Найти</button>
             <div id="search-dropdown" class="search-dropdown"></div>
           </div>
 
-          <div class="card-title" style="margin-top: 4px;">
+          <div class="card-title" style="margin-top: 6px;">
             <span><span class="icon">⚡</span>Популярные трассы</span>
           </div>
           <div id="presets-container" class="presets-grid">
@@ -1039,12 +1119,16 @@
     let logOffset = 0;
     let isGenerating = false;
     let lastGeneratedResult = null;
+    let searchDebounceTimer = null;
 
-    // Initialize Leaflet Map
+    // Initialize Leaflet Map (disable default top-left zoom so it doesn't collide with toolbar)
     const map = L.map('map', {
-      zoomControl: true,
+      zoomControl: false,
       preferCanvas: true
     }).setView([55.751244, 37.618423], 14);
+
+    // Place zoom control at bottom-right above attribution
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     // Multi-Layer Base Maps
     const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -1093,13 +1177,20 @@
       draggable: true
     }).addTo(map);
 
+    centerMarker.bindTooltip("🎯 Центр карты (перетащите или кликните в любое место)", {
+      direction: 'top',
+      offset: [0, -12],
+      className: 'custom-tooltip'
+    });
+
     /* ==========================================================================
        Geodesic Math (Exact 1:1 match with core.projection.meters_to_lat_lon)
        ========================================================================== */
     function metersToLatLon(x, y, originLat, originLon) {
       const originLatRad = (originLat * Math.PI) / 180.0;
       const metersPerDegLat = 111132.92 - 559.82 * Math.cos(2 * originLatRad) + 1.175 * Math.cos(4 * originLatRad);
-      const metersPerDegLon = 111412.84 * Math.cos(originLatRad) - 93.5 * Math.cos(3 * originLatRad);
+      const cosLat = Math.cos(originLatRad);
+      const metersPerDegLon = Math.max(111412.84 * cosLat - 93.5 * Math.cos(3 * originLatRad), 100.0);
       const dLat = y / metersPerDegLat;
       const dLon = x / metersPerDegLon;
       return [originLat + dLat, originLon + dLon];
@@ -1162,11 +1253,13 @@
     }
 
     /* ==========================================================================
-       Interactive Map Events
+       Interactive Map Events & Coordinate Navigation
        ========================================================================== */
     map.on('click', function(e) {
-      document.getElementById('lat-input').value = e.latlng.lat.toFixed(6);
-      document.getElementById('lon-input').value = e.latlng.lng.toFixed(6);
+      const lat = e.latlng.lat;
+      const lon = e.latlng.lng;
+      document.getElementById('lat-input').value = lat.toFixed(6);
+      document.getElementById('lon-input').value = lon.toFixed(6);
       updateBox();
     });
 
@@ -1179,6 +1272,20 @@
 
     document.getElementById('lat-input').addEventListener('input', updateBox);
     document.getElementById('lon-input').addEventListener('input', updateBox);
+
+    function onCoordsCommitted() {
+      const lat = parseFloat(document.getElementById('lat-input').value);
+      const lon = parseFloat(document.getElementById('lon-input').value);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        map.panTo([lat, lon]);
+        updateBox();
+      }
+    }
+
+    document.getElementById('lat-input').addEventListener('change', onCoordsCommitted);
+    document.getElementById('lon-input').addEventListener('change', onCoordsCommitted);
+    document.getElementById('lat-input').addEventListener('keydown', e => { if (e.key === 'Enter') onCoordsCommitted(); });
+    document.getElementById('lon-input').addEventListener('keydown', e => { if (e.key === 'Enter') onCoordsCommitted(); });
 
     function zoomToZone() {
       if (boxPolygon) {
@@ -1206,14 +1313,31 @@
       );
     }
 
-    // Auto Invalidate Size on Resize / Sidebar toggle
+    /* ==========================================================================
+       ResizeObserver & Responsive Invalidation
+       ========================================================================== */
+    const mapWrapper = document.getElementById('map-wrapper');
+    if (window.ResizeObserver && mapWrapper) {
+      const mapResizeObserver = new ResizeObserver(() => {
+        map.invalidateSize({ animate: false });
+      });
+      mapResizeObserver.observe(mapWrapper);
+    }
+
+    // Auto Invalidate Size on Resize / Staggered timeouts
     window.addEventListener('resize', () => map.invalidateSize());
-    setTimeout(() => map.invalidateSize(), 250);
+    setTimeout(() => map.invalidateSize(), 100);
+    setTimeout(() => map.invalidateSize(), 300);
+    setTimeout(() => map.invalidateSize(), 1000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) map.invalidateSize();
+    });
 
     function toggleSidebar() {
       const sb = document.getElementById('sidebar');
       sb.classList.toggle('collapsed');
-      setTimeout(() => map.invalidateSize(), 300);
+      setTimeout(() => map.invalidateSize(), 200);
+      setTimeout(() => map.invalidateSize(), 400);
     }
 
     /* ==========================================================================
@@ -1228,6 +1352,16 @@
       { id: "msu", name: "🏙️ Москва, Воробьёвы", lat: 55.7029, lon: 37.5309, size: 2048, title: "Москва — Воробьёвы горы", nameId: "moscow_sparrow_hills" }
     ];
 
+    function transliterate(str) {
+      const ru = {
+        'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i',
+        'й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t',
+        'у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y',
+        'ь':'','э':'e','ю':'yu','я':'ya'
+      };
+      return str.toLowerCase().split('').map(c => ru[c] !== undefined ? ru[c] : c).join('').replace(/[^a-z0-9_]/g, '_');
+    }
+
     function renderPresets(presets) {
       const container = document.getElementById('presets-container');
       container.innerHTML = '';
@@ -1241,7 +1375,7 @@
           document.getElementById('level-name').value = p.level_name || p.nameId || 'custom_track';
           document.getElementById('level-title').value = p.title || p.name;
           selectSize(p.size || 2048);
-          map.flyTo([p.lat, p.lon], 14, { duration: 1.2 });
+          map.flyTo([p.lat, p.lon], 14, { duration: 1.0 });
           updateBox();
         };
         container.appendChild(pill);
@@ -1284,47 +1418,70 @@
     }
 
     function directOsmSearch(query) {
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`)
         .then(r => r.json())
         .then(data => displaySearchResults(data))
         .catch(() => {
           const dropdown = document.getElementById('search-dropdown');
-          dropdown.innerHTML = '<div class="search-item"><span class="sub">Ничего не найдено</span></div>';
+          dropdown.innerHTML = '<div class="search-item"><span class="name">Локация не найдена</span><span class="sub">Кликните по карте в любой точке или введите координаты вручную</span></div>';
         });
     }
 
     function displaySearchResults(items) {
       const dropdown = document.getElementById('search-dropdown');
       if (!items || items.length === 0) {
-        dropdown.innerHTML = '<div class="search-item"><span class="sub">Ничего не найдено. Уточните запрос.</span></div>';
+        dropdown.innerHTML = '<div class="search-item"><span class="name">Ничего не найдено</span><span class="sub">Уточните запрос или кликните по карте в любой точке</span></div>';
         return;
       }
 
       dropdown.innerHTML = '';
-      items.slice(0, 5).forEach(item => {
+      items.slice(0, 6).forEach(item => {
         const div = document.createElement('div');
         div.className = 'search-item';
         const parts = (item.display_name || '').split(',');
-        const title = parts[0];
+        const title = parts[0].trim();
         const sub = parts.slice(1).join(',').trim();
 
-        div.innerHTML = `<span class="name">${title}</span><span class="sub">${sub}</span>`;
+        div.innerHTML = `<span class="name">📍 ${title}</span><span class="sub">${sub}</span>`;
         div.onclick = () => {
           const lat = parseFloat(item.lat);
           const lon = parseFloat(item.lon);
           document.getElementById('lat-input').value = lat.toFixed(6);
           document.getElementById('lon-input').value = lon.toFixed(6);
           document.getElementById('search-input').value = title;
+          document.getElementById('level-title').value = title + ' (BeamNG)';
+
+          const safeSlug = transliterate(title.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')).replace(/_+/g, '_').replace(/^_|_$/g, '');
+          document.getElementById('level-name').value = (safeSlug || 'custom_map').slice(0, 24);
+
           dropdown.classList.remove('active');
-          map.flyTo([lat, lon], 14, { duration: 1.2 });
+          map.flyTo([lat, lon], 14, { duration: 1.0 });
           updateBox();
         };
         dropdown.appendChild(div);
       });
+      dropdown.classList.add('active');
     }
 
-    document.getElementById('search-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') executeSearch();
+    // Search input live debounce
+    const searchInputField = document.getElementById('search-input');
+    searchInputField.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      const q = searchInputField.value.trim();
+      if (q.length >= 2) {
+        searchDebounceTimer = setTimeout(() => {
+          executeSearch();
+        }, 400);
+      } else {
+        document.getElementById('search-dropdown').classList.remove('active');
+      }
+    });
+
+    searchInputField.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        clearTimeout(searchDebounceTimer);
+        executeSearch();
+      }
     });
 
     document.addEventListener('click', e => {

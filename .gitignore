@@ -21,3 +21,6 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# External reference archives
+reference/

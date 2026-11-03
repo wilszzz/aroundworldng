@@ -11,34 +11,60 @@ from typing import Optional, Union
 
 def get_resource_path(relative_path: Union[str, pathlib.Path]) -> pathlib.Path:
     """
-    Get absolute path to resource, working both in development mode
-    and inside PyInstaller bundled executable.
+    Get absolute path to resource, working across all environments:
+    - PyInstaller --onefile (sys._MEIPASS)
+    - PyInstaller --onedir (sys.executable parent and _internal subdir)
+    - Development mode (project root relative to this file or cwd)
     """
     rel = pathlib.Path(relative_path)
     if rel.is_absolute():
         return rel
 
-    base_path = getattr(sys, "_MEIPASS", None)
-    if base_path is not None:
-        target = pathlib.Path(base_path) / rel
+    candidates = []
+
+    # If running inside a PyInstaller frozen executable
+    if getattr(sys, "frozen", False):
+        # 1. PyInstaller --onefile temporary extraction folder
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidates.append(pathlib.Path(meipass))
+            candidates.append(pathlib.Path(meipass) / "_internal")
+
+        # 2. PyInstaller --onedir mode: files reside in _internal or next to executable
+        exe_dir = pathlib.Path(sys.executable).resolve().parent
+        candidates.append(exe_dir / "_internal")
+        candidates.append(exe_dir)
+
+    # 3. Development mode: project root is parent of 'core'
+    try:
+        project_root = pathlib.Path(__file__).resolve().parent.parent
+        candidates.append(project_root)
+    except Exception:
+        pass
+    candidates.append(pathlib.Path.cwd())
+
+    # Search candidates for exact match or under parent subdirectories
+    for base in candidates:
+        target = base / rel
         if target.exists():
             return target
         for parent_cand in ["exporter", "ui"]:
-            alt = pathlib.Path(base_path) / parent_cand / rel
+            alt = base / parent_cand / rel
             if alt.exists():
                 return alt
-        return target
 
-    # In development mode, base path is project root (parent of 'core')
+    # If not found yet, return best-effort candidate path
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            return pathlib.Path(meipass) / rel
+        exe_dir = pathlib.Path(sys.executable).resolve().parent
+        if (exe_dir / "_internal").exists():
+            return exe_dir / "_internal" / rel
+        return exe_dir / rel
+
     project_root = pathlib.Path(__file__).resolve().parent.parent
-    target = project_root / rel
-    if target.exists():
-        return target
-    for parent_cand in ["exporter", "ui"]:
-        alt = project_root / parent_cand / rel
-        if alt.exists():
-            return alt
-    return target
+    return project_root / rel
 
 
 def get_default_beamng_mods_dir() -> Optional[pathlib.Path]:
@@ -89,6 +115,7 @@ class MapConfig:
     # Satellite Imagery (Yandex)
     sat_zoom: int = 18                   # Zoom level for satellite imagery tiles (17-19)
     save_orthophoto: bool = True
+    sat_max_res: int = 2048              # Max resolution for stitched orthophoto (2048 or 4096)
     
     # Features toggles
     generate_roads: bool = True

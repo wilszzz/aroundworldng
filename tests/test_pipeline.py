@@ -97,12 +97,41 @@ class TestHeightmapAndTer(unittest.TestCase):
             size = struct.unpack_from("<I", data, 1)[0]
             self.assertEqual(size, self.res - 1)
 
-            # Total header size = 1 + 4 = 5 bytes
+            # Header = 1 + 4 = 5 bytes
+            offset = 5
+
             # Heightmap size = size * size * 2 = 128 * 128 * 2 = 32768
+            hm_bytes = size * size * 2
+            offset += hm_bytes
+
             # LayerMap size = size * size = 16384
-            # Material count = 4 bytes + material names
-            expected_payload_min = 5 + (size * size * 2) + (size * size) + 4
-            self.assertGreaterEqual(len(data), expected_payload_min)
+            lm_bytes = size * size
+            offset += lm_bytes
+
+            # LayerTextureMap size = size * size = 16384 (Crucial Torque3D v9 layer texture map)
+            ltm_bytes = size * size
+            ltm_data = data[offset : offset + ltm_bytes]
+            self.assertEqual(len(ltm_data), ltm_bytes)
+            self.assertEqual(set(ltm_data), {0}, "LayerTextureMap must be zero-filled")
+            offset += ltm_bytes
+
+            # Material count = 4 bytes (uint32)
+            mat_count = struct.unpack_from("<I", data, offset)[0]
+            self.assertEqual(mat_count, len(materials))
+            offset += 4
+
+            # Material names
+            parsed_materials = []
+            for _ in range(mat_count):
+                m_len = data[offset]
+                offset += 1
+                m_str = data[offset : offset + m_len].decode("ascii")
+                offset += m_len
+                parsed_materials.append(m_str)
+
+            self.assertEqual(parsed_materials, materials)
+            # Exact total file length matching Torque3D v9 specification
+            self.assertEqual(len(data), offset)
 
 
 class TestColladaMeshes(unittest.TestCase):
@@ -375,18 +404,18 @@ class TestPhysicsAndCollision(unittest.TestCase):
         elevs = np.full((129, 129), 25.0, dtype=np.float32)
         proc = HeightmapProcessor(elevs, square_size=2.0)
 
-        # 1. Fallback spawn height (+1.2m above terrain)
+        # 1. Fallback spawn height (+1.5m above terrain)
         osm_empty = OSMData(roads=[], buildings=[])
         sx, sy, sz = builder._find_spawn_point(osm_empty, proc)
-        self.assertAlmostEqual(sz, 26.2, places=2)
+        self.assertAlmostEqual(sz, 26.5, places=2)
 
-        # 2. Road spawn height (+1.2m above road)
+        # 2. Road spawn height (+1.5m above road)
         r0 = (cfg.center_lat, cfg.center_lon)
         r1 = meters_to_lat_lon(10.0, 0.0, cfg.center_lat, cfg.center_lon)
         road = RoadSegment(osm_id=10, highway_type="primary", nodes=[r0, r1])
         osm_road = OSMData(roads=[road], buildings=[])
         rx, ry, rz = builder._find_spawn_point(osm_road, proc)
-        self.assertAlmostEqual(rz, 26.2, places=2)
+        self.assertAlmostEqual(rz, 26.5, places=2)
 
     def test_depth_map_value_solid_255(self):
         from PIL import Image
@@ -412,9 +441,58 @@ class TestPhysicsAndCollision(unittest.TestCase):
             depth_file = builder.level_dir / "theTerrain.ter.depth.png"
             self.assertTrue(depth_file.exists())
             with Image.open(depth_file) as d_img:
+                self.assertEqual(d_img.mode, "L")
+                self.assertEqual(d_img.size, (64, 64))
                 extrema = d_img.getextrema()
                 # Entire depth map must be 255 (0 mud depth = solid monolithic ground)
                 self.assertEqual(extrema, (255, 255))
+
+    def test_terrain_block_max_height_and_file(self):
+        import json
+        from exporter.level_builder import LevelBuilder
+        from core.config import MapConfig
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cfg = MapConfig(
+                title="Test TerrainBlock",
+                level_name="test_tb",
+                size_meters=128.0,
+                output_dir=pathlib.Path(tmpdir),
+                install_to_beamng=False,
+            )
+            builder = LevelBuilder(cfg)
+            elevs = np.zeros((65, 65), dtype=np.float32)
+            elevs[0, 0] = 50.0  # span 50m
+            proc = HeightmapProcessor(elevs, square_size=2.0)
+            specs = proc.compute_specs()
+            osm_data = OSMData(roads=[], buildings=[])
+            exclusion = SpatialExclusionEngine([], cfg.center_lat, cfg.center_lon)
+
+            builder.build_level(proc, specs, osm_data, exclusion)
+
+            # Check items.level.json
+            items_file = builder.level_dir / "main" / "MissionGroup" / "items.level.json"
+            self.assertTrue(items_file.exists())
+            terrain_item = None
+            with open(items_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    obj = json.loads(line)
+                    if obj.get("name") == "theTerrain":
+                        terrain_item = obj
+                        break
+
+            self.assertIsNotNone(terrain_item)
+            self.assertEqual(terrain_item.get("terrainFile"), f"levels/{cfg.level_name}/theTerrain.ter")
+            self.assertAlmostEqual(terrain_item.get("maxHeight"), specs.height_scale, places=6)
+
+            # Check main.level.json
+            main_file = builder.level_dir / "main.level.json"
+            self.assertTrue(main_file.exists())
+            with open(main_file, "r", encoding="utf-8") as f:
+                main_json = json.load(f)
+            level_objs = main_json["childs"][0]["childs"]
+            main_terrain = next(item for item in level_objs if item.get("name") == "theTerrain")
+            self.assertEqual(main_terrain.get("terrainFile"), f"levels/{cfg.level_name}/theTerrain.ter")
+            self.assertAlmostEqual(main_terrain.get("maxHeight"), specs.height_scale, places=6)
 
 
 class TestForestBuilder(unittest.TestCase):
