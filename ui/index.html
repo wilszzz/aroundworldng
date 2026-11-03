@@ -1,211 +1,1498 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>AroundWorldNG — Генератор карт BeamNG.drive</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AroundWorldNG v1.1.3 — Генератор карт BeamNG.drive</title>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  
+  <!-- Modern Clean Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { display: flex; height: 100vh; background: #121316; color: #e4e7eb; }
-    #sidebar { width: 380px; padding: 24px; background: #1a1c22; border-right: 1px solid #2b2e38; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
-    #map { flex: 1; height: 100%; }
-    h1 { font-size: 20px; color: #ff5722; display: flex; align-items: center; gap: 8px; }
-    .subtitle { font-size: 13px; color: #8e95a5; line-height: 1.4; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    label { font-size: 13px; font-weight: 500; color: #b0b7c3; }
-    input, select { background: #262933; border: 1px solid #363a47; border-radius: 6px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none; }
-    input:focus, select:focus { border-color: #ff5722; }
-    .row { display: flex; gap: 10px; }
-    .row .form-group { flex: 1; }
-    .checkbox-group { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
-    .checkbox-group input { width: 16px; height: 16px; cursor: pointer; }
-    button#generate-btn { background: #ff5722; color: #fff; border: none; border-radius: 6px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
-    button#generate-btn:hover { background: #f4511e; }
-    button#generate-btn:disabled { background: #555; cursor: not-allowed; }
-    #console-box { background: #0c0d10; border: 1px solid #2b2e38; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; height: 140px; overflow-y: auto; color: #6be285; white-space: pre-wrap; }
-    .badge { background: #2a2d39; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #ff9800; font-weight: normal; }
+    /* ==========================================================================
+       CSS Reset & Core Variables (Dark Tech Theme)
+       ========================================================================== */
+    :root {
+      --bg-base: #0b0d13;
+      --bg-sidebar: #13161f;
+      --bg-card: #1a1e2b;
+      --bg-card-hover: #212637;
+      --bg-input: #10121a;
+      --border-subtle: #242938;
+      --border-focus: #ff5722;
+      --primary: #ff5722;
+      --primary-hover: #ff7043;
+      --primary-active: #f4511e;
+      --primary-glow: rgba(255, 87, 34, 0.35);
+      --accent-cyan: #00d2ff;
+      --accent-green: #00e676;
+      --accent-amber: #ffb300;
+      --accent-red: #ff5252;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, monospace;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-base);
+      color: var(--text-main);
+    }
+
+    #app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Custom Sleek Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2b3142;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3e465e;
+    }
+
+    /* ==========================================================================
+       Sidebar Layout & Components
+       ========================================================================== */
+    #sidebar {
+      width: 440px;
+      min-width: 380px;
+      max-width: 480px;
+      height: 100%;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Header */
+    .sidebar-header {
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: linear-gradient(180deg, rgba(255,87,34,0.06) 0%, transparent 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #ff5722 0%, #ff8a65 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px var(--primary-glow);
+      font-size: 20px;
+    }
+
+    .brand-titles h1 {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-titles .badge-version {
+      background: rgba(255, 87, 34, 0.15);
+      border: 1px solid rgba(255, 87, 34, 0.35);
+      color: #ff7043;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .brand-titles p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Scrollable Form Content */
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Section Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: var(--transition);
+    }
+    .card:hover {
+      border-color: #333a4d;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title span.icon {
+      font-size: 14px;
+      margin-right: 6px;
+    }
+
+    /* Form Fields */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-dim);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 13.5px;
+      font-weight: 500;
+      outline: none;
+      transition: var(--transition);
+    }
+    .has-icon input {
+      padding-left: 36px;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .row .form-group {
+      flex: 1;
+    }
+
+    /* Search Box & Dropdown */
+    .search-container {
+      position: relative;
+    }
+    .search-btn {
+      position: absolute;
+      right: 6px;
+      background: #252b3b;
+      border: 1px solid #363e54;
+      color: #cbd5e1;
+      border-radius: 4px;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .search-btn:hover {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .search-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #181c28;
+      border: 1px solid #2d3548;
+      border-radius: var(--radius-sm);
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      display: none;
+    }
+    .search-dropdown.active {
+      display: block;
+    }
+    .search-item {
+      padding: 10px 12px;
+      font-size: 12.5px;
+      cursor: pointer;
+      border-bottom: 1px solid #212636;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: background 0.15s;
+    }
+    .search-item:last-child {
+      border-bottom: none;
+    }
+    .search-item:hover {
+      background: #232a3c;
+    }
+    .search-item .name {
+      font-weight: 600;
+      color: #fff;
+    }
+    .search-item .sub {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Preset Chips */
+    .presets-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .preset-pill {
+      background: #141722;
+      border: 1px solid #282f42;
+      color: #cbd5e1;
+      padding: 5px 9px;
+      border-radius: 14px;
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: var(--transition);
+      user-select: none;
+    }
+    .preset-pill:hover {
+      background: #212739;
+      border-color: var(--primary);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* Action Buttons in Cards */
+    .btn-secondary {
+      background: #202534;
+      border: 1px solid #2e3549;
+      color: #cbd5e1;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+    .btn-secondary:hover {
+      background: #2a3145;
+      color: #fff;
+      border-color: #404b66;
+    }
+
+    /* Size Selector Segmented Grid */
+    .size-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .size-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .size-card:hover {
+      background: #181d2a;
+      border-color: #3b445c;
+    }
+    .size-card.active {
+      background: rgba(255, 87, 34, 0.12);
+      border-color: var(--primary);
+      box-shadow: inset 0 0 0 1px var(--primary);
+    }
+    .size-card .size-val {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .size-card .size-desc {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .size-card.active .size-val {
+      color: var(--primary);
+    }
+
+    /* Stats chip */
+    .stats-badge {
+      background: rgba(0, 210, 255, 0.08);
+      border: 1px solid rgba(0, 210, 255, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 11px;
+      color: var(--accent-cyan);
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+    }
+
+    /* Checkbox Switch */
+    .switch-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #2b3142;
+      transition: .25s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .25s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+    .switch-label {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #cbd5e1;
+    }
+
+    /* Primary CTA Button */
+    .sidebar-footer {
+      padding: 16px 22px 20px;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-sidebar);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    button#generate-btn {
+      background: linear-gradient(135deg, #ff5722 0%, #ff7043 100%);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      font-size: 14.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px var(--primary-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    button#generate-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #f4511e 0%, #ff5722 100%);
+      box-shadow: 0 6px 22px rgba(255, 87, 34, 0.5);
+      transform: translateY(-1px);
+    }
+    button#generate-btn:disabled {
+      background: #252a39;
+      color: var(--text-dim);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: #181c28;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #293044;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff5722 0%, #ff9800 50%, #00e676 100%);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .stage-text {
+      color: #cbd5e1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 320px;
+    }
+
+    /* Console Container */
+    .terminal-card {
+      background: #0a0b0f;
+      border: 1px solid #1f2433;
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .terminal-header {
+      background: #12151e;
+      padding: 8px 12px;
+      border-bottom: 1px solid #1f2433;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .terminal-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .terminal-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    .terminal-title {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .terminal-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .terminal-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: color 0.15s;
+    }
+    .terminal-btn:hover {
+      color: #fff;
+    }
+
+    #console-box {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.5;
+      padding: 10px 12px;
+      height: 140px;
+      overflow-y: auto;
+      color: #94a3b8;
+      white-space: pre-wrap;
+      word-break: break-all;
+      user-select: text;
+    }
+    .log-success { color: #00e676; font-weight: 600; }
+    .log-error { color: #ff5252; font-weight: 600; }
+    .log-info { color: #38bdf8; }
+    .log-warn { color: #fbbf24; }
+
+    .result-bar {
+      display: none;
+      padding: 8px 12px;
+      background: rgba(0, 230, 118, 0.1);
+      border-top: 1px solid rgba(0, 230, 118, 0.25);
+      align-items: center;
+      justify-content: space-between;
+    }
+    .result-bar.active {
+      display: flex;
+    }
+    .btn-open-folder {
+      background: #00e676;
+      color: #0b0d13;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-open-folder:hover {
+      background: #2cfc94;
+    }
+
+    /* ==========================================================================
+       Map Area & Overlays
+       ========================================================================== */
+    #map-wrapper {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #141720;
+    }
+
+    /* Custom Map Floating Toolbar */
+    .map-floating-bar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 999;
+      display: flex;
+      gap: 8px;
+    }
+
+    .map-btn {
+      background: rgba(19, 22, 31, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+    .map-btn:hover {
+      background: rgba(33, 38, 55, 0.95);
+      border-color: var(--primary);
+    }
+
+    /* Bounding Box Info Badge on Map */
+    .map-info-badge {
+      position: absolute;
+      bottom: 24px;
+      left: 16px;
+      z-index: 999;
+      background: rgba(19, 22, 31, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: #cbd5e1;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .map-info-badge .tag {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* Sidebar Toggle for Small Screens */
+    #sidebar-toggle {
+      display: none;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 1001;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    /* Custom Leaflet Controls Theme */
+    .leaflet-bar {
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      border-radius: 8px !important;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+    }
+    .leaflet-bar a {
+      background-color: rgba(19, 22, 31, 0.92) !important;
+      backdrop-filter: blur(8px);
+      color: #f1f5f9 !important;
+      border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+      width: 34px !important;
+      height: 34px !important;
+      line-height: 34px !important;
+      font-size: 16px !important;
+    }
+    .leaflet-bar a:hover {
+      background-color: #262c3e !important;
+      color: var(--primary) !important;
+    }
+    .leaflet-control-layers {
+      background: rgba(19, 22, 31, 0.94) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      border-radius: 8px !important;
+      color: #f1f5f9 !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+    }
+    .leaflet-control-attribution {
+      background: rgba(11, 13, 19, 0.75) !important;
+      color: #64748b !important;
+      font-size: 10px !important;
+    }
+    .leaflet-control-attribution a {
+      color: #94a3b8 !important;
+    }
+
+    /* Custom Animated Marker Pin */
+    .custom-center-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .marker-pin {
+      width: 24px;
+      height: 24px;
+      position: relative;
+      cursor: grab;
+    }
+    .marker-pin:active {
+      cursor: grabbing;
+    }
+    .marker-pulse {
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 87, 34, 0.35);
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    .marker-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ff5722;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 10px rgba(255, 87, 34, 0.8);
+      position: relative;
+      z-index: 2;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.5); opacity: 0.8; }
+      80%, 100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 900px) {
+      #sidebar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: 400px;
+        transform: translateX(0);
+      }
+      #sidebar.collapsed {
+        transform: translateX(-100%);
+      }
+      #sidebar-toggle {
+        display: flex;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <div id="sidebar">
-    <div>
-      <h1>AroundWorldNG <span class="badge">v1.0</span></h1>
-      <p class="subtitle">Генератор локаций BeamNG.drive по данным Яндекс Карт и OpenStreetMap с защитой от помех.</p>
-    </div>
-
-    <div class="form-group">
-      <label>Поиск города / места (Россия)</label>
-      <input type="text" id="search-input" placeholder="Например: Сочи, Красная Поляна" />
-    </div>
-
-    <div class="row">
-      <div class="form-group">
-        <label>Широта (Lat)</label>
-        <input type="text" id="lat-input" value="55.751244" />
+  <div id="app-container">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <!-- Header -->
+      <div class="sidebar-header">
+        <div class="brand-group">
+          <div class="brand-icon">🏎️</div>
+          <div class="brand-titles">
+            <h1>AroundWorldNG <span class="badge-version">v1.1.3</span></h1>
+            <p>Генератор локаций BeamNG.drive из реального мира</p>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Долгота (Lon)</label>
-        <input type="text" id="lon-input" value="37.618423" />
+
+      <!-- Main Config Body -->
+      <div class="sidebar-body">
+        
+        <!-- Search & Presets -->
+        <div class="card">
+          <div class="card-title">
+            <span><span class="icon">🔍</span>Поиск локации / Города</span>
+          </div>
+          <div class="search-container">
+            <div class="input-wrapper has-icon">
+              <span class="input-icon">📍</span>
+              <input type="text" id="search-input" placeholder="Например: Сочи, Нюрбургринг, Монако..." />
+            </div>
+            <button class="search-btn" onclick="executeSearch()">Найти</button>
+            <div id="search-dropdown" class="search-dropdown"></div>
+          </div>
+
+          <div class="card-title" style="margin-top: 4px;">
+            <span><span class="icon">⚡</span>Популярные трассы</span>
+          </div>
+          <div id="presets-container" class="presets-grid">
+            <!-- Dynamically populated or fallback presets -->
+          </div>
+        </div>
+
+        <!-- Coordinates & Positioning -->
+        <div class="card">
+          <div class="card-title">
+            <span><span class="icon">🎯</span>Координаты центра</span>
+            <span style="font-size: 11px; text-transform: none; color: var(--text-dim);">WGS 84</span>
+          </div>
+          <div class="row">
+            <div class="form-group">
+              <label>Широта (Lat)</label>
+              <input type="number" step="0.000001" id="lat-input" value="55.751244" />
+            </div>
+            <div class="form-group">
+              <label>Долгота (Lon)</label>
+              <input type="number" step="0.000001" id="lon-input" value="37.618423" />
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn-secondary" style="flex: 1;" onclick="locateUser()">
+              <span>📍 Моё место</span>
+            </button>
+            <button class="btn-secondary" style="flex: 1;" onclick="zoomToZone()">
+              <span>🔍 Зум к зоне</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Size & Resolution -->
+        <div class="card">
+          <div class="card-title">
+            <span><span class="icon">📐</span>Размер области и Сетка</span>
+          </div>
+          <div class="size-grid">
+            <div class="size-card" data-size="512" onclick="selectSize(512)">
+              <div class="size-val">512 м</div>
+              <div class="size-desc">0.5×0.5 км</div>
+            </div>
+            <div class="size-card" data-size="1024" onclick="selectSize(1024)">
+              <div class="size-val">1024 м</div>
+              <div class="size-desc">1×1 км</div>
+            </div>
+            <div class="size-card active" data-size="2048" onclick="selectSize(2048)">
+              <div class="size-val">2048 м</div>
+              <div class="size-desc">2×2 км ★</div>
+            </div>
+            <div class="size-card" data-size="4096" onclick="selectSize(4096)">
+              <div class="size-val">4096 м</div>
+              <div class="size-desc">4×4 км</div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top: 4px;">
+            <div class="form-group" style="flex: 1;">
+              <label>Детализация высот (DEM)</label>
+              <select id="res-select" onchange="updateStats()">
+                <option value="1025" selected>1025 × 1025 (Стандарт, 16-bit)</option>
+                <option value="2049">2049 × 2049 (Ultra HD)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="stats-badge" id="stats-display">
+            <span>Площадь: 4.00 км²</span>
+            <span>Шаг: 2.00 м/px</span>
+          </div>
+        </div>
+
+        <!-- Mod Metadata -->
+        <div class="card">
+          <div class="card-title">
+            <span><span class="icon">🎮</span>Настройки мода BeamNG</span>
+          </div>
+          <div class="form-group">
+            <label>Идентификатор уровня (Папка)</label>
+            <input type="text" id="level-name" value="russia_custom_track" />
+          </div>
+          <div class="form-group">
+            <label>Отображаемое название в меню</label>
+            <input type="text" id="level-title" value="Живописная трасса (Яндекс Карты)" />
+          </div>
+          <label class="switch-group">
+            <div class="switch">
+              <input type="checkbox" id="install-beamng" checked />
+              <span class="slider"></span>
+            </div>
+            <span class="switch-label">Установить прямо в папку BeamNG.drive /mods</span>
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Action Footer & Terminal -->
+      <div class="sidebar-footer">
+        <button id="generate-btn" onclick="startGeneration()">
+          <span>🚀 Сгенерировать карту BeamNG</span>
+        </button>
+
+        <!-- Progress Container -->
+        <div class="progress-container" id="progress-container" style="display: none;">
+          <div class="progress-meta">
+            <span class="stage-text" id="stage-text">Инициализация пайплайна...</span>
+            <span id="percent-text">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <!-- Live Terminal -->
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="dot-red"></span>
+              <span class="dot-yellow"></span>
+              <span class="dot-green"></span>
+            </div>
+            <div class="terminal-title">BEAMNG BUILD CONSOLE</div>
+            <div class="terminal-actions">
+              <button class="terminal-btn" title="Копировать логи" onclick="copyConsole()">📋</button>
+              <button class="terminal-btn" title="Очистить" onclick="clearConsole()">🗑️</button>
+            </div>
+          </div>
+          <div id="console-box">Готов к генерации. Кликните по карте для выбора точки и нажмите «Сгенерировать карту».</div>
+          <div class="result-bar" id="result-bar">
+            <span style="font-size: 11px; color: #00e676; font-weight: 600;">✅ Мод собран!</span>
+            <button class="btn-open-folder" onclick="openOutputFolder()">📂 Открыть папку</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="row">
-      <div class="form-group">
-        <label>Размер области</label>
-        <select id="size-select">
-          <option value="1024">1 x 1 км (Быстро)</option>
-          <option value="2048" selected>2 x 2 км (Стандарт)</option>
-          <option value="4096">4 x 4 км (Огромный)</option>
-        </select>
+    <!-- Map Container -->
+    <div id="map-wrapper">
+      <div class="map-floating-bar">
+        <button class="map-btn" onclick="zoomToZone()">🎯 Центрировать зону</button>
+        <button class="map-btn" onclick="locateUser()">📍 Моё местоположение</button>
       </div>
-      <div class="form-group">
-        <label>Детализация</label>
-        <select id="res-select">
-          <option value="1025" selected>1025 x 1025</option>
-          <option value="2049">2049 x 2049 (Ultra)</option>
-        </select>
+
+      <div class="map-info-badge" id="map-info-badge">
+        <span>Зона: <span class="tag" id="badge-size-text">2.0 × 2.0 км</span></span>
+        <span>Площадь: <span class="tag" id="badge-area-text">4.0 км²</span></span>
+        <span id="badge-coords-text">55.751244, 37.618423</span>
       </div>
-    </div>
 
-    <div class="form-group">
-      <label>Название уровня (ID)</label>
-      <input type="text" id="level-name" value="russia_custom_track" />
-    </div>
-
-    <div class="form-group">
-      <label>Отображаемое название в игре</label>
-      <input type="text" id="level-title" value="Живописная трасса (Яндекс Карты)" />
-    </div>
-
-    <div class="checkbox-group">
-      <input type="checkbox" id="install-beamng" checked />
-      <label for="install-beamng">Установить прямо в папку BeamNG.drive /mods</label>
-    </div>
-
-    <button id="generate-btn" onclick="startGeneration()">🚀 Сгенерировать карту</button>
-
-    <div class="form-group">
-      <label>Статус генерации</label>
-      <div id="console-box">Кликните на карте или выберите место, затем нажмите «Сгенерировать карту».</div>
+      <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+      <div id="map"></div>
     </div>
   </div>
 
-  <div id="map"></div>
-
   <script>
-    const map = L.map('map').setView([55.751244, 37.618423], 15);
+    /* ==========================================================================
+       Map & Geodesic Setup
+       ========================================================================== */
+    let currentSize = 2048;
+    let boxPolygon = null;
+    let centerMarker = null;
+    let pollInterval = null;
+    let logOffset = 0;
+    let isGenerating = false;
+    let lastGeneratedResult = null;
 
-    // OpenStreetMap & Carto tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Initialize Leaflet Map
+    const map = L.map('map', {
+      zoomControl: true,
+      preferCanvas: true
+    }).setView([55.751244, 37.618423], 14);
+
+    // Multi-Layer Base Maps
+    const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    const darkCarto = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd',
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    });
+
+    const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    });
+
+    const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17,
+      attribution: '&copy; OpenTopoMap contributors'
+    });
+
+    // Default to Satellite View (Essential for real-world BeamNG road/terrain inspection)
+    esriSat.addTo(map);
+
+    const baseMaps = {
+      "🛰️ Спутник (Esri World)": esriSat,
+      "🌙 Темная тема (Carto Dark)": darkCarto,
+      "🗺️ OpenStreetMap": osmStandard,
+      "🏔️ Топографическая": topoMap
+    };
+
+    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
+    // Custom Glowing Center Marker
+    const centerIcon = L.divIcon({
+      className: 'custom-center-marker',
+      html: '<div class="marker-pin"><div class="marker-pulse"></div><div class="marker-dot"></div></div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    centerMarker = L.marker([55.751244, 37.618423], {
+      icon: centerIcon,
+      draggable: true
     }).addTo(map);
 
-    let centerMarker = L.marker([55.751244, 37.618423], { draggable: true }).addTo(map);
-    let boxPolygon = null;
+    /* ==========================================================================
+       Geodesic Math (Exact 1:1 match with core.projection.meters_to_lat_lon)
+       ========================================================================== */
+    function metersToLatLon(x, y, originLat, originLon) {
+      const originLatRad = (originLat * Math.PI) / 180.0;
+      const metersPerDegLat = 111132.92 - 559.82 * Math.cos(2 * originLatRad) + 1.175 * Math.cos(4 * originLatRad);
+      const metersPerDegLon = 111412.84 * Math.cos(originLatRad) - 93.5 * Math.cos(3 * originLatRad);
+      const dLat = y / metersPerDegLat;
+      const dLon = x / metersPerDegLon;
+      return [originLat + dLat, originLon + dLon];
+    }
 
     function updateBox() {
-      const lat = parseFloat(document.getElementById('lat-input').value);
-      const lon = parseFloat(document.getElementById('lon-input').value);
-      const sizeMeters = parseFloat(document.getElementById('size-select').value);
+      const lat = parseFloat(document.getElementById('lat-input').value) || 55.751244;
+      const lon = parseFloat(document.getElementById('lon-input').value) || 37.618423;
+      const half = currentSize / 2.0;
 
       centerMarker.setLatLng([lat, lon]);
 
-      // Calculate approximate bbox in degrees
-      const dLat = (sizeMeters / 2.0) / 111132.0;
-      const dLon = (sizeMeters / 2.0) / (111412.0 * Math.cos(lat * Math.PI / 180.0));
-
-      const bounds = [
-        [lat - dLat, lon - dLon],
-        [lat + dLat, lon + dLon]
-      ];
+      const sw = metersToLatLon(-half, -half, lat, lon);
+      const ne = metersToLatLon(half, half, lat, lon);
+      const bounds = [sw, ne];
 
       if (boxPolygon) {
         boxPolygon.setBounds(bounds);
       } else {
-        boxPolygon = L.rectangle(bounds, { color: "#ff5722", weight: 2, fillOpacity: 0.2 }).addTo(map);
+        boxPolygon = L.rectangle(bounds, {
+          color: "#ff5722",
+          weight: 2.5,
+          opacity: 0.9,
+          fillColor: "#ff5722",
+          fillOpacity: 0.14,
+          dashArray: "6, 4"
+        }).addTo(map);
       }
+
+      updateStats();
     }
 
+    function updateStats() {
+      const lat = parseFloat(document.getElementById('lat-input').value) || 0;
+      const lon = parseFloat(document.getElementById('lon-input').value) || 0;
+      const res = parseInt(document.getElementById('res-select').value) || 1025;
+      const areaKm2 = (currentSize * currentSize / 1000000.0).toFixed(2);
+      const stepM = (currentSize / (res - 1)).toFixed(2);
+      const km = (currentSize / 1000.0).toFixed(1);
+
+      document.getElementById('stats-display').innerHTML = `
+        <span>Площадь: ${areaKm2} км²</span>
+        <span>Шаг: ${stepM} м/px</span>
+      `;
+      document.getElementById('badge-size-text').textContent = `${km} × ${km} км`;
+      document.getElementById('badge-area-text').textContent = `${areaKm2} км²`;
+      document.getElementById('badge-coords-text').textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+    }
+
+    function selectSize(size) {
+      currentSize = size;
+      document.querySelectorAll('.size-card').forEach(c => {
+        if (parseInt(c.dataset.size) === size) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+      updateBox();
+    }
+
+    /* ==========================================================================
+       Interactive Map Events
+       ========================================================================== */
     map.on('click', function(e) {
       document.getElementById('lat-input').value = e.latlng.lat.toFixed(6);
       document.getElementById('lon-input').value = e.latlng.lng.toFixed(6);
       updateBox();
     });
 
-    centerMarker.on('dragend', function(e) {
+    centerMarker.on('drag', function(e) {
       const pos = e.target.getLatLng();
       document.getElementById('lat-input').value = pos.lat.toFixed(6);
       document.getElementById('lon-input').value = pos.lng.toFixed(6);
       updateBox();
     });
 
-    document.getElementById('size-select').addEventListener('change', updateBox);
+    document.getElementById('lat-input').addEventListener('input', updateBox);
+    document.getElementById('lon-input').addEventListener('input', updateBox);
 
-    // City search via Nominatim
-    document.getElementById('search-input').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        const query = this.value;
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.length > 0) {
-              const item = data[0];
-              const lat = parseFloat(item.lat);
-              const lon = parseFloat(item.lon);
-              map.setView([lat, lon], 14);
-              document.getElementById('lat-input').value = lat.toFixed(6);
-              document.getElementById('lon-input').value = lon.toFixed(6);
-              updateBox();
-            }
-          });
+    function zoomToZone() {
+      if (boxPolygon) {
+        map.fitBounds(boxPolygon.getBounds(), { padding: [50, 50], maxZoom: 16 });
+      }
+    }
+
+    function locateUser() {
+      if (!navigator.geolocation) {
+        alert("Геолокация не поддерживается вашим браузером");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          document.getElementById('lat-input').value = lat.toFixed(6);
+          document.getElementById('lon-input').value = lon.toFixed(6);
+          map.flyTo([lat, lon], 14);
+          updateBox();
+        },
+        err => {
+          alert("Не удалось определить координаты: " + err.message);
+        }
+      );
+    }
+
+    // Auto Invalidate Size on Resize / Sidebar toggle
+    window.addEventListener('resize', () => map.invalidateSize());
+    setTimeout(() => map.invalidateSize(), 250);
+
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      sb.classList.toggle('collapsed');
+      setTimeout(() => map.invalidateSize(), 300);
+    }
+
+    /* ==========================================================================
+       Presets & Nominatim Search
+       ========================================================================== */
+    const defaultPresets = [
+      { id: "sochi", name: "🏁 Сочи Автодром", lat: 43.4056, lon: 39.9547, size: 2048, title: "Сочи Автодром (Олимпийский парк)", nameId: "sochi_autodrom" },
+      { id: "polyana", name: "⛰️ Красная Поляна", lat: 43.6744, lon: 40.2974, size: 2048, title: "Красная Поляна — Горный серпантин", nameId: "krasnaya_polyana" },
+      { id: "nurburg", name: "👑 Нюрбургринг", lat: 50.3341, lon: 6.9427, size: 4096, title: "Nürburgring Nordschleife", nameId: "nurburgring_nordschleife" },
+      { id: "monaco", name: "🏎️ Монако GP", lat: 43.7384, lon: 7.4246, size: 2048, title: "Monaco GP Circuit", nameId: "monaco_gp_circuit" },
+      { id: "haruna", name: "🚗 Гора Харуна", lat: 36.4770, lon: 138.8770, size: 4096, title: "Mount Haruna (Akina Touge)", nameId: "mount_haruna_touge" },
+      { id: "msu", name: "🏙️ Москва, Воробьёвы", lat: 55.7029, lon: 37.5309, size: 2048, title: "Москва — Воробьёвы горы", nameId: "moscow_sparrow_hills" }
+    ];
+
+    function renderPresets(presets) {
+      const container = document.getElementById('presets-container');
+      container.innerHTML = '';
+      presets.forEach(p => {
+        const pill = document.createElement('div');
+        pill.className = 'preset-pill';
+        pill.innerHTML = p.name;
+        pill.onclick = () => {
+          document.getElementById('lat-input').value = p.lat.toFixed(6);
+          document.getElementById('lon-input').value = p.lon.toFixed(6);
+          document.getElementById('level-name').value = p.level_name || p.nameId || 'custom_track';
+          document.getElementById('level-title').value = p.title || p.name;
+          selectSize(p.size || 2048);
+          map.flyTo([p.lat, p.lon], 14, { duration: 1.2 });
+          updateBox();
+        };
+        container.appendChild(pill);
+      });
+    }
+
+    // Load presets from server or fallback
+    fetch('/api/presets')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          renderPresets(data);
+        } else {
+          renderPresets(defaultPresets);
+        }
+      })
+      .catch(() => renderPresets(defaultPresets));
+
+    // Nominatim Geocoding Search
+    function executeSearch() {
+      const query = document.getElementById('search-input').value.trim();
+      if (!query) return;
+
+      const dropdown = document.getElementById('search-dropdown');
+      dropdown.innerHTML = '<div class="search-item"><span class="sub">Поиск...</span></div>';
+      dropdown.classList.add('active');
+
+      // Attempt server proxy first, fallback to OSM direct
+      fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(data => {
+          const results = Array.isArray(data) ? data : (data.results || []);
+          if (results.length > 0) {
+            displaySearchResults(results);
+          } else {
+            return directOsmSearch(query);
+          }
+        })
+        .catch(() => directOsmSearch(query));
+    }
+
+    function directOsmSearch(query) {
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+        .then(r => r.json())
+        .then(data => displaySearchResults(data))
+        .catch(() => {
+          const dropdown = document.getElementById('search-dropdown');
+          dropdown.innerHTML = '<div class="search-item"><span class="sub">Ничего не найдено</span></div>';
+        });
+    }
+
+    function displaySearchResults(items) {
+      const dropdown = document.getElementById('search-dropdown');
+      if (!items || items.length === 0) {
+        dropdown.innerHTML = '<div class="search-item"><span class="sub">Ничего не найдено. Уточните запрос.</span></div>';
+        return;
+      }
+
+      dropdown.innerHTML = '';
+      items.slice(0, 5).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-item';
+        const parts = (item.display_name || '').split(',');
+        const title = parts[0];
+        const sub = parts.slice(1).join(',').trim();
+
+        div.innerHTML = `<span class="name">${title}</span><span class="sub">${sub}</span>`;
+        div.onclick = () => {
+          const lat = parseFloat(item.lat);
+          const lon = parseFloat(item.lon);
+          document.getElementById('lat-input').value = lat.toFixed(6);
+          document.getElementById('lon-input').value = lon.toFixed(6);
+          document.getElementById('search-input').value = title;
+          dropdown.classList.remove('active');
+          map.flyTo([lat, lon], 14, { duration: 1.2 });
+          updateBox();
+        };
+        dropdown.appendChild(div);
+      });
+    }
+
+    document.getElementById('search-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') executeSearch();
+    });
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.search-container')) {
+        document.getElementById('search-dropdown').classList.remove('active');
       }
     });
 
-    updateBox();
-
+    /* ==========================================================================
+       Console & Generation Pipeline
+       ========================================================================== */
     function log(msg) {
       const box = document.getElementById('console-box');
-      box.textContent += "\n" + msg;
+      const span = document.createElement('span');
+
+      if (msg.includes('[OK]') || msg.includes('SUCCESS') || msg.includes('успешно')) {
+        span.className = 'log-success';
+      } else if (msg.includes('[ERROR]') || msg.includes('Ошибка') || msg.includes('Exception')) {
+        span.className = 'log-error';
+      } else if (msg.includes('Warning') || msg.includes('Внимание')) {
+        span.className = 'log-warn';
+      } else if (msg.includes('[Generator]') || msg.includes('[RoadCarver]') || msg.includes('[Heightmap]')) {
+        span.className = 'log-info';
+      }
+
+      span.textContent = msg + "\n";
+      box.appendChild(span);
       box.scrollTop = box.scrollHeight;
     }
 
+    function clearConsole() {
+      document.getElementById('console-box').textContent = '';
+    }
+
+    function copyConsole() {
+      const text = document.getElementById('console-box').textContent;
+      navigator.clipboard.writeText(text).then(() => alert("Логи скопированы в буфер обмена"));
+    }
+
+    function openOutputFolder() {
+      fetch('/api/open_folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: lastGeneratedResult ? lastGeneratedResult.path : null })
+      });
+    }
+
     function startGeneration() {
+      if (isGenerating) return;
+
       const btn = document.getElementById('generate-btn');
+      const progressContainer = document.getElementById('progress-container');
+      const progressFill = document.getElementById('progress-fill');
+      const stageText = document.getElementById('stage-text');
+      const percentText = document.getElementById('percent-text');
+      const resultBar = document.getElementById('result-bar');
+
+      const lat = parseFloat(document.getElementById('lat-input').value);
+      const lon = parseFloat(document.getElementById('lon-input').value);
+      const name = document.getElementById('level-name').value.trim();
+      const title = document.getElementById('level-title').value.trim();
+      const res = parseInt(document.getElementById('res-select').value);
+      const install = document.getElementById('install-beamng').checked;
+
+      if (!name) {
+        alert("Пожалуйста, укажите название уровня");
+        return;
+      }
+
+      isGenerating = true;
       btn.disabled = true;
-      btn.textContent = "⏳ Идет генерация...";
+      btn.innerHTML = '<span>⏳ Идет генерация BeamNG мода...</span>';
+      progressContainer.style.display = 'flex';
+      progressFill.style.width = '5%';
+      percentText.textContent = '5%';
+      stageText.textContent = 'Запуск пайплайна генерации...';
+      resultBar.classList.remove('active');
+      logOffset = 0;
+      clearConsole();
+      log("▶ Запуск генератора AroundWorldNG...");
 
       const payload = {
-        lat: parseFloat(document.getElementById('lat-input').value),
-        lon: parseFloat(document.getElementById('lon-input').value),
-        size: parseFloat(document.getElementById('size-select').value),
-        res: parseInt(document.getElementById('res-select').value),
-        name: document.getElementById('level-name').value,
-        title: document.getElementById('level-title').value,
-        install: document.getElementById('install-beamng').checked
+        lat: lat,
+        lon: lon,
+        size: currentSize,
+        res: res,
+        name: name,
+        title: title,
+        install: install
       };
-
-      document.getElementById('console-box').textContent = "Запуск пайплайна генерации...";
 
       fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      .then(res => res.json())
-      .then(data => {
-        log(data.message || "Генерация завершена!");
-        btn.disabled = false;
-        btn.textContent = "🚀 Сгенерировать карту";
+      .then(res => {
+        if (!res.ok && res.status !== 202) {
+          return res.json().then(j => { throw new Error(j.message || 'Ошибка запуска'); });
+        }
+        return res.json();
+      })
+      .then(() => {
+        // Start live polling for progress & console logs
+        pollInterval = setInterval(pollStatus, 500);
       })
       .catch(err => {
-        log("Ошибка: " + err);
-        btn.disabled = false;
-        btn.textContent = "🚀 Сгенерировать карту";
+        log("❌ Ошибка: " + err.message);
+        finishGeneration(false);
       });
     }
+
+    function pollStatus() {
+      fetch(`/api/status?since=${logOffset}`)
+        .then(r => r.json())
+        .then(data => {
+          // Append new logs
+          if (Array.isArray(data.logs)) {
+            data.logs.forEach(line => log(line));
+            logOffset = data.log_total || (logOffset + data.logs.length);
+          }
+
+          // Update Progress Bar
+          const progress = data.progress || 0;
+          document.getElementById('progress-fill').style.width = `${progress}%`;
+          document.getElementById('percent-text').textContent = `${progress}%`;
+          if (data.stage) {
+            document.getElementById('stage-text').textContent = data.stage;
+          }
+
+          if (data.status === 'success') {
+            clearInterval(pollInterval);
+            lastGeneratedResult = data.result;
+            finishGeneration(true, data.result);
+          } else if (data.status === 'error') {
+            clearInterval(pollInterval);
+            finishGeneration(false, data.error);
+          }
+        })
+        .catch(err => {
+          console.warn("Status poll error:", err);
+        });
+    }
+
+    function finishGeneration(success, meta) {
+      isGenerating = false;
+      const btn = document.getElementById('generate-btn');
+      btn.disabled = false;
+
+      if (success) {
+        btn.innerHTML = '<span>🚀 Сгенерировать снова</span>';
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('percent-text').textContent = '100%';
+        document.getElementById('stage-text').textContent = 'Генерация успешно завершена!';
+        document.getElementById('result-bar').classList.add('active');
+        log(`\n🎉 КАРТА УСПЕШНО СОЗДАНА!`);
+        if (meta && meta.path) {
+          log(`📦 Файл: ${meta.name}`);
+          log(`📂 Путь: ${meta.path}`);
+        }
+      } else {
+        btn.innerHTML = '<span>🔄 Повторить генерацию</span>';
+        document.getElementById('stage-text').textContent = 'Произошла ошибка при сборке';
+      }
+    }
+
+    // Initialize Box on startup
+    updateBox();
   </script>
 </body>
 </html>
