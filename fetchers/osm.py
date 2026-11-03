@@ -33,6 +33,13 @@ class RoadSegment:
     is_lit: bool = False
 
 
+class BuildingPolygon(list):
+    """Building footprint polygon coordinates with OSM tags."""
+    def __init__(self, iterable, tags: Optional[Dict[str, str]] = None):
+        super().__init__(iterable)
+        self.tags: Dict[str, str] = tags or {}
+
+
 @dataclass
 class OSMData:
     roads: List[RoadSegment] = field(default_factory=list)
@@ -163,7 +170,7 @@ class OSMFetcher:
 
             # Buildings (must have at least 3 points)
             elif "building" in tags and len(way_nodes) >= 3:
-                osm_result.buildings.append(way_nodes)
+                osm_result.buildings.append(BuildingPolygon(way_nodes, tags=dict(tags)))
 
             # Forests / Woods
             elif (tags.get("landuse") == "forest" or tags.get("natural") == "wood") and len(way_nodes) >= 3:
@@ -229,7 +236,7 @@ class OSMFetcher:
                         )
                     )
             elif "building" in tags and len(coords) >= 3:
-                osm_result.buildings.append(coords)
+                osm_result.buildings.append(BuildingPolygon(coords, tags=dict(tags)))
             elif (tags.get("landuse") == "forest" or tags.get("natural") == "wood") and len(coords) >= 3:
                 osm_result.forests.append(coords)
             elif tags.get("natural") == "water" and len(coords) >= 3:

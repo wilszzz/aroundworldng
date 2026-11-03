@@ -1,44 +1,27 @@
 """
-3D Architectural Building Exporter for BeamNG.drive.
-Generates TSStatic building instances from OpenStreetMap building footprints,
-mapping each footprint to suitable architectural archetypes with orientation and foundation skirts.
+Procedural Architectural Building Exporter for BeamNG.drive.
+Transforms OSM building footprints into rich, multi-story architectural meshes
+grouped by spatial sectors into art/shapes/buildings/bld_sector_*.dae and
+instantiates corresponding TSStatic entities in items.level.json.
 """
 
 import math
-import random
-from typing import Any, Dict, List, Tuple
+import pathlib
+from typing import Any, Dict, List, Optional, Tuple, Union
 import uuid
-from shapely.geometry import Polygon
 
 from core.projection import lat_lon_to_meters
 from processing.heightmap import HeightmapProcessor
-
-ARCHETYPES = {
-    "house": {
-        "file": "bld_house_small.dae",
-        "bw": 10.0, "bd": 12.0, "bh": 7.0,
-    },
-    "apartment": {
-        "file": "bld_apartment_block.dae",
-        "bw": 24.0, "bd": 14.0, "bh": 16.0,
-    },
-    "commercial": {
-        "file": "bld_commercial_glass.dae",
-        "bw": 20.0, "bd": 20.0, "bh": 26.0,
-    },
-    "plaza": {
-        "file": "bld_commercial_plaza.dae",
-        "bw": 30.0, "bd": 16.0, "bh": 8.0,
-    },
-    "warehouse": {
-        "file": "bld_industrial_warehouse.dae",
-        "bw": 35.0, "bd": 20.0, "bh": 10.0,
-    },
-}
+from exporter.building_mesh import (
+    clean_ring,
+    ProceduralBuildingMesh,
+    write_sector_dae,
+    SKIRT_DEPTH_M,
+)
 
 
 class BuildingExporter:
-    """Translates OSM building polygons into oriented, textured BeamNG TSStatic objects."""
+    """Translates OSM building polygons into procedural Collada sector models and BeamNG TSStatic objects."""
 
     def __init__(
         self,
@@ -46,94 +29,182 @@ class BuildingExporter:
         level_name: str,
         origin_lat: float,
         origin_lon: float,
+        output_dir: Optional[pathlib.Path] = None,
+        sector_size: float = 256.0,
     ):
         self.heightmap = heightmap
         self.level_name = level_name
         self.origin_lat = origin_lat
         self.origin_lon = origin_lon
+        self.output_dir = output_dir
+        self.sector_size = sector_size
 
     def export_buildings(
         self,
-        building_polygons: List[List[Tuple[float, float]]],
-        max_buildings: int = 500,
+        building_polygons: List[Any],
+        max_buildings: Optional[int] = None,
+        output_dir: Optional[pathlib.Path] = None,
     ) -> List[Dict[str, Any]]:
-        """Converts building footprint polygons to oriented 3D TSStatic scene objects."""
-        items: List[Dict[str, Any]] = []
+        """
+        Processes building polygons from OSM:
+        1. Simplifies collinear vertices (clean_ring)
+        2. Calculates height & floors (from tags or 2-5 floors @ 3m)
+        3. Extrudes walls per floor with UV window bands (BeamNG facade atlas)
+        4. Triangulates roof with architectural cornice / parapet
+        5. Adds deep foundation skirt (-3.0m under lowest terrain point)
+        6. Groups buildings into spatial sectors (bld_sector_*.dae)
+        7. Returns TSStatic objects for items.level.json
+        """
+        target_dir = output_dir or self.output_dir or (pathlib.Path("levels") / self.level_name / "art" / "shapes" / "buildings")
+        target_dir.mkdir(parents=True, exist_ok=True)
 
-        for idx, b_poly in enumerate(building_polygons):
-            if len(b_poly) < 3 or len(items) >= max_buildings:
+        # Dictionary mapping sector (sx, sy) -> ProceduralBuildingMesh and building centroid bounds
+        sectors: Dict[Tuple[int, int], ProceduralBuildingMesh] = {}
+        sector_bounds: Dict[Tuple[int, int], List[float]] = {}  # [min_x, min_y, min_z, max_x, max_y, max_z]
+
+        count = 0
+        for b_poly in building_polygons:
+            if max_buildings is not None and count >= max_buildings:
                 break
+            if len(b_poly) < 3:
+                continue
 
+            # Convert lat/lon to local metric coordinates
             metric_pts = [
                 lat_lon_to_meters(lat, lon, self.origin_lat, self.origin_lon)
                 for lat, lon in b_poly
             ]
 
-            try:
-                poly = Polygon(metric_pts)
-                if not poly.is_valid:
-                    poly = poly.buffer(0)
-
-                area = poly.area
-                # Skip tiny sheds or giant open grounds/stadium zones (> 5000 m2)
-                if area < 30.0 or area > 5000.0:
-                    continue
-
-                minx, miny, maxx, maxy = poly.bounds
-                cx = (minx + maxx) / 2.0
-                cy = (miny + maxy) / 2.0
-
-                # Clamp width and depth to realistic building bounds
-                w = min(max(maxx - minx, 8.0), 45.0)
-                d = min(max(maxy - miny, 8.0), 35.0)
-
-                # Estimate building orientation from first wall segment
-                p0 = metric_pts[0]
-                p1 = metric_pts[1]
-                yaw = math.atan2(p1[1] - p0[1], p1[0] - p0[0])
-
-                # Select archetype based on footprint dimensions and area
-                if area < 180.0:
-                    atype_key = "house"
-                    h = random.uniform(6.5, 8.5)
-                elif area < 650.0:
-                    atype_key = "apartment"
-                    h = random.uniform(12.0, 18.0)
-                elif area < 1600.0:
-                    atype_key = random.choice(["commercial", "plaza"])
-                    h = random.uniform(16.0, 24.0) if atype_key == "commercial" else random.uniform(7.5, 10.0)
-                else:
-                    atype_key = "warehouse" if w > 30.0 or d > 30.0 else "commercial"
-                    h = random.uniform(9.0, 13.0) if atype_key == "warehouse" else random.uniform(18.0, 26.0)
-
-                spec = ARCHETYPES[atype_key]
-                sx = round(max(0.5, min(2.5, w / spec["bw"])), 3)
-                sy = round(max(0.5, min(2.5, d / spec["bd"])), 3)
-                sz = round(max(0.6, min(2.0, h / spec["bh"])), 3)
-
-                z = self.heightmap.get_elevation_at_meters(cx, cy)
-
-                cos_y = math.cos(yaw)
-                sin_y = math.sin(yaw)
-
-                bld_obj = {
-                    "name": f"building_{atype_key}_{idx}",
-                    "class": "TSStatic",
-                    "persistentId": str(uuid.uuid4()),
-                    "__parent": "MissionGroup",
-                    "position": [round(cx, 2), round(cy, 2), round(z, 2)],
-                    "rotationMatrix": [
-                        round(cos_y, 4), round(-sin_y, 4), 0.0,
-                        round(sin_y, 4), round(cos_y, 4), 0.0,
-                        0.0, 0.0, 1.0,
-                    ],
-                    "scale": [sx, sy, sz],
-                    "shapeName": f"/levels/{self.level_name}/art/shapes/buildings/{spec['file']}",
-                    "collisionType": "Visible Mesh Final",
-                }
-                items.append(bld_obj)
-            except Exception:
+            # Simplify ring and ensure CCW orientation
+            ring = clean_ring(metric_pts)
+            if ring is None or len(ring) < 3:
                 continue
 
-        print(f"[BuildingExporter] Generated {len(items)} oriented architectural 3D buildings.")
+            n = len(ring)
+            cx = sum(p[0] for p in ring) / n
+            cy = sum(p[1] for p in ring) / n
+
+            # Query ground elevation
+            z_verts = [self.heightmap.get_elevation_at_meters(p[0], p[1]) for p in ring]
+            z_center = self.heightmap.get_elevation_at_meters(cx, cy)
+            z_min = min(z_verts + [z_center])
+            z_max = max(z_verts + [z_center])
+
+            # Determine floors and height
+            tags = getattr(b_poly, "tags", {})
+            floors = None
+            if "building:levels" in tags:
+                try:
+                    floors = max(1, min(50, int(float(tags["building:levels"]))))
+                except (ValueError, TypeError):
+                    pass
+            elif "levels" in tags:
+                try:
+                    floors = max(1, min(50, int(float(tags["levels"]))))
+                except (ValueError, TypeError):
+                    pass
+            elif "height" in tags:
+                try:
+                    h_val = float(str(tags["height"]).replace("m", "").strip())
+                    floors = max(1, min(50, int(round(h_val / 3.0))))
+                except (ValueError, TypeError):
+                    pass
+
+            seed = int(abs(hash((round(cx, 1), round(cy, 1)))))
+            poly_area = 0.5 * abs(sum(ring[i][0] * ring[(i + 1) % n][1] - ring[(i + 1) % n][0] * ring[i][1] for i in range(n)))
+
+            if floors is None:
+                # Default 2-5 floors (3.0m per floor)
+                if poly_area < 120.0:
+                    floors = 2 + (seed % 2)  # 2 or 3 floors
+                elif poly_area < 400.0:
+                    floors = 2 + (seed % 3)  # 2, 3, or 4 floors
+                else:
+                    floors = 2 + (seed % 4)  # 2, 3, 4, or 5 floors
+
+            floor_h = 3.0
+            total_height = floors * floor_h
+
+            # Skirt depth: 3.0m under lowest terrain point under building
+            base_z = z_max
+            z_base = z_min - SKIRT_DEPTH_M
+            z_eave = base_z + total_height
+
+            # Band styling
+            band_idx = (seed >> 3) % 4
+            is_house = poly_area < 150.0 and floors <= 2
+
+            # Find spatial sector
+            sx = int(math.floor(cx / self.sector_size))
+            sy = int(math.floor(cy / self.sector_size))
+            sec_key = (sx, sy)
+
+            if sec_key not in sectors:
+                sectors[sec_key] = ProceduralBuildingMesh()
+                sector_bounds[sec_key] = [cx, cy, z_base, cx, cy, z_eave]
+            else:
+                b = sector_bounds[sec_key]
+                b[0] = min(b[0], cx)
+                b[1] = min(b[1], cy)
+                b[2] = min(b[2], z_base)
+                b[3] = max(b[3], cx)
+                b[4] = max(b[4], cy)
+                b[5] = max(b[5], z_eave)
+
+            # Extrude building into sector mesh
+            sectors[sec_key].extrude_building(
+                ring=ring,
+                base_z=base_z,
+                z_base=z_base,
+                z_eave=z_eave,
+                floors=floors,
+                floor_h=floor_h,
+                band_idx=band_idx,
+                is_house=is_house,
+            )
+            count += 1
+
+        items: List[Dict[str, Any]] = []
+
+        # Export each sector to .dae and create TSStatic object
+        for (sx, sy), mesh in sectors.items():
+            if len(mesh.verts) == 0:
+                continue
+
+            sec_b = sector_bounds[(sx, sy)]
+            # Sector origin
+            sec_cx = (sec_b[0] + sec_b[3]) / 2.0
+            sec_cy = (sec_b[1] + sec_b[4]) / 2.0
+            sec_cz = sec_b[2]
+
+            dae_filename = f"bld_sector_{sx}_{sy}.dae"
+            dae_path = target_dir / dae_filename
+
+            write_sector_dae(
+                output_path=dae_path,
+                mesh=mesh,
+                sector_origin=(sec_cx, sec_cy, sec_cz),
+            )
+
+            ts_static = {
+                "name": f"bld_sector_{sx}_{sy}",
+                "class": "TSStatic",
+                "persistentId": str(uuid.uuid4()),
+                "__parent": "MissionGroup",
+                "position": [round(sec_cx, 2), round(sec_cy, 2), round(sec_cz, 2)],
+                "rotationMatrix": [
+                    1.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0,
+                    0.0, 0.0, 1.0,
+                ],
+                "scale": [1.0, 1.0, 1.0],
+                "shapeName": f"/levels/{self.level_name}/art/shapes/buildings/{dae_filename}",
+                "collisionType": "Visible Mesh",
+            }
+            items.append(ts_static)
+
+        print(
+            f"[BuildingExporter] Successfully generated {count} procedural buildings "
+            f"across {len(items)} sector DAEs with Visible Mesh collision."
+        )
         return items

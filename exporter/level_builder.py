@@ -113,6 +113,7 @@ class LevelBuilder:
                 level_name=self.cfg.level_name,
                 origin_lat=self.cfg.center_lat,
                 origin_lon=self.cfg.center_lon,
+                output_dir=shapes_dir / "buildings",
             )
             building_items = building_exporter.export_buildings(osm_data.buildings)
 
@@ -452,10 +453,27 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "baseColorMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_b.color.dds",
-                        "normalMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_nm.normal.dds",
-                        "roughnessMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_r.data.dds",
-                        "ambientOcclusionMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_ao.data.dds",
+                        "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.png",
+                        "normalMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_nm.normal.png",
+                        "roughnessMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_r.data.png",
+                        "ambientOcclusionMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_ao.data.png",
+                        "metallicMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_m.data.png",
+                    }
+                ],
+                "annotation": "BUILDINGS",
+            },
+            "bne_bld_facade": {
+                "name": "bne_bld_facade",
+                "mapTo": "bne_bld_facade",
+                "class": "Material",
+                "persistentId": str(uuid.uuid4()),
+                "Stages": [
+                    {
+                        "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.png",
+                        "normalMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_nm.normal.png",
+                        "roughnessMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_r.data.png",
+                        "ambientOcclusionMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_ao.data.png",
+                        "metallicMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_m.data.png",
                     }
                 ],
                 "annotation": "BUILDINGS",
@@ -492,6 +510,34 @@ class LevelBuilder:
             "roof_tiles": {
                 "name": "roof_tiles",
                 "mapTo": "roof_tiles",
+                "class": "Material",
+                "persistentId": str(uuid.uuid4()),
+                "Stages": [
+                    {
+                        "baseColorMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_b.color.dds",
+                        "normalMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_r.data.dds",
+                    }
+                ],
+                "annotation": "BUILDINGS",
+            },
+            "bne_bld_roof_flat": {
+                "name": "bne_bld_roof_flat",
+                "mapTo": "bne_bld_roof_flat",
+                "class": "Material",
+                "persistentId": str(uuid.uuid4()),
+                "Stages": [
+                    {
+                        "baseColorMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_b.color.dds",
+                        "normalMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_r.data.dds",
+                    }
+                ],
+                "annotation": "BUILDINGS",
+            },
+            "bne_bld_roof_slate": {
+                "name": "bne_bld_roof_slate",
+                "mapTo": "bne_bld_roof_slate",
                 "class": "Material",
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [

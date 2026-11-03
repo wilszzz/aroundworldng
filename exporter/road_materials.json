@@ -34,6 +34,80 @@
     "translucentZWrite": true,
     "version": 1.5
   },
+  "road_asphalt_2lane": {
+    "name": "road_asphalt_2lane",
+    "mapTo": "road_asphalt_2lane",
+    "class": "Material",
+    "persistentId": "7dc14be7-24b4-4d23-b491-83c09f000527",
+    "Stages": [
+      {
+        "baseColorFactor": [
+          0.85,
+          0.85,
+          0.85,
+          1
+        ],
+        "baseColorMap": "/assets/materials/decalroad/asphalt/m_asphalt_variation_03/t_asphalt_variation_03_b.color.png",
+        "normalMap": "/assets/materials/decalroad/asphalt/m_asphalt_variation_03/t_asphalt_variation_03_nm.normal.png",
+        "opacityMap": "/assets/materials/decalroad/asphalt/m_asphalt_variation_03/t_asphalt_variation_03_o.data.png",
+        "roughnessMap": "/assets/materials/decalroad/asphalt/m_asphalt_variation_03/t_asphalt_variation_03_r.data.png"
+      },
+      {
+        "baseColorFactor": null
+      },
+      {
+        "baseColorFactor": null
+      },
+      {
+        "baseColorFactor": null
+      }
+    ],
+    "alphaRef": 150,
+    "annotation": "ASPHALT",
+    "castShadows": false,
+    "materialTag0": "RoadAndPath",
+    "materialTag1": "beamng",
+    "translucent": true,
+    "translucentZWrite": true,
+    "version": 1.5
+  },
+  "line_white": {
+    "name": "line_white",
+    "mapTo": "line_white",
+    "class": "Material",
+    "persistentId": "e5e9ee8b-c4d6-4064-b2ee-1e397e577528",
+    "Stages": [
+      {
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "baseColorMap": "/assets/materials/decalroad/lines/line_white/t_line_white_b.color.png",
+        "normalMap": "/assets/materials/decalroad/lines/line_white/t_line_white_nm.normal.png",
+        "opacityMap": "/assets/materials/decalroad/lines/line_white/t_line_white_o.data.png",
+        "roughnessFactor": 0.45
+      },
+      {
+        "baseColorFactor": null
+      },
+      {
+        "baseColorFactor": null
+      },
+      {
+        "baseColorFactor": null
+      }
+    ],
+    "alphaRef": 200,
+    "annotation": "SOLID_LINE",
+    "castShadows": false,
+    "materialTag0": "RoadAndPath",
+    "materialTag1": "beamng",
+    "translucent": true,
+    "translucentZWrite": true,
+    "version": 1.5
+  },
   "road_dirt": {
     "name": "road_dirt",
     "mapTo": "road_dirt",
