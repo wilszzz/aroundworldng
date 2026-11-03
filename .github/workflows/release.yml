@@ -31,7 +31,7 @@ jobs:
 
       - name: Build standalone executable with PyInstaller
         run: |
-          pyinstaller --noconfirm --onedir --windowed --name AroundWorldNG --add-data "ui/index.html;ui" main.py
+          pyinstaller --noconfirm --onedir --name AroundWorldNG --add-data "ui;ui" --add-data "exporter/*.json;exporter" --collect-all scipy --collect-all shapely --collect-all PIL main.py
           # Copy readme and requirements into dist folder
           copy README.md dist\AroundWorldNG\
           Compress-Archive -Path dist\AroundWorldNG\* -DestinationPath AroundWorldNG-Windows-x64.zip

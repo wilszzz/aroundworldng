@@ -271,11 +271,10 @@ class ProceduralBuildingMesh:
         is_house: bool = False,
     ):
         """
-        Extrudes a building from its foundation skirt up to its roof with parapet cornice:
+        Extrudes a building from its foundation skirt up to its roof with architectural details:
         - Deep foundation skirt down to z_base (-3.0m under lowest terrain point)
         - Floor by floor walls with UV window bays matching BeamNG highrise plaster atlas
-        - Roof surface with ear-clipped triangulation
-        - Roof cornice parapet moulding
+        - Roof: Pitched gabled roof for cottages/houses, or flat gravel roof with parapet for highrises
         - Solid collision hull
         """
         n = len(ring)
@@ -288,7 +287,7 @@ class ProceduralBuildingMesh:
         v_top = 1.0 - band_idx / 4.0 - eps
 
         wall_mat = "facade_brick" if band_idx == 3 else "facade_plaster"
-        roof_mat = "roof_tiles" if (is_house and floors <= 2) else "roof_gravel"
+        roof_mat = "roof_tiles" if is_house else "roof_gravel"
 
         # 1. Extrude walls per floor and foundation skirt
         for i in range(n):
@@ -327,17 +326,19 @@ class ProceduralBuildingMesh:
             # Foundation skirt below base_z down to z_base
             skirt_h = base_z - z_base
             u_skirt = max(1, int(round(l / 3.0)))
-            v_skirt = skirt_h / 3.0
+            # Sample neutral plaster trim band to avoid underground windows
+            v_sk_b = 0.990
+            v_sk_t = 0.998
             self.add_quad(
                 "facade_plaster",
                 (a[0], a[1], z_base),
                 (b[0], b[1], z_base),
                 (b[0], b[1], base_z),
                 (a[0], a[1], base_z),
-                (0.0, 0.0),
-                (u_skirt, 0.0),
-                (u_skirt, v_skirt),
-                (0.0, v_skirt),
+                (0.0, v_sk_b),
+                (u_skirt, v_sk_b),
+                (u_skirt, v_sk_t),
+                (0.0, v_sk_t),
                 norm,
             )
 
@@ -349,12 +350,150 @@ class ProceduralBuildingMesh:
                 (a[0], a[1], z_eave),
             )
 
-        # 2. Roof surface (at z_eave)
+        # 2. Roof surface and architecture
+        if is_house:
+            self._add_pitched_roof(ring, z_eave, wall_mat, roof_mat)
+        else:
+            self._add_flat_roof_and_parapet(ring, z_eave, roof_mat)
+
+        # 3. Bottom skirt collision cap (facing down)
+        col_bot_start = len(self.col_verts)
+        for p in ring:
+            self.col_verts.append((p[0], p[1], z_base))
+        roof_tris = triangulate(ring)
+        for ia, ib, ic in roof_tris:
+            self.col_triangles.extend([
+                col_bot_start + ic, col_bot_start + ib, col_bot_start + ia,
+            ])
+
+    def _add_pitched_roof(
+        self,
+        ring: List[Tuple[float, float]],
+        z_eave: float,
+        wall_mat: str,
+        roof_mat: str = "roof_tiles",
+    ):
+        """
+        Generates realistic pitched/gabled roof for cottages and residential houses:
+        - 4-vertex rectangular footprint: classic gabled roof with triangular wall gables
+        - N-vertex footprint: hipped roof with elevated ridge/apex
+        - UV mapping scaled to realistic roof tile dimensions (~2.0m tile repeat)
+        - Synchronized collision geometry
+        """
+        n = len(ring)
+        if n < 3:
+            return
+
+        cx = sum(p[0] for p in ring) / n
+        cy = sum(p[1] for p in ring) / n
+        poly_area = 0.5 * abs(sum(ring[i][0] * ring[(i + 1) % n][1] - ring[(i + 1) % n][0] * ring[i][1] for i in range(n)))
+
+        # Pitch height ~2.0m - 3.5m (pitch angle ~25-35 degrees)
+        min_dim = math.sqrt(max(16.0, poly_area))
+        pitch_h = min(4.0, max(2.2, min_dim * 0.30))
+        z_ridge = z_eave + pitch_h
+        tile_scale = 2.0  # 2.0m per tile repeat
+
+        def add_roof_tri(mat, va, vb, vc):
+            ab = (vb[0] - va[0], vb[1] - va[1], vb[2] - va[2])
+            ac = (vc[0] - va[0], vc[1] - va[1], vc[2] - va[2])
+            nx = ab[1] * ac[2] - ab[2] * ac[1]
+            ny = ab[2] * ac[0] - ab[0] * ac[2]
+            nz = ab[0] * ac[1] - ab[1] * ac[0]
+            nl = math.hypot(nx, ny, nz)
+            norm = (nx / nl, ny / nl, nz / nl) if nl > 1e-6 else (0.0, 0.0, 1.0)
+
+            start = len(self.verts)
+            self.verts.extend([va, vb, vc])
+            self.normals.extend([norm, norm, norm])
+            self.uvs.extend([
+                (va[0] / tile_scale, va[1] / tile_scale),
+                (vb[0] / tile_scale, vb[1] / tile_scale),
+                (vc[0] / tile_scale, vc[1] / tile_scale),
+            ])
+            if mat not in self.triangles_by_mat:
+                self.triangles_by_mat[mat] = []
+            self.triangles_by_mat[mat].extend([start, start + 1, start + 2])
+
+            col_start = len(self.col_verts)
+            self.col_verts.extend([va, vb, vc])
+            self.col_triangles.extend([col_start, col_start + 1, col_start + 2])
+
+        if n == 4:
+            # Rectangular footprint: Classic Gabled Roof with 2 slopes and 2 vertical wall gables
+            p0, p1, p2, p3 = ring[0], ring[1], ring[2], ring[3]
+            l01 = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+            l12 = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+            l23 = math.hypot(p3[0] - p2[0], p3[1] - p2[1])
+            l30 = math.hypot(p0[0] - p3[0], p0[1] - p3[1])
+
+            avg_l0 = (l01 + l23) / 2.0
+            avg_l1 = (l12 + l30) / 2.0
+
+            p0_eave = (p0[0], p0[1], z_eave)
+            p1_eave = (p1[0], p1[1], z_eave)
+            p2_eave = (p2[0], p2[1], z_eave)
+            p3_eave = (p3[0], p3[1], z_eave)
+
+            if avg_l0 >= avg_l1:
+                # Longer axis along edge 0 (p0->p1) and edge 2 (p2->p3)
+                m1 = ((p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0, z_ridge)
+                m3 = ((p3[0] + p0[0]) / 2.0, (p3[1] + p0[1]) / 2.0, z_ridge)
+
+                # Roof Slope 1 (over edge 0)
+                add_roof_tri(roof_mat, p0_eave, p1_eave, m1)
+                add_roof_tri(roof_mat, p0_eave, m1, m3)
+
+                # Roof Slope 2 (over edge 2)
+                add_roof_tri(roof_mat, p2_eave, p3_eave, m3)
+                add_roof_tri(roof_mat, p2_eave, m3, m1)
+
+                # Gable 1 (vertical triangular wall over edge 1)
+                add_roof_tri(wall_mat, p1_eave, p2_eave, m1)
+
+                # Gable 2 (vertical triangular wall over edge 3)
+                add_roof_tri(wall_mat, p3_eave, p0_eave, m3)
+            else:
+                # Longer axis along edge 1 (p1->p2) and edge 3 (p3->p0)
+                m0 = ((p0[0] + p1[0]) / 2.0, (p0[1] + p1[1]) / 2.0, z_ridge)
+                m2 = ((p2[0] + p3[0]) / 2.0, (p2[1] + p3[1]) / 2.0, z_ridge)
+
+                # Roof Slope 1 (over edge 1)
+                add_roof_tri(roof_mat, p1_eave, p2_eave, m2)
+                add_roof_tri(roof_mat, p1_eave, m2, m0)
+
+                # Roof Slope 2 (over edge 3)
+                add_roof_tri(roof_mat, p3_eave, p0_eave, m0)
+                add_roof_tri(roof_mat, p3_eave, m0, m2)
+
+                # Gable 1 (vertical triangular wall over edge 0)
+                add_roof_tri(wall_mat, p0_eave, p1_eave, m0)
+
+                # Gable 2 (vertical triangular wall over edge 2)
+                add_roof_tri(wall_mat, p2_eave, p3_eave, m2)
+        else:
+            # General N-gon hipped roof: elevated central apex
+            apex = (cx, cy, z_ridge)
+            for i in range(n):
+                va = (ring[i][0], ring[i][1], z_eave)
+                vb = (ring[(i + 1) % n][0], ring[(i + 1) % n][1], z_eave)
+                vc = apex
+                add_roof_tri(roof_mat, va, vb, vc)
+
+    def _add_flat_roof_and_parapet(
+        self,
+        ring: List[Tuple[float, float]],
+        z_eave: float,
+        roof_mat: str = "roof_gravel",
+    ):
+        """Flat gravel roof with architectural parapet and cornice for multi-story / commercial buildings."""
+        n = len(ring)
         roof_start = len(self.verts)
+        tile_scale = 3.5  # Realistic 3.5m gravel/asphalt tile
         for p in ring:
             self.verts.append((p[0], p[1], z_eave))
             self.normals.append((0.0, 0.0, 1.0))
-            self.uvs.append((p[0] / 6.0, p[1] / 6.0))
+            self.uvs.append((p[0] / tile_scale, p[1] / tile_scale))
 
         roof_tris = triangulate(ring)
         if roof_mat not in self.triangles_by_mat:
@@ -373,16 +512,7 @@ class ProceduralBuildingMesh:
                 col_roof_start + ia, col_roof_start + ib, col_roof_start + ic,
             ])
 
-        # Bottom skirt collision cap (facing down)
-        col_bot_start = len(self.col_verts)
-        for p in ring:
-            self.col_verts.append((p[0], p[1], z_base))
-        for ia, ib, ic in roof_tris:
-            self.col_triangles.extend([
-                col_bot_start + ic, col_bot_start + ib, col_bot_start + ia,
-            ])
-
-        # 3. Architectural Roof Cornice & Parapet
+        # Architectural Roof Cornice & Parapet
         zc0 = z_eave - CORNICE_DOWN_M
         zc1 = z_eave + CORNICE_UP_M
         uv_c0, uv_c1 = (0.002, 0.995), (0.012, 0.995)
@@ -505,7 +635,7 @@ def write_sector_dae(
         tri_elements.append(f"""        <triangles material="{mat}" count="{tri_count}">
           <input semantic="VERTEX" source="#Building-vertices" offset="0"/>
           <input semantic="NORMAL" source="#Building-norm" offset="1"/>
-          <input semantic="TEXCOORD" source="#Building-uv" offset="2"/>
+          <input semantic="TEXCOORD" source="#Building-uv" offset="2" set="0"/>
           <p>{p_str}</p>
         </triangles>""")
 

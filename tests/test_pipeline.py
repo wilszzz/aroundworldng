@@ -4,6 +4,7 @@ Tests math, coordinate transforms, binary exporters, Collada meshes, and scene a
 """
 
 import io
+import json
 import math
 import pathlib
 import struct
@@ -16,6 +17,7 @@ from core.projection import lat_lon_to_meters, meters_to_lat_lon, lat_lon_to_yan
 from fetchers.osm import OSMData, RoadSegment
 from processing.heightmap import HeightmapProcessor
 from processing.terrain_layers import TerrainLayerEngine
+from processing.exclusion import SpatialExclusionEngine
 from exporter.building_mesh import (
     write_building_dae,
     create_all_building_archetypes,
@@ -153,6 +155,48 @@ class TestWaterBuilder(unittest.TestCase):
         self.assertEqual(items_ocean[0]["class"], "WaterPlane")
         self.assertLessEqual(items_ocean[0]["position"][2], -3.0)
 
+    def test_water_lake_elevation_below_bank(self):
+        # Heightmap with bank at 20.0m and center at 15.0m
+        elevs = np.full((51, 51), 20.0, dtype=np.float32)
+        elevs[24:27, 24:27] = 15.0
+        proc = HeightmapProcessor(elevs, square_size=1.0)
+        specs = proc.compute_specs()
+
+        origin_lat, origin_lon = 43.0, 39.0
+        wb = WaterBuilder(heightmap=proc, origin_lat=origin_lat, origin_lon=origin_lon, specs=specs)
+        # Lake centered around (0, 0)
+        p0 = meters_to_lat_lon(-5.0, -5.0, origin_lat, origin_lon)
+        p1 = meters_to_lat_lon(5.0, -5.0, origin_lat, origin_lon)
+        p2 = meters_to_lat_lon(5.0, 5.0, origin_lat, origin_lon)
+        p3 = meters_to_lat_lon(-5.0, 5.0, origin_lat, origin_lon)
+
+        items = wb.generate_water_items([[p0, p1, p2, p3]])
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["class"], "WaterBlock")
+        # Water elevation must be strictly below bank (20.0m) and center (15.0m)
+        self.assertLess(items[0]["position"][2], 15.0)
+
+    def test_water_lake_avoids_road_corridor(self):
+        elevs = np.full((50, 50), 10.0, dtype=np.float32)
+        proc = HeightmapProcessor(elevs, square_size=1.0)
+        specs = proc.compute_specs()
+
+        origin_lat, origin_lon = 43.0, 39.0
+        r_p0 = (origin_lat, origin_lon)
+        r_p1 = meters_to_lat_lon(50.0, 50.0, origin_lat, origin_lon)
+        road = RoadSegment(osm_id=1, highway_type="primary", nodes=[r_p0, r_p1], width=10.0)
+        exclusion = SpatialExclusionEngine([road], origin_lat, origin_lon)
+
+        wb = WaterBuilder(heightmap=proc, origin_lat=origin_lat, origin_lon=origin_lon, specs=specs, exclusion=exclusion)
+        # Lake completely on road corridor
+        d_p0 = (origin_lat, origin_lon)
+        d_p1 = meters_to_lat_lon(2.0, 0.0, origin_lat, origin_lon)
+        d_p2 = meters_to_lat_lon(2.0, 2.0, origin_lat, origin_lon)
+        d_p3 = meters_to_lat_lon(0.0, 2.0, origin_lat, origin_lon)
+
+        items = wb.generate_water_items([[d_p0, d_p1, d_p2, d_p3]])
+        self.assertEqual(len(items), 0)
+
 
 class TestRoadDecorations(unittest.TestCase):
     def test_streetlight_placement_and_yaw(self):
@@ -267,6 +311,185 @@ class TestProceduralBuildings(unittest.TestCase):
             global_min_z = min_local_z + item["position"][2]
             # Heightmap around origin is ~10-15m, so skirt must reach under 10m - 3m = 7m
             self.assertLessEqual(global_min_z, 12.0)
+
+    def test_building_pitched_and_flat_roofs(self):
+        from exporter.building_mesh import ProceduralBuildingMesh, write_sector_dae
+
+        # 1. House with pitched/gabled roof
+        house_mesh = ProceduralBuildingMesh()
+        rect_ring = [(-6.0, -4.0), (6.0, -4.0), (6.0, 4.0), (-6.0, 4.0)]
+        house_mesh.extrude_building(
+            ring=rect_ring,
+            base_z=10.0,
+            z_base=7.0,
+            z_eave=16.0,
+            floors=2,
+            floor_h=3.0,
+            band_idx=2,
+            is_house=True,
+        )
+        # Should have roof_tiles for pitched roof
+        self.assertGreater(len(house_mesh.triangles_by_mat.get("roof_tiles", [])), 0)
+        # Ridge must be elevated above z_eave (16.0m)
+        max_z = max(v[2] for v in house_mesh.verts)
+        self.assertGreater(max_z, 17.5)
+
+        # 2. High-rise / office with flat gravel roof and parapet
+        office_mesh = ProceduralBuildingMesh()
+        office_mesh.extrude_building(
+            ring=rect_ring,
+            base_z=10.0,
+            z_base=7.0,
+            z_eave=28.0,
+            floors=6,
+            floor_h=3.0,
+            band_idx=0,
+            is_house=False,
+        )
+        # Should have roof_gravel
+        self.assertGreater(len(office_mesh.triangles_by_mat.get("roof_gravel", [])), 0)
+        # Verify UV coordinates are valid non-zero numbers
+        for u, v in house_mesh.uvs:
+            self.assertFalse(math.isnan(u) or math.isnan(v))
+            self.assertFalse(math.isinf(u) or math.isinf(v))
+
+        # 3. Verify DAE generation with set="0" on TEXCOORD
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            dae_path = pathlib.Path(tmp_dir) / "test_roof.dae"
+            write_sector_dae(dae_path, house_mesh, sector_origin=(0.0, 0.0, 10.0))
+            self.assertTrue(dae_path.exists())
+            tree = ET.parse(dae_path)
+            ns = {"c": "http://www.collada.org/2005/11/COLLADASchema"}
+            tex_input = tree.find(".//c:triangles//c:input[@semantic='TEXCOORD']", ns)
+            self.assertIsNotNone(tex_input)
+            self.assertEqual(tex_input.attrib.get("set"), "0")
+
+
+class TestPhysicsAndCollision(unittest.TestCase):
+    def test_spawn_point_height_offset(self):
+        from exporter.level_builder import LevelBuilder
+        from core.config import MapConfig
+        cfg = MapConfig(title="Test", level_name="test_spawn", size_meters=256.0)
+        builder = LevelBuilder(cfg)
+
+        elevs = np.full((129, 129), 25.0, dtype=np.float32)
+        proc = HeightmapProcessor(elevs, square_size=2.0)
+
+        # 1. Fallback spawn height (+1.2m above terrain)
+        osm_empty = OSMData(roads=[], buildings=[])
+        sx, sy, sz = builder._find_spawn_point(osm_empty, proc)
+        self.assertAlmostEqual(sz, 26.2, places=2)
+
+        # 2. Road spawn height (+1.2m above road)
+        r0 = (cfg.center_lat, cfg.center_lon)
+        r1 = meters_to_lat_lon(10.0, 0.0, cfg.center_lat, cfg.center_lon)
+        road = RoadSegment(osm_id=10, highway_type="primary", nodes=[r0, r1])
+        osm_road = OSMData(roads=[road], buildings=[])
+        rx, ry, rz = builder._find_spawn_point(osm_road, proc)
+        self.assertAlmostEqual(rz, 26.2, places=2)
+
+    def test_depth_map_value_solid_255(self):
+        from PIL import Image
+        from exporter.level_builder import LevelBuilder
+        from core.config import MapConfig
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cfg = MapConfig(
+                title="Test",
+                level_name="test_depth",
+                size_meters=128.0,
+                output_dir=pathlib.Path(tmpdir),
+                install_to_beamng=False,
+            )
+            builder = LevelBuilder(cfg)
+            elevs = np.zeros((65, 65), dtype=np.float32)
+            proc = HeightmapProcessor(elevs, square_size=2.0)
+            specs = proc.compute_specs()
+            osm_data = OSMData(roads=[], buildings=[])
+            exclusion = SpatialExclusionEngine([], cfg.center_lat, cfg.center_lon)
+
+            builder.build_level(proc, specs, osm_data, exclusion)
+
+            depth_file = builder.level_dir / "theTerrain.ter.depth.png"
+            self.assertTrue(depth_file.exists())
+            with Image.open(depth_file) as d_img:
+                extrema = d_img.getextrema()
+                # Entire depth map must be 255 (0 mud depth = solid monolithic ground)
+                self.assertEqual(extrema, (255, 255))
+
+
+class TestForestBuilder(unittest.TestCase):
+    def setUp(self):
+        self.center_lat = 43.58
+        self.center_lon = 39.72
+        elevs = np.zeros((65, 65), dtype=np.float32)
+        self.heightmap = HeightmapProcessor(elevs, square_size=2.0)
+        self.exclusion = SpatialExclusionEngine([], self.center_lat, self.center_lon)
+
+    def test_default_tree_models_library(self):
+        from exporter.forest_builder import DEFAULT_TREE_MODELS
+        shape_files = {v["shapeFile"] for v in DEFAULT_TREE_MODELS.values()}
+        required_shapes = [
+            "/assets/meshes/foliage/trees_library/oak/tree_oak_large_a.dae",
+            "/assets/meshes/foliage/trees_library/oak/tree_oak_sml_a.dae",
+            "/assets/meshes/foliage/trees_library/beech/tree_beech_large_a.dae",
+            "/assets/meshes/foliage/trees_library/beech/tree_beech_large_b.dae",
+            "/assets/meshes/foliage/trees_library/cypress/tree_cypress_a.dae",
+        ]
+        for shape in required_shapes:
+            self.assertIn(shape, shape_files, f"Expected shapeFile {shape} in DEFAULT_TREE_MODELS")
+
+    def test_street_tree_exclusions(self):
+        # Excluded types like motorway, raceway, track, links must never spawn street trees
+        for hw_type in ["motorway", "trunk", "raceway", "track", "primary_link", "motorway_link", "trunk_link"]:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                level_dir = pathlib.Path(tmpdir)
+                fb = ForestBuilder("test_level", self.center_lat, self.center_lon, self.heightmap, self.exclusion, 1000.0)
+                r0 = (self.center_lat, self.center_lon)
+                r1 = meters_to_lat_lon(0.0, 150.0, self.center_lat, self.center_lon)
+                road = RoadSegment(osm_id=1, highway_type=hw_type, nodes=[r0, r1])
+                osm_data = OSMData(roads=[road], buildings=[], forests=[])
+                fb.generate_forest(osm_data, level_dir)
+
+                with open(level_dir / "test_level.forest.json", "r", encoding="utf-8") as f:
+                    forest_data = json.load(f)
+                total_instances = sum(len(instances) for instances in forest_data["instances"].values())
+                self.assertEqual(total_instances, 0, f"Expected 0 trees for highway_type={hw_type}")
+
+    def test_street_tree_urban_generation_and_jitter(self):
+        # Urban residential street should spawn green trees with jitter, no orange aspen
+        with tempfile.TemporaryDirectory() as tmpdir:
+            level_dir = pathlib.Path(tmpdir)
+            fb = ForestBuilder("test_level", self.center_lat, self.center_lon, self.heightmap, self.exclusion, 1000.0)
+            r0 = (self.center_lat, self.center_lon)
+            r1 = meters_to_lat_lon(0.0, 200.0, self.center_lat, self.center_lon)
+            road = RoadSegment(osm_id=2, highway_type="residential", nodes=[r0, r1])
+            osm_data = OSMData(roads=[road], buildings=[], forests=[])
+            fb.generate_forest(osm_data, level_dir)
+
+            with open(level_dir / "test_level.forest.json", "r", encoding="utf-8") as f:
+                forest_data = json.load(f)
+
+            # Never spawn orange aspen on streets
+            self.assertEqual(len(forest_data["instances"]["tree_aspen_large"]), 0)
+
+            # Green trees spawned
+            green_counts = {
+                k: len(v) for k, v in forest_data["instances"].items()
+                if k in ["tree_oak_large", "tree_oak_small", "tree_beech_large_a", "tree_beech_large_b", "tree_cypress"]
+            }
+            total_green = sum(green_counts.values())
+            self.assertGreater(total_green, 0, "Urban road should spawn green street trees")
+
+            # Check organic jitter (perpendicular and step positions vary)
+            all_pts = []
+            for k, instances in forest_data["instances"].items():
+                if k != "bush_large":
+                    all_pts.extend(instances)
+            x_coords = [p[0] for p in all_pts]
+            # Since road is along Y axis (x=0), street trees are displaced along X (nx = +-1)
+            # Jitter means absolute X values shouldn't be strictly identical
+            unique_abs_x = len(set(round(abs(x), 2) for x in x_coords))
+            self.assertGreater(unique_abs_x, 1, "Expected jitter to create variations in road offset")
 
 
 if __name__ == "__main__":

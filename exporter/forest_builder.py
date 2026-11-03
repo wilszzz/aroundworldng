@@ -29,9 +29,14 @@ DEFAULT_TREE_MODELS = {
         "radius": 1.0,
         "annotation": "TREE",
     },
-    "tree_aspen_large": {
-        "shapeFile": "/assets/meshes/foliage/trees_library/birch/tree_aspen_large_a.dae",
-        "radius": 1.2,
+    "tree_beech_large_a": {
+        "shapeFile": "/assets/meshes/foliage/trees_library/beech/tree_beech_large_a.dae",
+        "radius": 1.4,
+        "annotation": "TREE",
+    },
+    "tree_beech_large_b": {
+        "shapeFile": "/assets/meshes/foliage/trees_library/beech/tree_beech_large_b.dae",
+        "radius": 1.4,
         "annotation": "TREE",
     },
     "tree_beech_large": {
@@ -39,11 +44,54 @@ DEFAULT_TREE_MODELS = {
         "radius": 1.4,
         "annotation": "TREE",
     },
+    "tree_cypress": {
+        "shapeFile": "/assets/meshes/foliage/trees_library/cypress/tree_cypress_a.dae",
+        "radius": 1.0,
+        "annotation": "TREE",
+    },
+    "tree_cypress_a": {
+        "shapeFile": "/assets/meshes/foliage/trees_library/cypress/tree_cypress_a.dae",
+        "radius": 1.0,
+        "annotation": "TREE",
+    },
+    "tree_aspen_large": {
+        "shapeFile": "/assets/meshes/foliage/trees_library/birch/tree_aspen_large_a.dae",
+        "radius": 1.2,
+        "annotation": "TREE",
+    },
     "bush_large": {
         "shapeFile": "/assets/meshes/foliage/trees_library/oak/tree_oak_bush_a.dae",
         "radius": 0.8,
         "annotation": "BUSH",
     },
+}
+
+# Natural green summer tree pool for streets and procedural greenery
+GREEN_STREET_TREES = [
+    "tree_oak_large",
+    "tree_oak_small",
+    "tree_beech_large_a",
+    "tree_beech_large_b",
+    "tree_cypress",
+]
+
+# Highway classification filters for street trees
+EXCLUDED_STREET_HIGHWAY_TYPES = {
+    "motorway",
+    "trunk",
+    "raceway",
+    "track",
+    "primary_link",
+    "motorway_link",
+    "trunk_link",
+}
+
+ALLOWED_STREET_HIGHWAY_TYPES = {
+    "residential",
+    "secondary",
+    "tertiary",
+    "living_street",
+    "unclassified",
 }
 
 
@@ -109,7 +157,15 @@ class ForestBuilder:
                     if poly.contains(pt) and self.exclusion.is_point_clear(rx, ry):
                         rz = self.heightmap.get_elevation_at_meters(rx, ry)
                         inst = self._create_tree_instance(rx, ry, rz)
-                        tree_type = random.choice(["tree_oak_large", "tree_aspen_large", "tree_beech_large", "tree_oak_small"])
+                        tree_type = random.choice(
+                            [
+                                "tree_oak_large",
+                                "tree_oak_small",
+                                "tree_beech_large_a",
+                                "tree_beech_large_b",
+                                "tree_cypress",
+                            ]
+                        )
                         instances[tree_type].append(inst)
 
                         # 40% chance to spawn an accompanying bush
@@ -126,8 +182,10 @@ class ForestBuilder:
         for road in osm_data.roads:
             if road.is_bridge or road.is_tunnel:
                 continue
-            if road.highway_type in {"motorway", "trunk"}:
-                continue  # High-speed freeways don't have street trees right on the curb
+            if road.highway_type in EXCLUDED_STREET_HIGHWAY_TYPES:
+                continue  # Never spawn street trees along freeways, tracks, or links
+            if road.highway_type not in ALLOWED_STREET_HIGHWAY_TYPES:
+                continue  # Spawn street trees only along designated urban streets
             if len(road.nodes) < 2:
                 continue
 
@@ -137,7 +195,7 @@ class ForestBuilder:
             ]
 
             half_w = (road.width / 2.0) + 2.5  # 2.5 meters from road edge onto the sidewalk/verge
-            step = 30.0  # Tree every 30 meters
+            step = 30.0  # Base spacing: tree every 30 meters
 
             for i in range(len(pts) - 1):
                 p1, p2 = pts[i], pts[i + 1]
@@ -152,20 +210,29 @@ class ForestBuilder:
 
                 num_street_trees = max(int(seg_len / step), 1)
                 for t_idx in range(1, num_street_trees + 1):
-                    dist = (t_idx / (num_street_trees + 1)) * seg_len
-                    bx = p1[0] + ux * dist
-                    by = p1[1] + uy * dist
+                    base_dist = (t_idx / (num_street_trees + 1)) * seg_len
 
-                    # Spawn on both sides of the street
+                    # Spawn on both sides of the street with organic jitter
                     for side in [-1, 1]:
-                        tx = bx + nx * half_w * side
-                        ty = by + ny * half_w * side
+                        # Organic jitter: step shift +-5m, perpendicular offset shift +-0.8m
+                        step_jitter = random.uniform(-5.0, 5.0)
+                        actual_dist = max(2.0, min(seg_len - 2.0, base_dist + step_jitter))
 
-                        # Ensure point is in map bounds and clear of building footprints
+                        bx = p1[0] + ux * actual_dist
+                        by = p1[1] + uy * actual_dist
+
+                        perp_jitter = random.uniform(-0.8, 0.8)
+                        actual_offset = max(road.width / 2.0 + 1.2, half_w + perp_jitter)
+
+                        tx = bx + nx * actual_offset * side
+                        ty = by + ny * actual_offset * side
+
+                        # Ensure point is in map bounds
                         if abs(tx) < self.size / 2.0 and abs(ty) < self.size / 2.0:
                             tz = self.heightmap.get_elevation_at_meters(tx, ty)
                             inst = self._create_tree_instance(tx, ty, tz, scale_range=(0.85, 1.15))
-                            instances["tree_aspen_large"].append(inst)
+                            tree_type = random.choice(GREEN_STREET_TREES)
+                            instances[tree_type].append(inst)
 
         total_instances = sum(len(v) for v in instances.values())
         print(f"[ForestBuilder] Populated {total_instances} 3D trees and foliage instances.")

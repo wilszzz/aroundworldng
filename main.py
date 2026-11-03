@@ -35,6 +35,18 @@ def parse_args():
 
 
 def main():
+    if len(sys.argv) == 1:
+        print("=" * 70)
+        print("  AroundWorldNG — Генератор карт реального мира для BeamNG.drive")
+        print("=" * 70)
+        print(" Запуск интерактивного визуального веб-интерфейса карты...")
+        print(" Открываем браузер: http://localhost:8080/")
+        print(" (Для использования через командную строку: AroundWorldNG.exe --help)")
+        print("=" * 70 + "\n")
+        from ui.web_server import start_web_ui
+        start_web_ui()
+        return
+
     args = parse_args()
 
     if args.web:

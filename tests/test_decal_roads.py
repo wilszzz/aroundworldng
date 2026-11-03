@@ -104,6 +104,39 @@ class TestDecalRoads(unittest.TestCase):
             self.assertAlmostEqual(node[2], 15.05, places=2)
             self.assertEqual(node[3], 0.25)
 
+    def test_road_and_bridge_materials_ground_types(self):
+        """Verify PBR groundType friction tags and valid textures in road_materials.json."""
+        import json
+        from core.config import get_resource_path
+
+        road_mats_path = get_resource_path("exporter/road_materials.json")
+        with open(road_mats_path, "r", encoding="utf-8") as f:
+            mats = json.load(f)
+
+        # Tire friction physics types
+        self.assertEqual(mats["road_asphalt"]["groundType"], "ASPHALT")
+        self.assertEqual(mats["road_asphalt_2lane"]["groundType"], "ASPHALT")
+        self.assertEqual(mats["AsphaltRoad_variation_01"]["groundType"], "ASPHALT")
+        self.assertEqual(mats["road_dirt"]["groundType"], "DIRT")
+        self.assertEqual(mats["concrete_plain"]["groundType"], "CONCRETE")
+
+        # road_asphalt_2lane must only reference existing textures
+        stage0 = mats["road_asphalt_2lane"]["Stages"][0]
+        self.assertNotIn("normalMap", stage0)
+        self.assertNotIn("roughnessMap", stage0)
+        self.assertIn("baseColorMap", stage0)
+        self.assertIn("opacityMap", stage0)
+
+        # tree_materials.json: holm_oak_trunk must use official core paths
+        tree_mats_path = get_resource_path("exporter/tree_materials.json")
+        with open(tree_mats_path, "r", encoding="utf-8") as f:
+            tree_mats = json.load(f)
+
+        oak_stage0 = tree_mats["holm_oak_trunk"]["Stages"][0]
+        for key in ["ambientOcclusionMap", "baseColorMap", "normalMap", "roughnessMap"]:
+            self.assertTrue(oak_stage0[key].startswith("/assets/materials/tree/holm_oak/"))
+            self.assertNotIn("east_coast_usa", oak_stage0[key])
+
 
 if __name__ == "__main__":
     unittest.main()

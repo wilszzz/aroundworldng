@@ -113,14 +113,30 @@ class BuildingExporter:
             seed = int(abs(hash((round(cx, 1), round(cy, 1)))))
             poly_area = 0.5 * abs(sum(ring[i][0] * ring[(i + 1) % n][1] - ring[(i + 1) % n][0] * ring[i][1] for i in range(n)))
 
+            b_type = str(tags.get("building", "")).lower().strip()
+            is_house_type = b_type in (
+                "house", "detached", "residential", "semidetached_house",
+                "bungalow", "cabin", "cottage", "shed", "garage", "hut",
+                "terrace", "farm", "villa"
+            )
+            is_highrise_type = b_type in (
+                "apartments", "office", "commercial", "hotel", "hospital",
+                "retail", "industrial", "warehouse", "civic", "school", "university"
+            )
+
             if floors is None:
-                # Default 2-5 floors (3.0m per floor)
-                if poly_area < 120.0:
-                    floors = 2 + (seed % 2)  # 2 or 3 floors
-                elif poly_area < 400.0:
+                if b_type in ("shed", "garage", "hut"):
+                    floors = 1
+                elif is_house_type:
+                    floors = 1 if (seed % 3 == 0) else 2
+                elif poly_area < 90.0:
+                    floors = 1 if (seed % 2 == 0) else 2
+                elif poly_area < 220.0:
+                    floors = 2 if (seed % 3 != 0) else 1
+                elif poly_area < 500.0:
                     floors = 2 + (seed % 3)  # 2, 3, or 4 floors
                 else:
-                    floors = 2 + (seed % 4)  # 2, 3, 4, or 5 floors
+                    floors = 3 + (seed % 4)  # 3, 4, 5, or 6 floors
 
             floor_h = 3.0
             total_height = floors * floor_h
@@ -132,7 +148,8 @@ class BuildingExporter:
 
             # Band styling
             band_idx = (seed >> 3) % 4
-            is_house = poly_area < 150.0 and floors <= 2
+            is_house = (is_house_type or (poly_area < 260.0 and floors <= 2)) and not is_highrise_type
+            z_roof_top = z_eave + (3.5 if is_house else 0.5)
 
             # Find spatial sector
             sx = int(math.floor(cx / self.sector_size))
@@ -141,7 +158,7 @@ class BuildingExporter:
 
             if sec_key not in sectors:
                 sectors[sec_key] = ProceduralBuildingMesh()
-                sector_bounds[sec_key] = [cx, cy, z_base, cx, cy, z_eave]
+                sector_bounds[sec_key] = [cx, cy, z_base, cx, cy, z_roof_top]
             else:
                 b = sector_bounds[sec_key]
                 b[0] = min(b[0], cx)
@@ -149,7 +166,7 @@ class BuildingExporter:
                 b[2] = min(b[2], z_base)
                 b[3] = max(b[3], cx)
                 b[4] = max(b[4], cy)
-                b[5] = max(b[5], z_eave)
+                b[5] = max(b[5], z_roof_top)
 
             # Extrude building into sector mesh
             sectors[sec_key].extrude_building(

@@ -13,7 +13,7 @@ import uuid
 import zipfile
 from PIL import Image
 
-from core.config import MapConfig, get_default_beamng_mods_dir
+from core.config import MapConfig, get_default_beamng_mods_dir, get_resource_path
 from core.projection import lat_lon_to_meters
 from exporter.building_mesh import create_all_building_archetypes
 from exporter.buildings import BuildingExporter
@@ -72,7 +72,10 @@ class LevelBuilder:
         )
 
         # 2b. Export collision fluid depth map for BeamNG physics engine
-        depth_img = Image.new("L", (heightmap_proc.res - 1, heightmap_proc.res - 1), color=0)
+        # In BeamNG theTerrain.ter.depth.png defines fluid/mud depth:
+        # 255 = 0 mud/fluid depth (100% solid monolithic ground).
+        # 0 = maximum mud depth (quicksand), causing vehicles to sink into terrain!
+        depth_img = Image.new("L", (heightmap_proc.res - 1, heightmap_proc.res - 1), color=255)
         depth_img.save(self.level_dir / "theTerrain.ter.depth.png")
 
         # 3. Export Base Terrain Textures and UI Previews (Power-of-two 2048x2048)
@@ -154,6 +157,7 @@ class LevelBuilder:
             origin_lat=self.cfg.center_lat,
             origin_lon=self.cfg.center_lon,
             specs=terrain_specs,
+            exclusion=exclusion,
         )
         water_items = water_builder.generate_water_items(
             osm_data.waters,
@@ -201,11 +205,11 @@ class LevelBuilder:
                 dist = x ** 2 + y ** 2
                 if dist < min_dist:
                     min_dist = dist
-                    z = heightmap.get_elevation_at_meters(x, y) + 0.8
+                    z = heightmap.get_elevation_at_meters(x, y) + 1.2
                     best_pt = (x, y, z)
 
         if min_dist == float("inf"):
-            z = heightmap.get_elevation_at_meters(0.0, 0.0) + 1.0
+            z = heightmap.get_elevation_at_meters(0.0, 0.0) + 1.2
             best_pt = (0.0, 0.0, z)
 
         print(f"[LevelBuilder] Spawn point set at ({best_pt[0]:.1f}, {best_pt[1]:.1f}, {best_pt[2]:.1f})")
@@ -356,7 +360,7 @@ class LevelBuilder:
         art_ter_dir = self.level_dir / "art" / "terrains"
         art_ter_dir.mkdir(parents=True, exist_ok=True)
 
-        terrain_mats_path = pathlib.Path(__file__).parent / "terrain_materials.json"
+        terrain_mats_path = get_resource_path("exporter/terrain_materials.json")
         if terrain_mats_path.exists():
             with open(terrain_mats_path, "r", encoding="utf-8") as f:
                 raw_ter_json = f.read()
@@ -384,7 +388,7 @@ class LevelBuilder:
         art_road_dir = self.level_dir / "art" / "road"
         art_road_dir.mkdir(parents=True, exist_ok=True)
 
-        road_mats_path = pathlib.Path(__file__).parent / "road_materials.json"
+        road_mats_path = get_resource_path("exporter/road_materials.json")
         if road_mats_path.exists():
             with open(road_mats_path, "r", encoding="utf-8") as f:
                 road_mats = json.load(f)
@@ -400,7 +404,7 @@ class LevelBuilder:
         art_trees_dir = self.level_dir / "art" / "shapes" / "trees"
         art_trees_dir.mkdir(parents=True, exist_ok=True)
 
-        tree_mats_path = pathlib.Path(__file__).parent / "tree_materials.json"
+        tree_mats_path = get_resource_path("exporter/tree_materials.json")
         if tree_mats_path.exists():
             with open(tree_mats_path, "r", encoding="utf-8") as f:
                 tree_mats = json.load(f)
@@ -424,10 +428,11 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "baseColorMap": "/assets/materials/tileable/brick/brick_plain/t_bricks_red_01_b.color.dds",
-                        "normalMap": "/assets/materials/tileable/brick/brick_plain/t_bricks_red_01_nm.normal.dds",
-                        "roughnessMap": "/assets/materials/tileable/brick/brick_plain/t_bricks_red_01_r.data.dds",
-                        "ambientOcclusionMap": "/assets/materials/tileable/brick/brick_plain/t_bricks_red_01_ao.data.dds",
+                        "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.dds",
+                        "normalMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_r.data.dds",
+                        "ambientOcclusionMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_ao.data.dds",
+                        "metallicMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_m.data.dds",
                     }
                 ],
                 "annotation": "BUILDINGS",
@@ -453,11 +458,11 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.png",
-                        "normalMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_nm.normal.png",
-                        "roughnessMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_r.data.png",
-                        "ambientOcclusionMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_ao.data.png",
-                        "metallicMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_m.data.png",
+                        "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.dds",
+                        "normalMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_r.data.dds",
+                        "ambientOcclusionMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_ao.data.dds",
+                        "metallicMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_m.data.dds",
                     }
                 ],
                 "annotation": "BUILDINGS",
@@ -469,11 +474,11 @@ class LevelBuilder:
                 "persistentId": str(uuid.uuid4()),
                 "Stages": [
                     {
-                        "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.png",
-                        "normalMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_nm.normal.png",
-                        "roughnessMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_r.data.png",
-                        "ambientOcclusionMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_ao.data.png",
-                        "metallicMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_m.data.png",
+                        "baseColorMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_b.color.dds",
+                        "normalMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_nm.normal.dds",
+                        "roughnessMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_r.data.dds",
+                        "ambientOcclusionMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_ao.data.dds",
+                        "metallicMap": "/assets/materials/trim/plaster/t_highrise_plaster/t_highrise_plaster_m.data.dds",
                     }
                 ],
                 "annotation": "BUILDINGS",

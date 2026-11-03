@@ -5,7 +5,40 @@ Configuration settings for AroundWorldNG generator.
 from dataclasses import dataclass, field
 import os
 import pathlib
-from typing import Optional
+import sys
+from typing import Optional, Union
+
+
+def get_resource_path(relative_path: Union[str, pathlib.Path]) -> pathlib.Path:
+    """
+    Get absolute path to resource, working both in development mode
+    and inside PyInstaller bundled executable.
+    """
+    rel = pathlib.Path(relative_path)
+    if rel.is_absolute():
+        return rel
+
+    base_path = getattr(sys, "_MEIPASS", None)
+    if base_path is not None:
+        target = pathlib.Path(base_path) / rel
+        if target.exists():
+            return target
+        for parent_cand in ["exporter", "ui"]:
+            alt = pathlib.Path(base_path) / parent_cand / rel
+            if alt.exists():
+                return alt
+        return target
+
+    # In development mode, base path is project root (parent of 'core')
+    project_root = pathlib.Path(__file__).resolve().parent.parent
+    target = project_root / rel
+    if target.exists():
+        return target
+    for parent_cand in ["exporter", "ui"]:
+        alt = project_root / parent_cand / rel
+        if alt.exists():
+            return alt
+    return target
 
 
 def get_default_beamng_mods_dir() -> Optional[pathlib.Path]:

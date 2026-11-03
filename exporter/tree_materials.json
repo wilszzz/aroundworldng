@@ -942,10 +942,10 @@
     "persistentId": "fed40da5-9842-47c9-915c-fdaaa83c20dd",
     "Stages": [
       {
-        "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/trees/ECA_coast_bush/holm_oak_trunk_ao.data.png",
-        "baseColorMap": "/levels/east_coast_usa/art/shapes/trees/ECA_coast_bush/holm_oak_trunk_b.color.png",
-        "normalMap": "/levels/east_coast_usa/art/shapes/trees/ECA_coast_bush/holm_oak_trunk_nm.normal.png",
-        "roughnessMap": "/levels/east_coast_usa/art/shapes/trees/ECA_coast_bush/holm_oak_trunk_r.data.png"
+        "ambientOcclusionMap": "/assets/materials/tree/holm_oak/t_holm_oak_trunk/t_holm_oak_bark_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/holm_oak/t_holm_oak_trunk/t_holm_oak_bark_b.color.png",
+        "normalMap": "/assets/materials/tree/holm_oak/t_holm_oak_trunk/t_holm_oak_bark_nm.normal.png",
+        "roughnessMap": "/assets/materials/tree/holm_oak/t_holm_oak_trunk/t_holm_oak_bark_r.data.png"
       },
       {},
       {},

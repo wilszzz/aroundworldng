@@ -9,11 +9,11 @@ import pathlib
 import threading
 import webbrowser
 
-from core.config import MapConfig
+from core.config import MapConfig, get_resource_path
 from generator import AroundWorldGenerator
 
 PORT = 8080
-UI_DIR = pathlib.Path(__file__).parent
+UI_DIR = get_resource_path("ui")
 
 
 class AroundWorldWebHandler(SimpleHTTPRequestHandler):
@@ -27,7 +27,8 @@ class AroundWorldWebHandler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            with open(UI_DIR / "index.html", "rb") as f:
+            index_path = get_resource_path("ui/index.html")
+            with open(index_path, "rb") as f:
                 self.wfile.write(f.read())
         else:
             super().do_GET()
