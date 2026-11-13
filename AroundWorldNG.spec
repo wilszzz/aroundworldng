@@ -1,9 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 from PyInstaller.utils.hooks import collect_all, collect_data_files
 
 datas = [
     ('aroundworldng/fast_tree_materials.json', 'aroundworldng'),
+    ('aroundworldng/fast_tree_materials.json', '.'),
     ('aroundworldng/ready_packs.json', 'aroundworldng'),
+    ('aroundworldng/ready_packs.json', '.'),
+    ('aroundworldng/planet/materials.json', 'aroundworldng/planet'),
+    ('aroundworldng/planet/materials.json', 'planet'),
     ('icon.ico', '.'),
 ]
 binaries = []
@@ -26,6 +31,10 @@ hiddenimports = [
     'tkinter.ttk',
     'tkinter.font',
 ]
+
+awng_mods = [f[:-3] for f in os.listdir('aroundworldng') if f.endswith('.py') and not f.startswith('__')]
+hiddenimports.extend(awng_mods)
+hiddenimports.extend(['aroundworldng.' + m for m in awng_mods])
 
 for pkg in ['customtkinter', 'pyproj', 'shapely', 'osmium']:
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(pkg)

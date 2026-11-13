@@ -22,6 +22,7 @@ import io
 import math
 from pathlib import Path
 import struct
+import sys
 import zipfile
 
 from PIL import Image, ImageDraw, ImageFilter

@@ -872,7 +872,43 @@ MATERIALS = dds({'e2rf_' + k: material(k) for k in KINDS})
 # them, and without them every tree rendered as the orange NO MATERIAL (fast-game-detail-03).
 import json as _json
 from pathlib import Path as _Path
-MATERIALS.update(_json.loads((_Path(__file__).with_name('fast_tree_materials.json')).read_text(encoding='utf8')))
+import sys as _sys
+
+
+def _find_resource(filename: str) -> _Path:
+    candidates = []
+    if hasattr(_sys, '_MEIPASS'):
+        mp = _Path(_sys._MEIPASS).resolve()
+        candidates.extend([mp / filename, mp / 'aroundworldng' / filename])
+    if getattr(_sys, 'frozen', False):
+        exe_dir = _Path(_sys.executable).resolve().parent
+        internal = exe_dir / '_internal'
+        candidates.extend([
+            internal / filename,
+            internal / 'aroundworldng' / filename,
+            exe_dir / filename,
+            exe_dir / 'aroundworldng' / filename,
+        ])
+    here = _Path(__file__).resolve().parent
+    repo = here.parent if here.name == 'aroundworldng' else here
+    candidates.extend([
+        here / filename,
+        here / 'aroundworldng' / filename,
+        repo / filename,
+        repo / 'aroundworldng' / filename,
+    ])
+    for c in candidates:
+        if c.is_file():
+            return c
+    return here / filename
+
+
+_tree_mat_file = _find_resource('fast_tree_materials.json')
+if _tree_mat_file.is_file():
+    MATERIALS.update(_json.loads(_tree_mat_file.read_text(encoding='utf8')))
+else:
+    print(f'Warning: fast_tree_materials.json not found at {_tree_mat_file}', file=_sys.stderr)
+
 # the thin-leaf physics material (no stages: what a car feels in a bush) of Italy's generibush and
 # East Coast's fir bush, as leaves_strong above; the levels define it in a file that would also
 # overwrite our leaves_strong
@@ -972,7 +1008,9 @@ def pitched(tags, height, area):
 def export_materials(path=None):
     """Write fast_style.MATERIALS into earthng/planet/materials.json."""
     if path is None:
-        path = _Path(__file__).parent / 'planet' / 'materials.json'
+        path = _find_resource('planet/materials.json')
+        if not path.parent.exists():
+            path = _Path(__file__).parent / 'planet' / 'materials.json'
     else:
         path = _Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

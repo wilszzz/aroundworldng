@@ -38,7 +38,32 @@ import looks  # noqa: E402
 import places  # noqa: E402
 import tls  # noqa: E402
 
-CATALOG = HERE / 'ready_packs.json'
+def _find_catalog() -> Path:
+    candidates = []
+    if hasattr(sys, '_MEIPASS'):
+        mp = Path(sys._MEIPASS).resolve()
+        candidates.extend([mp / 'ready_packs.json', mp / 'aroundworldng' / 'ready_packs.json'])
+    if getattr(sys, 'frozen', False):
+        exe_dir = Path(sys.executable).resolve().parent
+        internal = exe_dir / '_internal'
+        candidates.extend([
+            internal / 'ready_packs.json',
+            internal / 'aroundworldng' / 'ready_packs.json',
+            exe_dir / 'ready_packs.json',
+            exe_dir / 'aroundworldng' / 'ready_packs.json',
+        ])
+    candidates.extend([
+        HERE / 'ready_packs.json',
+        ROOT / 'aroundworldng' / 'ready_packs.json',
+        ROOT / 'ready_packs.json',
+    ])
+    for c in candidates:
+        if c.is_file():
+            return c
+    return HERE / 'ready_packs.json'
+
+
+CATALOG = _find_catalog()
 USER_AGENT = places.USER_AGENT
 
 
@@ -51,9 +76,10 @@ def default_mods():
 
 
 def catalog_entries():
-    if not CATALOG.exists():
+    catalog_path = _find_catalog()
+    if not catalog_path.exists():
         return []
-    payload = json.loads(CATALOG.read_text(encoding='utf-8'))
+    payload = json.loads(catalog_path.read_text(encoding='utf-8'))
     entries = payload.get('packs') if isinstance(payload, dict) else None
     if not isinstance(entries, list):
         return []
@@ -335,8 +361,12 @@ def cut_tiles(pbf, tiles, box=None, jobs=None, emit=print, cancel=None, heavy_jo
         if target.exists():
             shutil.rmtree(target)
         emit(f'cutting tiles into {tiles.name}')
-        command = [_python(), str(HERE / 'osm_tiles_country.py'), str(pbf), '--out', str(target),
-                   '--jobs', str(jobs), '--heavy-jobs', str(heavy_jobs)]
+        if getattr(sys, 'frozen', False):
+            command = [sys.executable, '--cli-cut', str(pbf), '--out', str(target),
+                       '--jobs', str(jobs), '--heavy-jobs', str(heavy_jobs)]
+        else:
+            command = [_python(), str(HERE / 'osm_tiles_country.py'), str(pbf), '--out', str(target),
+                       '--jobs', str(jobs), '--heavy-jobs', str(heavy_jobs)]
         if box:
             command += ['--package-box', *(str(v) for v in box)]
         run_step(command, emit, cancel)
@@ -630,17 +660,15 @@ def forget_old_index(work, key, regions, emit=print):
 
 
 def run_build_job(job, emit=print, cancel=None):
-    """Index or export in a normal python.exe, not in the Map Builder window.
-
-    The window is a detached pythonw process and its stdout is the startup log.
-    A process pool created there dies on Windows and is reported only as a child
-    that terminated abruptly. Tile cutting already goes through run_step, and
-    that pool finishes."""
+    """Index or export in a worker process."""
     folder = Path(job['work'])
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"{job['command']}-job.json"
     path.write_text(json.dumps(job), encoding='utf-8')
-    run_step([_python(), str(HERE / 'build_country.py'), '--job', str(path)], emit, cancel)
+    if getattr(sys, 'frozen', False):
+        run_step([sys.executable, '--cli-job', str(path)], emit, cancel)
+    else:
+        run_step([_python(), str(HERE / 'build_country.py'), '--job', str(path)], emit, cancel)
 
 
 def run_step(command, emit=print, cancel=None):

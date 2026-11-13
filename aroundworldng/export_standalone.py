@@ -24,6 +24,7 @@ from pathlib import Path
 import re
 import shutil
 import struct
+import sys
 import time
 import zipfile
 from typing import Callable, Optional

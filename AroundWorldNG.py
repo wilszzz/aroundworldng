@@ -24,14 +24,41 @@ try:
     if awng_dir.is_dir() and str(awng_dir) not in sys.path:
         sys.path.insert(0, str(awng_dir))
 
-    import country_ui
-
-    def main():
-        root = country_ui.create_root()
-        app = country_ui.Setup(root)
-        root.mainloop()
-
     if __name__ == "__main__":
+        if len(sys.argv) > 1:
+            first = sys.argv[1]
+            if first == "--cli-job" and len(sys.argv) > 2:
+                import build_country
+                build_country.run_job(Path(sys.argv[2]))
+                sys.exit(0)
+            elif first == "--cli-cut":
+                import osm_tiles_country
+                sys.argv = [sys.argv[0]] + sys.argv[2:]
+                osm_tiles_country.main()
+                sys.exit(0)
+            elif first == "--job" and len(sys.argv) > 2:
+                import build_country
+                build_country.run_job(Path(sys.argv[2]))
+                sys.exit(0)
+            elif first.endswith(".py"):
+                script_name = Path(first).stem
+                sys.argv = [sys.argv[0]] + sys.argv[2:]
+                if script_name == "build_country":
+                    import build_country
+                    build_country.main()
+                    sys.exit(0)
+                elif script_name == "osm_tiles_country":
+                    import osm_tiles_country
+                    osm_tiles_country.main()
+                    sys.exit(0)
+
+        import country_ui
+
+        def main():
+            root = country_ui.create_root()
+            app = country_ui.Setup(root)
+            root.mainloop()
+
         main()
 
 except Exception as exc:
