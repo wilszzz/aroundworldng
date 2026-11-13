@@ -518,83 +518,88 @@ class Setup:
         # Divider
         ctk.CTkFrame(self.left_panel, height=1, fg_color=PALETTE['border']).pack(fill='x', padx=10, pady=(4, 8))
 
-        # --- Section: Map Scale & Bounds Presets ("Формат и размер карты BeamNG") ---
-        scale_header = ctk.CTkFrame(self.left_panel, fg_color="transparent")
-        scale_header.pack(fill='x', padx=12, pady=(0, 2))
-        ctk.CTkLabel(scale_header, text='📐 ФОРМАТ И РАЗМЕР КАРТЫ',
+        # --- Section: Deletion of Generated Maps ("Удаление сгенерированных карт") ---
+        del_header = ctk.CTkFrame(self.left_panel, fg_color="transparent")
+        del_header.pack(fill='x', padx=12, pady=(0, 2))
+        ctk.CTkLabel(del_header, text='🗑️ УДАЛЕНИЕ СГЕНЕРИРОВАННЫХ КАРТ',
                      font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
                      text_color=PALETTE['border_highlight']).pack(anchor='w')
 
-        ctk.CTkLabel(self.left_panel, text='Быстрый масштаб области вокруг центра:',
+        ctk.CTkLabel(self.left_panel, text='Выберите карту для удаления из папки BeamNG:',
                      font=ctk.CTkFont(family=FONT_FAMILY, size=10),
                      text_color=PALETTE['text_dim']).pack(anchor='w', padx=12, pady=(0, 4))
 
-        scale_grid = ctk.CTkFrame(self.left_panel, fg_color="transparent")
-        scale_grid.pack(fill='x', padx=10, pady=(0, 4))
-        scale_grid.columnconfigure(0, weight=1)
-        scale_grid.columnconfigure(1, weight=1)
-
-        scales = [
-            ('🏎️ 1.5 × 1.5 км', 1.5, 'Дрифт / Квартал'),
-            ('🏙️ 3.0 × 3.0 км', 3.0, 'Город (Оптимально)'),
-            ('🛣️ 5.0 × 5.0 км', 5.0, 'Шоссе и трассы'),
-            ('⛰️ 8.0 × 8.0 км', 8.0, 'Огромный открытый мир'),
-        ]
-
-        for idx, (label, km, desc) in enumerate(scales):
-            row = idx // 2
-            col = idx % 2
-            btn = ctk.CTkButton(
-                scale_grid,
-                text=label,
-                height=30,
-                anchor='center',
-                font=ctk.CTkFont(family=FONT_FAMILY, size=10, weight="bold"),
-                fg_color=PALETTE['bg_card'],
-                text_color=PALETTE['text_primary'],
-                hover_color=PALETTE['btn_default_hover'],
-                corner_radius=8,
-                command=lambda _km=km: self.apply_map_scale(_km)
-            )
-            btn.grid(row=row, column=col, padx=2, pady=2, sticky="ew")
-
-        # Utility row: Center on map view & Bookmarks
-        util_row = ctk.CTkFrame(self.left_panel, fg_color="transparent")
-        util_row.pack(fill='x', padx=10, pady=(2, 4))
-
-        self.btn_center_view = ctk.CTkButton(
-            util_row, text='🎯 По центру вида', height=26,
-            font=ctk.CTkFont(family=FONT_FAMILY, size=10),
-            fg_color=PALETTE['bg_card'], text_color=PALETTE['text_secondary'],
-            hover_color=PALETTE['btn_default_hover'], corner_radius=8,
-            command=self.center_box_on_view
-        )
-        self.btn_center_view.pack(side='left', fill='x', expand=True, padx=(0, 3))
-
-        self.btn_bookmark = ctk.CTkButton(
-            util_row, text='⭐ В закладки', height=26,
-            font=ctk.CTkFont(family=FONT_FAMILY, size=10),
-            fg_color=PALETTE['bg_card'], text_color=PALETTE['text_secondary'],
-            hover_color=PALETTE['btn_default_hover'], corner_radius=8,
-            command=self.add_bookmark
-        )
-        self.btn_bookmark.pack(side='left', fill='x', expand=True, padx=(3, 0))
-
-        # Bookmarks selector dropdown
-        self.bookmark_var = tk.StringVar(value='⭐ Мои закладки (0)')
-        self.bookmark_menu = ctk.CTkOptionMenu(
+        # Dropdown selection of generated map
+        self.del_map_var = tk.StringVar(value='Поиск карт...')
+        self.del_map_menu = ctk.CTkOptionMenu(
             self.left_panel,
-            variable=self.bookmark_var,
-            values=['Нет сохраненных закладок'],
-            height=26,
+            variable=self.del_map_var,
+            values=['Нет созданных карт'],
+            height=30,
             fg_color=PALETTE['bg_input'],
             button_color=PALETTE['btn_default'],
             button_hover_color=PALETTE['btn_default_hover'],
             dropdown_fg_color=PALETTE['bg_card'],
-            font=ctk.CTkFont(family=FONT_FAMILY, size=10),
-            command=self.on_bookmark_selected
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
+            command=self.on_del_map_selected
         )
-        self.bookmark_menu.pack(fill='x', padx=10, pady=(0, 6))
+        self.del_map_menu.pack(fill='x', padx=10, pady=(0, 4))
+
+        # Details badge for currently selected map
+        self.lbl_del_map_info = ctk.CTkLabel(
+            self.left_panel,
+            text='Карты не найдены',
+            font=ctk.CTkFont(family=FONT_FAMILY, size=10),
+            text_color=PALETTE['text_secondary'],
+            anchor='w',
+            justify='left'
+        )
+        self.lbl_del_map_info.pack(fill='x', padx=12, pady=(0, 6))
+
+        # Action Buttons row: [ 🗑️ Удалить карту ] [ 🔄 ] [ 📁 ]
+        del_btn_row = ctk.CTkFrame(self.left_panel, fg_color="transparent")
+        del_btn_row.pack(fill='x', padx=10, pady=(0, 6))
+
+        self.btn_del_map = ctk.CTkButton(
+            del_btn_row,
+            text='🗑️ Удалить карту',
+            height=30,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
+            fg_color=PALETTE['btn_danger'],
+            hover_color=PALETTE['btn_danger_hover'],
+            text_color=PALETTE['btn_danger_text'],
+            corner_radius=8,
+            command=self.delete_selected_map
+        )
+        self.btn_del_map.pack(side='left', fill='x', expand=True, padx=(0, 4))
+
+        self.btn_del_refresh = ctk.CTkButton(
+            del_btn_row,
+            text='🔄',
+            width=36,
+            height=30,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
+            fg_color=PALETTE['btn_default'],
+            hover_color=PALETTE['btn_default_hover'],
+            text_color=PALETTE['text_primary'],
+            corner_radius=8,
+            command=self.refresh_installed_maps
+        )
+        self.btn_del_refresh.pack(side='left', padx=(0, 4))
+
+        self.btn_del_open = ctk.CTkButton(
+            del_btn_row,
+            text='📁',
+            width=36,
+            height=30,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
+            fg_color=PALETTE['btn_default'],
+            hover_color=PALETTE['btn_default_hover'],
+            text_color=PALETTE['text_primary'],
+            corner_radius=8,
+            command=self.open_mods_folder
+        )
+        self.btn_del_open.pack(side='left')
 
         # Divider
         ctk.CTkFrame(self.left_panel, height=1, fg_color=PALETTE['border']).pack(fill='x', padx=10, pady=(2, 8))
@@ -1225,27 +1230,28 @@ class Setup:
             messagebox.showinfo('AroundWorldNG', f'Папка mods не найдена: {mods}')
 
     def refresh_installed_maps(self):
-        if not hasattr(self, 'maps_scroll'):
-            return
-        for w in getattr(self, 'map_item_widgets', []):
-            try:
-                w.destroy()
-            except Exception:
-                pass
+        self.installed_maps = []
+        if hasattr(self, 'map_item_widgets'):
+            for w in self.map_item_widgets:
+                try:
+                    w.destroy()
+                except Exception:
+                    pass
         self.map_item_widgets = []
         
         mods = self.mods.get()
-        if not mods or not os.path.isdir(mods):
-            lbl = ctk.CTkLabel(self.maps_scroll, text='Папка mods BeamNG.drive не найдена.',
-                              font=ctk.CTkFont(family=FONT_FAMILY, size=11),
-                              text_color=PALETTE['text_dim'])
-            lbl.pack(anchor='w', padx=10, pady=10)
-            self.map_item_widgets.append(lbl)
-            return
+        mods_path = Path(mods) if mods else None
+        search_dirs = []
+        if mods_path and mods_path.is_dir():
+            if (mods_path / 'mods').is_dir():
+                search_dirs.append(mods_path / 'mods')
+            search_dirs.append(mods_path)
         
+        local_standalone = ROOT / 'out' / 'standalone'
+        if local_standalone.is_dir():
+            search_dirs.append(local_standalone)
+
         items = []
-        mods_path = Path(mods)
-        search_dirs = [mods_path / 'mods', mods_path] if (mods_path / 'mods').is_dir() else [mods_path]
         seen_files = set()
         try:
             for sdir in search_dirs:
@@ -1271,7 +1277,7 @@ class Setup:
                     mtime_str = datetime.datetime.fromtimestamp(os.path.getmtime(zip_file)).strftime('%d.%m.%Y %H:%M')
                     
                     if is_standalone:
-                        map_type = "Автономный уровень (Готовая карта)"
+                        map_type = "Автономная карта BeamNG"
                         try:
                             import zipfile
                             with zipfile.ZipFile(zip_file, 'r') as zf:
@@ -1284,43 +1290,95 @@ class Setup:
                             pass
                         if not title:
                             title = zip_file.stem.replace('awng_', '').replace('_', ' ').title()
-                        items.append({
-                            'path': zip_file,
-                            'title': title,
-                            'filename': name,
-                            'type': map_type,
-                            'size_mb': size_mb,
-                            'mtime': mtime_str,
-                            'icon': '🏁'
-                        })
-                    elif is_planet_pack:
-                        map_type = "Пак для Планеты (AroundWorldNG)"
+                        icon = '🏁'
+                    else:
+                        map_type = "Пак для Планеты"
                         clean_name = zip_file.stem.replace('aroundworldng_', '').replace('earthng_', '')
                         title = self.format_country_name(clean_name)
-                        items.append({
-                            'path': zip_file,
-                            'title': title,
-                            'filename': name,
-                            'type': map_type,
-                            'size_mb': size_mb,
-                            'mtime': mtime_str,
-                            'icon': '🌍'
-                        })
+                        icon = '🌍'
+                    
+                    display_str = f"{icon} {title} ({size_mb:.1f} МБ)"
+                    items.append({
+                        'path': zip_file,
+                        'title': title,
+                        'filename': name,
+                        'type': map_type,
+                        'size_mb': size_mb,
+                        'mtime': mtime_str,
+                        'icon': icon,
+                        'display_str': display_str
+                    })
         except Exception as exc:
             self.say(f'Ошибка сканирования папки mods: {exc}')
         
-        if not items:
-            empty_box = ctk.CTkFrame(self.maps_scroll, fg_color="transparent")
-            empty_box.pack(fill='both', expand=True, padx=10, pady=20)
-            ctk.CTkLabel(empty_box, text='📭 Созданные карты не найдены в папке mods.\nСгенерируйте первую готовую карту выше!',
-                         justify='center', font=ctk.CTkFont(family=FONT_FAMILY, size=11),
-                         text_color=PALETTE['text_dim']).pack(anchor='center')
-            self.map_item_widgets.append(empty_box)
-            return
-        
         items.sort(key=lambda x: os.path.getmtime(x['path']), reverse=True)
-        for item in items:
-            self._create_map_item_card(item)
+        # Ensure display strings are unique in the dropdown
+        used_strings = set()
+        for m in items:
+            base_str = f"{m['icon']} {m['title']} ({m['size_mb']:.1f} МБ)"
+            if base_str in used_strings:
+                base_str = f"{m['icon']} {m['title']} ({m['filename']})"
+            used_strings.add(base_str)
+            m['display_str'] = base_str
+        self.installed_maps = items
+
+        # 1. Update Left Panel Deletion Section
+        if hasattr(self, 'del_map_menu') and hasattr(self, 'del_map_var'):
+            if items:
+                vals = [m['display_str'] for m in items]
+                self.del_map_menu.configure(values=vals)
+                cur = self.del_map_var.get()
+                if cur not in vals:
+                    self.del_map_var.set(vals[0])
+                    self.on_del_map_selected(vals[0])
+                else:
+                    self.on_del_map_selected(cur)
+                if hasattr(self, 'btn_del_map'):
+                    self.btn_del_map.configure(state='normal')
+            else:
+                self.del_map_menu.configure(values=['Нет созданных карт'])
+                self.del_map_var.set('Нет созданных карт')
+                if hasattr(self, 'lbl_del_map_info'):
+                    self.lbl_del_map_info.configure(text='В папке BeamNG mods пока нет карт')
+                if hasattr(self, 'btn_del_map'):
+                    self.btn_del_map.configure(state='disabled')
+
+        # 2. Update Right Tab (tab_maps) if it exists
+        if hasattr(self, 'maps_scroll'):
+            if not items:
+                empty_box = ctk.CTkFrame(self.maps_scroll, fg_color="transparent")
+                empty_box.pack(fill='both', expand=True, padx=10, pady=20)
+                ctk.CTkLabel(empty_box, text='📭 Созданные карты не найдены в папке mods.\nСгенерируйте первую готовую карту выше!',
+                             justify='center', font=ctk.CTkFont(family=FONT_FAMILY, size=11),
+                             text_color=PALETTE['text_dim']).pack(anchor='center')
+                self.map_item_widgets.append(empty_box)
+            else:
+                for item in items:
+                    self._create_map_item_card(item)
+
+    def on_del_map_selected(self, val):
+        if not val or val == 'Нет созданных карт':
+            if hasattr(self, 'lbl_del_map_info'):
+                self.lbl_del_map_info.configure(text='В папке BeamNG mods пока нет карт')
+            return
+        selected_item = next((m for m in getattr(self, 'installed_maps', []) if m.get('display_str') == val), None)
+        if selected_item and hasattr(self, 'lbl_del_map_info'):
+            info_text = f"{selected_item['filename']}  •  {selected_item['size_mb']:.1f} МБ  •  {selected_item['mtime']}"
+            self.lbl_del_map_info.configure(text=info_text)
+
+    def delete_selected_map(self):
+        if self.running:
+            messagebox.showwarning('AroundWorldNG', 'Нельзя удалять карты во время текущей генерации.')
+            return
+        cur = self.del_map_var.get() if hasattr(self, 'del_map_var') else None
+        if not cur or cur == 'Нет созданных карт':
+            messagebox.showinfo('AroundWorldNG', 'Нет выбранной карты для удаления.')
+            return
+        selected_item = next((m for m in getattr(self, 'installed_maps', []) if m.get('display_str') == cur), None)
+        if not selected_item:
+            messagebox.showinfo('AroundWorldNG', 'Выбранная карта не найдена.')
+            return
+        self.delete_map(selected_item['path'], selected_item['title'])
 
     def _create_map_item_card(self, item):
         card = ctk.CTkFrame(self.maps_scroll, fg_color=PALETTE['bg_input'],
@@ -1360,25 +1418,40 @@ class Setup:
             messagebox.showwarning('AroundWorldNG', 'Нельзя удалять карты во время текущей генерации.')
             return
         
+        path = Path(path)
         size_mb = os.path.getsize(path) / (1024 * 1024) if path.is_file() else 0
         confirm = messagebox.askyesno(
             'Удаление карты',
             f'Вы действительно хотите удалить эту карту?\n\n'
             f'Название: «{title}»\n'
             f'Файл: {path.name} ({size_mb:.1f} МБ)\n\n'
-            f'Файл будет удален из папки mods BeamNG.drive.'
+            f'Файл будет полностью удален из папки mods BeamNG.drive.'
         )
         if not confirm:
             return
         
         try:
+            deleted = False
             if path.is_file():
                 os.remove(path)
-                self.say(f'Карта «{title}» ({path.name}) успешно удалена.')
-                self.refresh_installed_maps()
+                deleted = True
+            
+            # Also clean up matching file in out/standalone or out/country-setup or out/native-packs
+            for extra_dir in (ROOT / 'out' / 'standalone', ROOT / 'out' / 'country-setup', ROOT / 'out' / 'native-packs'):
+                extra_file = extra_dir / path.name
+                if extra_file.is_file():
+                    try:
+                        os.remove(extra_file)
+                    except Exception:
+                        pass
+            
+            if deleted:
+                self.say(f'🗑️ Карта «{title}» ({path.name}) успешно удалена из BeamNG.')
             else:
                 self.say(f'Файл {path.name} не найден.')
-                self.refresh_installed_maps()
+            self.refresh_installed_maps()
+        except PermissionError:
+            messagebox.showerror('Ошибка доступа', f'Файл {path.name} занят игрой BeamNG.drive или другим процессом.\nЗакройте BeamNG.drive или переключитесь на другую карту в игре, затем повторите попытку.')
         except Exception as exc:
             messagebox.showerror('Ошибка удаления', f'Не удалось удалить файл:\n{exc}')
 
