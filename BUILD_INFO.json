@@ -1,8 +1,8 @@
 {
   "project": "AroundWorldNG",
   "name": "AroundWorldNG Map Studio",
-  "version": "1.0.0",
-  "release": "v1.0.0",
+  "version": "1.3.0",
+  "release": "v1.3.0",
   "engine": "BeamNG.drive 0.30+ / Torque3D v9 / PBR 1.5",
   "buildDate": "2026-11-13"
 }
