@@ -1,0 +1,241 @@
+"""Build the Earth2Road planet mod for BeamNG.drive (docs/NATIVE_MODS.md).
+
+    .venv/Scripts/python.exe earthng/build_mod.py --out out/mod
+    .venv/Scripts/python.exe earthng/build_mod.py --out out/mod --install %LOCALAPPDATA%/BeamNG/BeamNG.drive/current
+
+Writes earthng_planet.zip with a carrier level, native Lua generator, offline map and
+shared art. Install it alongside earthng_<country>.zip in the normal BeamNG mods folder.
+No launcher or external runtime is required. --lang uk selects Ukrainian (English by default).
+"""
+import argparse
+import io
+import json
+import math
+from pathlib import Path
+import shutil
+import zipfile
+
+from PIL import Image, ImageDraw
+
+HERE = Path(__file__).resolve().parent
+MOD = HERE.parent / 'mod'
+LEVEL = 'e2r_world'
+PAD = (-3000.0, 0.0)
+ZIP = 'aroundworldng_planet.zip'
+ALT_ZIP = 'earthng_planet.zip'
+
+SKY = [
+    {'class': 'ScatterSky', 'name': 'sunsky', 'azimuth': 142, 'elevation': 48, 'brightness': 0.85, 'castShadows': True,
+     'flareType': 'BNG_Sunflare_2', 'flareScale': 3, 'moonEnabled': True, 'moonMat': 'Moon_Glow_Mat', 'moonScale': 0.06,
+     'nightCubemap': 'BNG_Sky_02_cubemap', 'shadowDistance': 1400, 'shadowSoftness': 0.2, 'skyBrightness': 26,
+     'texSize': 2048, 'ambientScale': [0.36, 0.4, 0.48, 1], 'colorize': [0.42, 0.55, 0.74, 1], 'colorizeAmount': 0.3,
+     'fogScale': [0.55, 0.66, 0.82, 1], 'sunScale': [1, 0.97, 0.92, 1], 'mieScattering': 0.0018,
+     'rayleighScattering': 0.0032, 'nightColor': [0.07, 0.08, 0.12, 1], 'nightFogColor': [0.09, 0.11, 0.16, 1]},
+    {'class': 'CloudLayer', 'name': 'clouds', 'baseColor': [0.93, 0.94, 0.96, 1], 'coverage': 0.35, 'exposure': 0.5,
+     'height': 4.5, 'position': [0, 0, 400], 'texture': 'art/skies/clouds/clouds_normal_displacement.png', 'windSpeed': 1.2,
+     'Textures': [{'texDirection': [0.3, 0.1], 'texScale': 0.55, 'texSpeed': 0.0035},
+                  {'texDirection': [0.2, 0.9], 'texScale': 0.75, 'texSpeed': 0.005},
+                  {'texDirection': [0.1, 0.4], 'texScale': 0.95, 'texSpeed': 0.0065}]},
+    # the game's own environment controls (time of day, rain, wind, weather presets of
+    # core_weather) act on the level's first TimeOfDay/Precipitation/ForestWindEmitter: without
+    # them those sliders did nothing here. Rain starts off; world.lua moves the sun to the landing.
+    {'class': 'TimeOfDay', 'name': 'tod', 'position': [0, 0, 0], 'axisTilt': 23.44, 'day': 200, 'dayLength': 1800,
+     'latitude': 50.45, 'longitude': 30.52, 'play': False, 'startTime': 0.08, 'time': 0.08, 'version': 2},
+    {'class': 'Precipitation', 'name': 'e2r_weather_rain', 'position': [0, 0, 0], 'dataBlock': 'rain_drop', 'numDrops': 0,
+     'boxWidth': 50, 'boxHeight': 50, 'dropSize': 0.2, 'splashSize': 0.2, 'minSpeed': 0.35, 'maxSpeed': 0.4,
+     'hitVehicles': True, 'useTurbulence': True},
+    {'class': 'ForestWindEmitter', 'name': 'e2r_wind', 'position': [0, 0, 0], 'strength': 0.4},
+    {'class': 'LevelInfo', 'name': 'theLevelInfo', 'canvasClearColor': [0.58, 0.66, 0.76, 255], 'fogAtmosphereHeight': 700,
+     # The scheduled horizon is 5 km (native.lua HORIZON_RADIUS). visibleDistance clears the
+     # outer edge of that ring; the fog keeps a ridge at 5 km present and hazy. 15 km and
+     # 30 km are not covered, so these values do not pretend that they are.
+     'fogColor': [0.66, 0.71, 0.77, 1], 'fogDensity': 0.00015, 'globalEnviromentMap': 'BNG_Sky_02_cubemap', 'gravity': -9.81,
+     'visibleDistance': 8000},
+]
+
+
+def pad_dae(size=60.0):
+    h = size / 2
+    pos = f'{-h} {-h} 0 {h} {-h} 0 {h} {h} 0 {-h} {h} 0'
+    return f'''<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+<asset><unit name="meter" meter="1"/><up_axis>Z_UP</up_axis></asset>
+<library_effects><effect id="e2r_world_pad-fx"><profile_COMMON><technique sid="common"><lambert><diffuse><color>0.5 0.5 0.5 1</color></diffuse></lambert></technique></profile_COMMON></effect></library_effects>
+<library_materials><material id="e2r_world_pad" name="e2r_world_pad"><instance_effect url="#e2r_world_pad-fx"/></material></library_materials>
+<library_geometries><geometry id="g0" name="g0"><mesh>
+<source id="g0-pos"><float_array id="g0-pos-array" count="12">{pos}</float_array><technique_common><accessor source="#g0-pos-array" count="4" stride="3"><param name="X" type="float"/><param name="Y" type="float"/><param name="Z" type="float"/></accessor></technique_common></source>
+<source id="g0-uv"><float_array id="g0-uv-array" count="8">0 0 8 0 8 8 0 8</float_array><technique_common><accessor source="#g0-uv-array" count="4" stride="2"><param name="S" type="float"/><param name="T" type="float"/></accessor></technique_common></source>
+<vertices id="g0-vtx"><input semantic="POSITION" source="#g0-pos"/></vertices>
+<triangles material="e2r_world_pad" count="2"><input semantic="VERTEX" source="#g0-vtx" offset="0"/><input semantic="TEXCOORD" source="#g0-uv" offset="0" set="0"/><p>0 1 2 0 2 3</p></triangles>
+</mesh></geometry></library_geometries>
+<library_visual_scenes><visual_scene id="Scene"><node id="base00" name="base00"><node id="start01" name="start01"><node id="pad" name="pad"><instance_geometry url="#g0"><bind_material><technique_common><instance_material symbol="e2r_world_pad" target="#e2r_world_pad"/></technique_common></bind_material></instance_geometry></node></node></node></visual_scene></library_visual_scenes>
+<scene><instance_visual_scene url="#Scene"/></scene></COLLADA>
+'''
+
+
+def preview():
+    """A plain globe for the level list (no map data, no third-party art)."""
+    img = Image.new('RGB', (512, 288), (14, 22, 40))
+    d = ImageDraw.Draw(img)
+    cx, cy, r = 256, 144, 118
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(30, 90, 160))
+    for lat in range(-60, 61, 30):
+        y = cy - r * math.sin(math.radians(lat))
+        w = r * math.cos(math.radians(lat))
+        d.line([cx - w, y, cx + w, y], fill=(90, 150, 210), width=1)
+    for k in range(-2, 3):
+        w = abs(r * math.sin(math.radians(k * 30)))
+        d.ellipse([cx - w, cy - r, cx + w, cy + r], outline=(90, 150, 210))
+    d.ellipse([cx + 22, cy - 66, cx + 34, cy - 54], fill=(230, 60, 50), outline=(255, 255, 255))
+    out = io.BytesIO()
+    img.save(out, 'JPEG', quality=90)
+    return out.getvalue()
+
+
+# the level in the Freeroam list: title, description, spawn point. Since 0.40 the list shows
+# one tile per spawn point, named "<spawn point> (<title>)" with the spawn point's own preview.
+INFO = {
+    'ru': ('AroundWorldNG - Планета', 'Выберите установленный регион на карте. '
+                                 'Lua генерирует мир в реальном времени во время езды.', 'Выбор региона'),
+    'uk': ('AroundWorldNG - Планета', 'Оберіть установлений регіон на мапі та висадіться. '
+                                 'Lua генерує світ під час гри.', 'Вибір регіону'),
+    'en': ('AroundWorldNG - Planet', 'Pick an installed country/region on the map and land there. '
+                                 'Lua generates the world in real time while you drive.',
+           'Region picker'),
+}
+WORLD_LUA = 'lua/ge/extensions/e2r/world.lua'
+
+
+def level_files(lang='ru'):
+    root = f'levels/{LEVEL}'
+    title, description, spawn = INFO[lang]
+    objects = [
+        {'__parent': 'MissionGroup', 'class': 'SimGroup', 'name': 'Sky'},
+        {'__parent': 'MissionGroup', 'class': 'SpawnSphere', 'dataBlock': 'SpawnSphereMarker', 'name': 'spawn_pad',
+         'position': [PAD[0], PAD[1], 0.6], 'radius': 2},
+        {'__parent': 'MissionGroup', 'class': 'TSStatic', 'name': 'e2r_world_pad_object',
+         'shapeName': f'/{root}/art/pad.dae', 'position': [PAD[0], PAD[1], 0.0],
+         'collisionType': 'Visible Mesh Final', 'decalType': 'Visible Mesh', 'useInstanceRenderData': True},
+    ]
+    return {
+        f'{root}/info.json': json.dumps({
+            'title': title, 'authors': 'Earth2Road', 'description': description,
+            'defaultSpawnPointName': 'spawn_pad', 'size': [8192, 8192], 'previews': ['preview.jpg'],
+            'spawnPoints': [{'name': spawn, 'objectname': 'spawn_pad', 'preview': 'preview.jpg'}]},
+            ensure_ascii=False, indent=2),
+        f'{root}/preview.jpg': preview(),
+        f'{root}/main/items.level.json': json.dumps({'class': 'SimGroup', 'name': 'MissionGroup'}) + '\n',
+        f'{root}/main/MissionGroup/items.level.json': ''.join(json.dumps(o) + '\n' for o in objects),
+        f'{root}/main/MissionGroup/Sky/items.level.json': ''.join(json.dumps({**o, '__parent': 'Sky'}) + '\n' for o in SKY),
+        f'{root}/art/pad.dae': pad_dae(),
+        f'{root}/art/main.materials.json': json.dumps({'e2r_world_pad': {
+            'name': 'e2r_world_pad', 'mapTo': 'e2r_world_pad', 'class': 'Material', 'version': 1.5,
+            'Stages': [{'baseColorMap': '/assets/materials/terrain/grass/groundmesh_grass2/groundmesh_grass_b.color.png',
+                        'baseColorFactor': [0.55, 0.55, 0.5, 1], 'roughnessFactor': 0.9}, {}, {}, {}]}}, indent=2),
+    }
+
+
+def build(out, lang='en'):
+    # Fail before writing a partial ZIP when building from a fresh source checkout.
+    import fast_photo
+    import fast_art
+    shared = HERE.parent / 'data/art-distributable' / fast_art.VERSION
+    if not (shared / 'packs.json').is_file() and not (fast_photo.TEXTURES / 'panelka_panels/albedo.jpg').is_file():
+        raise FileNotFoundError('Planet assets are missing. Extract earthng-developer-assets.zip from the release '
+                                'into the repository, or install the ready earthng_planet.zip. See README.md.')
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / ZIP
+    temporary = path.with_suffix('.zip.tmp')
+    with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED) as z:
+        for prefix in ('aroundworldng', 'earthng'):
+            for notice in ('LICENSE', 'THIRD_PARTY_NOTICES.md'):
+                z.write(HERE.parent / notice, f'{prefix}/planet/{notice}')
+        for src in sorted(MOD.rglob('*')):
+            if not src.is_file():
+                continue
+            name = src.relative_to(MOD).as_posix()
+            if name == WORLD_LUA:
+                text = src.read_text(encoding='utf8')
+                line = "local LANG = 'uk'"
+                if text.count(line) != 1:
+                    raise SystemExit(f'{WORLD_LUA}: no single "{line}" line to set the language')
+                text = text.replace(line, f"local LANG = '{lang}'")
+                z.writestr(name, text)
+            else:
+                z.write(src, name)
+        for name, data in level_files(lang).items():
+            z.writestr(name, data)
+        for prefix in ('aroundworldng', 'earthng'):
+            z.writestr(f'{prefix}/planet/manifest.json', json.dumps({
+                'schemaVersion': 1, 'kind': f'{prefix}-planet', 'version': '0.7.0', 'natureVersion': 1,
+                'countrySchemaVersion': 1, 'runtime': 'lua',
+            }))
+        import fast_art
+        import fast_style
+        art = fast_art.prebuild(distributable=True)
+        for prefix in ('aroundworldng', 'earthng'):
+            z.writestr(f'{prefix}/planet/materials.json', json.dumps(fast_style.MATERIALS))
+        for src in sorted(art.rglob('*')):
+            if src.is_file() and src.suffix in ('.dds', '.json'):
+                z.write(src, f'e2r_stream/fast-art/{fast_art.VERSION}/' + src.relative_to(art).as_posix())
+        credits = fast_art.logo_credits()
+        if credits:
+            for prefix in ('aroundworldng', 'earthng'):
+                z.writestr(f'{prefix}/planet/LOGOS.md', credits)
+        # the climate of every place (Köppen-Geiger, Beck et al. 2023, CC BY 4.0): biome.lua
+        import build_climate
+        climate = build_climate.build()
+        for prefix in ('aroundworldng', 'earthng'):
+            for src in sorted(climate.glob('*.bin')):
+                z.write(src, f'{prefix}/planet/climate/' + src.name)
+        # the picker's offline base map (Natural Earth tiles and labels; PNGs are stored as is)
+        import build_basemap
+        base = build_basemap.build()
+        for prefix in ('aroundworldng', 'earthng'):
+            for src in sorted(base.rglob('*')):
+                if src.is_file() and src.suffix in ('.png', '.json'):
+                    z.write(src, f'{prefix}/planet/basemap/' + src.relative_to(base).as_posix(),
+                            compress_type=zipfile.ZIP_STORED if src.suffix == '.png' else zipfile.ZIP_DEFLATED)
+        # Optional map-only updates for existing country packs (no geometry rebuild).
+        import build_map
+        for directory in sorted((HERE.parent / 'out/map-data').glob('*')):
+            if directory.is_dir() and (directory / 'index.json').is_file():
+                for prefix in ('aroundworldng', 'earthng'):
+                    build_map.write_archive(z, directory, f'{prefix}/planet/maps/' + directory.name)
+    temporary.replace(path)
+    try:
+        shutil.copy2(path, out / ALT_ZIP)
+    except Exception:
+        pass
+    return path
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    p.add_argument('--out', type=Path, required=True)
+    p.add_argument('--install', type=Path, help='BeamNG user folder (…/BeamNG.drive/current)')
+    p.add_argument('--lang', choices=sorted(INFO), default='ru')
+    a = p.parse_args()
+    path = build(a.out, a.lang)
+    print(path)
+    if a.install:
+        mods = a.install / 'mods'
+        mods.mkdir(parents=True, exist_ok=True)
+        old = mods / 'earth2road_world.zip'
+        if old.exists():
+            backup = mods / 'earth2road_world.zip.disabled'
+            if backup.exists():
+                raise SystemExit(f'Old and backed-up legacy mods both exist; move {old} aside before installing')
+            old.rename(backup)
+            print('legacy mod backed up', backup)
+        shutil.copy2(path, mods / ZIP)
+        try:
+            shutil.copy2(path, mods / ALT_ZIP)
+        except Exception:
+            pass
+        print('installed', mods / ZIP, 'and', mods / ALT_ZIP)
+
+
+if __name__ == '__main__':
+    main()

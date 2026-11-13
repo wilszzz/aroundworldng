@@ -1,0 +1,5860 @@
+{
+  "e2rf_road": {
+    "name": "e2rf_road",
+    "mapTo": "e2rf_road",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/road_base.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/road_base.normal.dds",
+        "roughnessMap": "/e2r_stream/fast-art/v10/real/road_base.data.dds",
+        "ambientOcclusionMap": "/e2r_stream/fast-art/v10/real/road_base_ao.data.dds",
+        "detailScale": [
+          15.0,
+          15.0
+        ],
+        "detailNormalMapStrength": 1.0,
+        "detailRoughnessMapStrength": 0.15,
+        "detailMap": "/e2r_stream/fast-art/v10/real/road_city_dc.data.dds",
+        "detailBaseColorMapStrength": 0.08,
+        "detailNormalMap": "/e2r_stream/fast-art/v10/real/road_city_dn.normal.dds",
+        "roughnessDetailMap": "/e2r_stream/fast-art/v10/real/road_city_dr.data.dds",
+        "baseColorFactor": [
+          0.865,
+          0.865,
+          0.856,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_road_major": {
+    "name": "e2rf_road_major",
+    "mapTo": "e2rf_road_major",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/road_base.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/road_base.normal.dds",
+        "roughnessMap": "/e2r_stream/fast-art/v10/real/road_base.data.dds",
+        "ambientOcclusionMap": "/e2r_stream/fast-art/v10/real/road_base_ao.data.dds",
+        "detailScale": [
+          15.0,
+          15.0
+        ],
+        "detailNormalMapStrength": 1.0,
+        "detailRoughnessMapStrength": 0.15,
+        "detailMap": "/e2r_stream/fast-art/v10/real/road_fresh_dc.data.dds",
+        "detailBaseColorMapStrength": 0.05,
+        "detailNormalMap": "/e2r_stream/fast-art/v10/real/road_fresh_dn.normal.dds",
+        "roughnessDetailMap": "/e2r_stream/fast-art/v10/real/road_fresh_dr.data.dds",
+        "baseColorFactor": [
+          0.666,
+          0.666,
+          0.676,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_sidewalk": {
+    "name": "e2rf_sidewalk",
+    "mapTo": "e2rf_sidewalk",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/concrete/sidewalk1/t_sidewalk1_b.color.dds",
+        "normalMap": "/assets/materials/tileable/concrete/sidewalk1/t_sidewalk1_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/concrete/sidewalk1/t_sidewalk1_r.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_mark": {
+    "name": "e2rf_mark",
+    "mapTo": "e2rf_mark",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/line.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/line.normal.dds",
+        "roughnessMap": "/e2r_stream/fast-art/v10/real/line.data.dds",
+        "opacityMap": "/e2r_stream/fast-art/v10/real/line_o.data.dds",
+        "baseColorFactor": [
+          0.99,
+          0.99,
+          0.99,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "alphaTest": true,
+    "alphaRef": 77,
+    "castShadows": false
+  },
+  "e2rf_mark_yellow": {
+    "name": "e2rf_mark_yellow",
+    "mapTo": "e2rf_mark_yellow",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/line.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/line.normal.dds",
+        "roughnessMap": "/e2r_stream/fast-art/v10/real/line.data.dds",
+        "opacityMap": "/e2r_stream/fast-art/v10/real/line_o.data.dds",
+        "baseColorFactor": [
+          0.94,
+          0.79,
+          0.27,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "alphaTest": true,
+    "alphaRef": 77,
+    "castShadows": false
+  },
+  "e2rf_ground": {
+    "name": "e2rf_ground",
+    "mapTo": "e2rf_ground",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_b.color.dds",
+        "normalMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_r.data.dds",
+        "roughnessFactor": 0.94,
+        "detailMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_b.dds",
+        "detailNormalMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_nm.dds",
+        "roughnessDetailMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_r.dds",
+        "detailScale": [
+          12.0,
+          12.0
+        ],
+        "detailBaseColorMapStrength": 0.38,
+        "detailNormalMapStrength": 1.0,
+        "detailRoughnessMapStrength": 0.4
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_paved": {
+    "name": "e2rf_paved",
+    "mapTo": "e2rf_paved",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_b.color.dds",
+        "normalMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_ao.data.dds",
+        "baseColorFactor": [
+          0.62,
+          0.62,
+          0.6,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_water": {
+    "name": "e2rf_water",
+    "mapTo": "e2rf_water",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "MUD",
+    "Stages": [
+      {
+        "diffuseColor": [
+          0.12,
+          0.29,
+          0.38,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_roof": {
+    "name": "e2rf_roof",
+    "mapTo": "e2rf_roof",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_b.color.dds",
+        "normalMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/roofing/asphalt_roof/t_asphalt_roof_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_forest": {
+    "name": "e2rf_forest",
+    "mapTo": "e2rf_forest",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_forest.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_forest.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_curb": {
+    "name": "e2rf_curb",
+    "mapTo": "e2rf_curb",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/trim/concrete/m_sidewalk_curb_trim_01/t_sidewalk_curb_trim_01_b.color.dds",
+        "normalMap": "/assets/materials/trim/concrete/m_sidewalk_curb_trim_01/t_sidewalk_curb_trim_01_nm.normal.dds",
+        "roughnessMap": "/assets/materials/trim/concrete/m_sidewalk_curb_trim_01/t_sidewalk_curb_trim_01_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/trim/concrete/m_sidewalk_curb_trim_01/t_sidewalk_curb_trim_01_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_curb",
+      "mapTo": "e2rf_curb",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ASPHALT",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_b.color.dds",
+          "normalMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_r.data.dds",
+          "ambientOcclusionMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_ao.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_edge_grass": {
+    "name": "e2rf_edge_grass",
+    "mapTo": "e2rf_edge_grass",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/decalroad/vegetation/dirt_road_edge_grassy_d/t_road_edge_grass_02_b.color.dds",
+        "normalMap": "/assets/materials/decalroad/vegetation/dirt_road_edge_grassy_d/t_road_edge_grass_02_nm.normal.dds",
+        "roughnessMap": "/assets/materials/decalroad/vegetation/dirt_road_edge_grassy_d/t_road_edge_grass_02_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/decalroad/vegetation/dirt_road_edge_grassy_d/t_road_edge_grass_02_ao.data.dds",
+        "opacityMap": "/assets/materials/decalroad/vegetation/dirt_road_edge_grassy_d/t_road_edge_grass_02_o.data.dds",
+        "baseColorFactor": [
+          0.84,
+          1,
+          0.73,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "alphaTest": true,
+    "alphaRef": 77,
+    "castShadows": false,
+    "e2rFallback": {
+      "name": "e2rf_edge_grass",
+      "mapTo": "e2rf_edge_grass",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "GRASS",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.29,
+            0.36,
+            0.22,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_edge_dirt": {
+    "name": "e2rf_edge_dirt",
+    "mapTo": "e2rf_edge_dirt",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/decalroad/asphalt/m_asphalt_dirt_edge/t_asphalt_dirt_edge_02_b.color.dds",
+        "normalMap": "/assets/materials/decalroad/asphalt/m_asphalt_dirt_edge/t_asphalt_dirt_edge_02_nm.normal.dds",
+        "roughnessMap": "/assets/materials/decalroad/asphalt/m_asphalt_dirt_edge/t_asphalt_dirt_edge_02_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/decalroad/asphalt/m_asphalt_dirt_edge/t_asphalt_dirt_edge_02_ao.data.dds",
+        "opacityMap": "/assets/materials/decalroad/asphalt/m_asphalt_dirt_edge/t_asphalt_dirt_edge_02_o.data.dds",
+        "baseColorFactor": [
+          0.74,
+          0.72,
+          0.7,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "alphaTest": true,
+    "alphaRef": 77,
+    "castShadows": false,
+    "e2rFallback": {
+      "name": "e2rf_edge_dirt",
+      "mapTo": "e2rf_edge_dirt",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "DIRT",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.45,
+            0.4,
+            0.32,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_wall_panel": {
+    "name": "e2rf_wall_panel",
+    "mapTo": "e2rf_wall_panel",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/panel.color.dds",
+        "normalMap": "/assets/materials/tileable/concrete/slabs_brutalist/t_slabs_brutalist_nm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_precast": {
+    "name": "e2rf_wall_precast",
+    "mapTo": "e2rf_wall_precast",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/precast.color.dds",
+        "normalMap": "/assets/materials/tileable/concrete/concrete_precast1/t_concrete_precast1_nm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brick": {
+    "name": "e2rf_wall_brick",
+    "mapTo": "e2rf_wall_brick",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brick.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/brick_plain/t_bricks_red_01_nm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brick_red": {
+    "name": "e2rf_wall_brick_red",
+    "mapTo": "e2rf_wall_brick_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brick_red.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/brick_plain/t_bricks_red_01_nm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brick_white": {
+    "name": "e2rf_wall_brick_white",
+    "mapTo": "e2rf_wall_brick_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brick_white.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/t_brick_white_paint_01/t_brick_white_paint_01_nm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_plaster": {
+    "name": "e2rf_wall_plaster",
+    "mapTo": "e2rf_wall_plaster",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/plaster.color.dds",
+        "normalMap": "/assets/materials/tileable/plaster/m_plaster_worn_01/t_plaster_worn_01_nm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_stucco": {
+    "name": "e2rf_wall_stucco",
+    "mapTo": "e2rf_wall_stucco",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/stucco.color.dds",
+        "normalMap": "/assets/materials/tileable/plaster/m_stucco_white/t_stucco_white_nm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_glass": {
+    "name": "e2rf_wall_glass",
+    "mapTo": "e2rf_wall_glass",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GLASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/glass.color.dds",
+        "normalMap": "/assets/materials/tileable/glass/modernstripwindow/t_window_strips_01_nm.normal.dds",
+        "roughnessFactor": 0.08,
+        "metallicFactor": 0.15,
+        "clearCoatFactor": 1.0,
+        "clearCoatRoughnessFactor": 0.05
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_windows": {
+    "name": "e2rf_wall_windows",
+    "mapTo": "e2rf_wall_windows",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GLASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/windows.color.dds",
+        "normalMap": "/assets/materials/tileable/glass/windows1/t_bld_ind_windows_nm.normal.dds",
+        "roughnessFactor": 0.08,
+        "metallicFactor": 0.15,
+        "clearCoatFactor": 1.0,
+        "clearCoatRoughnessFactor": 0.05
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_block": {
+    "name": "e2rf_wall_block",
+    "mapTo": "e2rf_wall_block",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/block.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_nm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_grey": {
+    "name": "e2rf_wall_pnl_grey",
+    "mapTo": "e2rf_wall_pnl_grey",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_grey.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_beige": {
+    "name": "e2rf_wall_pnl_beige",
+    "mapTo": "e2rf_wall_pnl_beige",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_beige.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_pink": {
+    "name": "e2rf_wall_pnl_pink",
+    "mapTo": "e2rf_wall_pnl_pink",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_pink.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_blue": {
+    "name": "e2rf_wall_pnl_blue",
+    "mapTo": "e2rf_wall_pnl_blue",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_blue.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_white": {
+    "name": "e2rf_wall_pnl_white",
+    "mapTo": "e2rf_wall_pnl_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_white.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_lgg_cream": {
+    "name": "e2rf_wall_lgg_cream",
+    "mapTo": "e2rf_wall_lgg_cream",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/lgg_cream.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_lgg_grey": {
+    "name": "e2rf_wall_lgg_grey",
+    "mapTo": "e2rf_wall_lgg_grey",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/lgg_grey.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_lgg_pink": {
+    "name": "e2rf_wall_lgg_pink",
+    "mapTo": "e2rf_wall_lgg_pink",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/lgg_pink.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_red": {
+    "name": "e2rf_wall_brk_red",
+    "mapTo": "e2rf_wall_brk_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_red.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_red.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_white": {
+    "name": "e2rf_wall_brk_white",
+    "mapTo": "e2rf_wall_brk_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_white.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_white.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_yellow": {
+    "name": "e2rf_wall_pls_yellow",
+    "mapTo": "e2rf_wall_pls_yellow",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_yellow.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_cream": {
+    "name": "e2rf_wall_pls_cream",
+    "mapTo": "e2rf_wall_pls_cream",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_cream.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_peach": {
+    "name": "e2rf_wall_pls_peach",
+    "mapTo": "e2rf_wall_pls_peach",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_peach.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_green": {
+    "name": "e2rf_wall_pls_green",
+    "mapTo": "e2rf_wall_pls_green",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_green.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_blue": {
+    "name": "e2rf_wall_pls_blue",
+    "mapTo": "e2rf_wall_pls_blue",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_blue.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_grey": {
+    "name": "e2rf_wall_pls_grey",
+    "mapTo": "e2rf_wall_pls_grey",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_grey.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_off_blue": {
+    "name": "e2rf_wall_off_blue",
+    "mapTo": "e2rf_wall_off_blue",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/off_blue.color.dds",
+        "roughnessFactor": 0.12,
+        "metallicFactor": 0.55
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_off_green": {
+    "name": "e2rf_wall_off_green",
+    "mapTo": "e2rf_wall_off_green",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/off_green.color.dds",
+        "roughnessFactor": 0.12,
+        "metallicFactor": 0.55
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_off_grey": {
+    "name": "e2rf_wall_off_grey",
+    "mapTo": "e2rf_wall_off_grey",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/off_grey.color.dds",
+        "roughnessFactor": 0.12,
+        "metallicFactor": 0.55
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_off_ribbon": {
+    "name": "e2rf_wall_off_ribbon",
+    "mapTo": "e2rf_wall_off_ribbon",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/off_ribbon.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_off_ribbon_dark": {
+    "name": "e2rf_wall_off_ribbon_dark",
+    "mapTo": "e2rf_wall_off_ribbon_dark",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/off_ribbon_dark.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_shop_dark": {
+    "name": "e2rf_wall_shop_dark",
+    "mapTo": "e2rf_wall_shop_dark",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/shop_dark.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_shop_red": {
+    "name": "e2rf_wall_shop_red",
+    "mapTo": "e2rf_wall_shop_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/shop_red.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_shop_green": {
+    "name": "e2rf_wall_shop_green",
+    "mapTo": "e2rf_wall_shop_green",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/shop_green.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_shop_blue": {
+    "name": "e2rf_wall_shop_blue",
+    "mapTo": "e2rf_wall_shop_blue",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/shop_blue.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_sil": {
+    "name": "e2rf_wall_brk_d_sil",
+    "mapTo": "e2rf_wall_brk_d_sil",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_sil.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_sil.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_red": {
+    "name": "e2rf_wall_brk_d_red",
+    "mapTo": "e2rf_wall_brk_d_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_red.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_red.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_old": {
+    "name": "e2rf_wall_brk_d_old",
+    "mapTo": "e2rf_wall_brk_d_old",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_old.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_old.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_new": {
+    "name": "e2rf_wall_brk_d_new",
+    "mapTo": "e2rf_wall_brk_d_new",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_new.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_new.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_stock": {
+    "name": "e2rf_wall_brk_d_stock",
+    "mapTo": "e2rf_wall_brk_d_stock",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_stock.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_stock.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_vic": {
+    "name": "e2rf_wall_brk_d_vic",
+    "mapTo": "e2rf_wall_brk_d_vic",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_vic.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_vic.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_dark": {
+    "name": "e2rf_wall_brk_d_dark",
+    "mapTo": "e2rf_wall_brk_d_dark",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_dark.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_dark.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_dash": {
+    "name": "e2rf_wall_pls_d_dash",
+    "mapTo": "e2rf_wall_pls_d_dash",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_dash.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_dash.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_stalin": {
+    "name": "e2rf_wall_pls_d_stalin",
+    "mapTo": "e2rf_wall_pls_d_stalin",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_stalin.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_stalin.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_stalin_red": {
+    "name": "e2rf_wall_pls_d_stalin_red",
+    "mapTo": "e2rf_wall_pls_d_stalin_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_stalin_red.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_stalin_red.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_aged": {
+    "name": "e2rf_wall_pls_d_aged",
+    "mapTo": "e2rf_wall_pls_d_aged",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_aged.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_aged.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_flake": {
+    "name": "e2rf_wall_pls_d_flake",
+    "mapTo": "e2rf_wall_pls_d_flake",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_flake.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_flake.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_new": {
+    "name": "e2rf_wall_pls_d_new",
+    "mapTo": "e2rf_wall_pls_d_new",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_new.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_new.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_euro": {
+    "name": "e2rf_wall_pls_d_euro",
+    "mapTo": "e2rf_wall_pls_d_euro",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_euro.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_euro.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_euro_warm": {
+    "name": "e2rf_wall_pls_d_euro_warm",
+    "mapTo": "e2rf_wall_pls_d_euro_warm",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_euro_warm.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_euro_warm.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_ashlar": {
+    "name": "e2rf_wall_pls_d_ashlar",
+    "mapTo": "e2rf_wall_pls_d_ashlar",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_ashlar.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_ashlar.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_shutter": {
+    "name": "e2rf_wall_pls_d_shutter",
+    "mapTo": "e2rf_wall_pls_d_shutter",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_shutter.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_shutter.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_white": {
+    "name": "e2rf_wall_pls_d_white",
+    "mapTo": "e2rf_wall_pls_d_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_white.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_white.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_sand": {
+    "name": "e2rf_wall_pls_d_sand",
+    "mapTo": "e2rf_wall_pls_d_sand",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_sand.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_sand.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_adobe": {
+    "name": "e2rf_wall_pls_d_adobe",
+    "mapTo": "e2rf_wall_pls_d_adobe",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_adobe.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_adobe.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_tile": {
+    "name": "e2rf_wall_pls_d_tile",
+    "mapTo": "e2rf_wall_pls_d_tile",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_tile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_tile.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_stain": {
+    "name": "e2rf_wall_pls_d_stain",
+    "mapTo": "e2rf_wall_pls_d_stain",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_stain.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_stain.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_blue": {
+    "name": "e2rf_wall_pls_d_blue",
+    "mapTo": "e2rf_wall_pls_d_blue",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_blue.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_blue.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_pink": {
+    "name": "e2rf_wall_pls_d_pink",
+    "mapTo": "e2rf_wall_pls_d_pink",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_pink.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_pink.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_patch_grey": {
+    "name": "e2rf_wall_pnl_patch_grey",
+    "mapTo": "e2rf_wall_pnl_patch_grey",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_patch_grey.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_patch_beige": {
+    "name": "e2rf_wall_pnl_patch_beige",
+    "mapTo": "e2rf_wall_pnl_patch_beige",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_patch_beige.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_patch_white": {
+    "name": "e2rf_wall_pnl_patch_white",
+    "mapTo": "e2rf_wall_pnl_patch_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_patch_white.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_grey_end": {
+    "name": "e2rf_wall_pnl_grey_end",
+    "mapTo": "e2rf_wall_pnl_grey_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_grey_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_beige_end": {
+    "name": "e2rf_wall_pnl_beige_end",
+    "mapTo": "e2rf_wall_pnl_beige_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_beige_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_pink_end": {
+    "name": "e2rf_wall_pnl_pink_end",
+    "mapTo": "e2rf_wall_pnl_pink_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_pink_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_blue_end": {
+    "name": "e2rf_wall_pnl_blue_end",
+    "mapTo": "e2rf_wall_pnl_blue_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_blue_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_white_end": {
+    "name": "e2rf_wall_pnl_white_end",
+    "mapTo": "e2rf_wall_pnl_white_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_white_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_lgg_cream_end": {
+    "name": "e2rf_wall_lgg_cream_end",
+    "mapTo": "e2rf_wall_lgg_cream_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/lgg_cream_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_lgg_grey_end": {
+    "name": "e2rf_wall_lgg_grey_end",
+    "mapTo": "e2rf_wall_lgg_grey_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/lgg_grey_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_lgg_pink_end": {
+    "name": "e2rf_wall_lgg_pink_end",
+    "mapTo": "e2rf_wall_lgg_pink_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/lgg_pink_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_red_end": {
+    "name": "e2rf_wall_brk_red_end",
+    "mapTo": "e2rf_wall_brk_red_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_red_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_red_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_white_end": {
+    "name": "e2rf_wall_brk_white_end",
+    "mapTo": "e2rf_wall_brk_white_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_white_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_white_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_sil_end": {
+    "name": "e2rf_wall_brk_d_sil_end",
+    "mapTo": "e2rf_wall_brk_d_sil_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_sil_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_sil_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_red_end": {
+    "name": "e2rf_wall_brk_d_red_end",
+    "mapTo": "e2rf_wall_brk_d_red_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_red_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_red_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_old_end": {
+    "name": "e2rf_wall_brk_d_old_end",
+    "mapTo": "e2rf_wall_brk_d_old_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_old_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_old_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_new_end": {
+    "name": "e2rf_wall_brk_d_new_end",
+    "mapTo": "e2rf_wall_brk_d_new_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_new_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_new_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_stock_end": {
+    "name": "e2rf_wall_brk_d_stock_end",
+    "mapTo": "e2rf_wall_brk_d_stock_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_stock_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_stock_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_vic_end": {
+    "name": "e2rf_wall_brk_d_vic_end",
+    "mapTo": "e2rf_wall_brk_d_vic_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_vic_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_vic_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_dark_end": {
+    "name": "e2rf_wall_brk_d_dark_end",
+    "mapTo": "e2rf_wall_brk_d_dark_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_dark_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_dark_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_patch_grey_end": {
+    "name": "e2rf_wall_pnl_patch_grey_end",
+    "mapTo": "e2rf_wall_pnl_patch_grey_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_patch_grey_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_patch_beige_end": {
+    "name": "e2rf_wall_pnl_patch_beige_end",
+    "mapTo": "e2rf_wall_pnl_patch_beige_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_patch_beige_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pnl_patch_white_end": {
+    "name": "e2rf_wall_pnl_patch_white_end",
+    "mapTo": "e2rf_wall_pnl_patch_white_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pnl_patch_white_end.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_parapet": {
+    "name": "e2rf_parapet",
+    "mapTo": "e2rf_parapet",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_b.color.dds",
+        "normalMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_roof_tile": {
+    "name": "e2rf_roof_tile",
+    "mapTo": "e2rf_roof_tile",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_b.color.dds",
+        "normalMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_r.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_metal": {
+    "name": "e2rf_roof_metal",
+    "mapTo": "e2rf_roof_metal",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_b.color.dds",
+        "normalMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_nm.normal.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_sheet": {
+    "name": "e2rf_roof_sheet",
+    "mapTo": "e2rf_roof_sheet",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/corrugation/t_corrugation_b.color.dds",
+        "normalMap": "/assets/materials/tileable/metal/corrugation/t_corrugation_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/metal/corrugation/t_corrugation_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/metal/corrugation/t_corrugation_ao.data.dds",
+        "baseColorFactor": [
+          0.739,
+          0.739,
+          0.702,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "e2rFallback": {
+      "name": "e2rf_roof_sheet",
+      "mapTo": "e2rf_roof_sheet",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": true,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_b.color.dds",
+          "normalMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_nm.normal.dds",
+          "ambientOcclusionMap": "/assets/materials/tileable/metal/corrugated_modern/t_metal_corrugated_01_ao.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_roof_mtile_red": {
+    "name": "e2rf_roof_mtile_red",
+    "mapTo": "e2rf_roof_mtile_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_b.color.dds",
+        "normalMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_ao.data.dds",
+        "baseColorFactor": [
+          0.706,
+          0.259,
+          0.223,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "e2rFallback": {
+      "name": "e2rf_roof_mtile_red",
+      "mapTo": "e2rf_roof_mtile_red",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": true,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_b.color.dds",
+          "normalMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_r.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_roof_mtile_brown": {
+    "name": "e2rf_roof_mtile_brown",
+    "mapTo": "e2rf_roof_mtile_brown",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_b.color.dds",
+        "normalMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_ao.data.dds",
+        "baseColorFactor": [
+          0.476,
+          0.344,
+          0.307,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "e2rFallback": {
+      "name": "e2rf_roof_mtile_brown",
+      "mapTo": "e2rf_roof_mtile_brown",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": true,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_b.color.dds",
+          "normalMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_r.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_roof_mtile_green": {
+    "name": "e2rf_roof_mtile_green",
+    "mapTo": "e2rf_roof_mtile_green",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_b.color.dds",
+        "normalMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/roofing/m_roof_slates_ochre/t_roof_slates_ochre_ao.data.dds",
+        "baseColorFactor": [
+          0.223,
+          0.464,
+          0.356,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "e2rFallback": {
+      "name": "e2rf_roof_mtile_green",
+      "mapTo": "e2rf_roof_mtile_green",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": true,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_b.color.dds",
+          "normalMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/roofing/t_italy_bld_roof_tiles/t_italy_bld_roof_tiles_r.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_door_garage": {
+    "name": "e2rf_door_garage",
+    "mapTo": "e2rf_door_garage",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/t_italy_bld_rollupdoor/t_italy_bld_rollupdoor_b.color.dds",
+        "normalMap": "/assets/materials/tileable/metal/t_italy_bld_rollupdoor/t_italy_bld_rollupdoor_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/metal/t_italy_bld_rollupdoor/t_italy_bld_rollupdoor_r.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_door_garage",
+      "mapTo": "e2rf_door_garage",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_b.color.dds",
+          "normalMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_r.data.dds",
+          "ambientOcclusionMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_ao.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_door_rust": {
+    "name": "e2rf_door_rust",
+    "mapTo": "e2rf_door_rust",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/WareHouse_door/Warehouse_door_d.dds",
+        "normalMap": "/assets/materials/tileable/metal/WareHouse_door/Warehouse_door_n.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_door_rust",
+      "mapTo": "e2rf_door_rust",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_b.color.dds",
+          "normalMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_r.data.dds",
+          "ambientOcclusionMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_ao.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_clad_metal": {
+    "name": "e2rf_clad_metal",
+    "mapTo": "e2rf_clad_metal",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_b.color.dds",
+        "normalMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_ao.data.dds",
+        "baseColorFactor": [
+          0.822,
+          0.849,
+          0.877,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_clad_metal",
+      "mapTo": "e2rf_clad_metal",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_b.color.dds",
+          "normalMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_r.data.dds",
+          "ambientOcclusionMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_ao.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_clad_tin": {
+    "name": "e2rf_clad_tin",
+    "mapTo": "e2rf_clad_tin",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/m_corrugated_tin_v1/t_corrugated_tin_v1_b.color.dds",
+        "normalMap": "/assets/materials/tileable/metal/m_corrugated_tin_v1/t_corrugated_tin_v1_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/metal/m_corrugated_tin_v1/t_corrugated_tin_v1_r.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_clad_tin",
+      "mapTo": "e2rf_clad_tin",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_b.color.dds",
+          "normalMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_r.data.dds",
+          "ambientOcclusionMap": "/assets/materials/tileable/brick/ind_blockwall/t_concrete_cinderblock_01_ao.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_plinth": {
+    "name": "e2rf_plinth",
+    "mapTo": "e2rf_plinth",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/concrete/concrete_painted/t_concrete_painted_b.color.dds",
+        "normalMap": "/assets/materials/tileable/concrete/concrete_painted/t_concrete_painted_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/concrete/concrete_painted/t_concrete_painted_r.data.dds",
+        "baseColorFactor": [
+          0.546,
+          0.533,
+          0.504,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_plinth",
+      "mapTo": "e2rf_plinth",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_b.color.dds",
+          "normalMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_r.data.dds",
+          "ambientOcclusionMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_ao.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_gable": {
+    "name": "e2rf_gable",
+    "mapTo": "e2rf_gable",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/wood/weatherboards/t_weatherboards_b.color.dds",
+        "normalMap": "/assets/materials/tileable/wood/weatherboards/t_weatherboards_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/wood/weatherboards/t_weatherboards_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/wood/weatherboards/t_weatherboards_ao.data.dds",
+        "baseColorFactor": [
+          0.719,
+          0.672,
+          0.601,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_gable",
+      "mapTo": "e2rf_gable",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.58,
+            0.52,
+            0.44,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_white": {
+    "name": "e2rf_hw_white",
+    "mapTo": "e2rf_hw_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_b.color.dds",
+        "normalMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_ao.data.dds",
+        "baseColorFactor": [
+          0.977,
+          0.968,
+          0.935,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_white",
+      "mapTo": "e2rf_hw_white",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.86,
+            0.85,
+            0.82,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_yellow": {
+    "name": "e2rf_hw_yellow",
+    "mapTo": "e2rf_hw_yellow",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_b.color.dds",
+        "normalMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_ao.data.dds",
+        "baseColorFactor": [
+          0.935,
+          0.812,
+          0.515,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_yellow",
+      "mapTo": "e2rf_hw_yellow",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.78,
+            0.66,
+            0.38,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_blue": {
+    "name": "e2rf_hw_blue",
+    "mapTo": "e2rf_hw_blue",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_b.color.dds",
+        "normalMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_ao.data.dds",
+        "baseColorFactor": [
+          0.704,
+          0.812,
+          0.894,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_blue",
+      "mapTo": "e2rf_hw_blue",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.55,
+            0.64,
+            0.72,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_green": {
+    "name": "e2rf_hw_green",
+    "mapTo": "e2rf_hw_green",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_b.color.dds",
+        "normalMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_ao.data.dds",
+        "baseColorFactor": [
+          0.754,
+          0.853,
+          0.696,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_green",
+      "mapTo": "e2rf_hw_green",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.6,
+            0.7,
+            0.55,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_pink": {
+    "name": "e2rf_hw_pink",
+    "mapTo": "e2rf_hw_pink",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_b.color.dds",
+        "normalMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/plaster/stucco1_white/t_stucco1_white_ao.data.dds",
+        "baseColorFactor": [
+          0.935,
+          0.795,
+          0.754,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_pink",
+      "mapTo": "e2rf_hw_pink",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.78,
+            0.64,
+            0.6,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_aged": {
+    "name": "e2rf_hw_aged",
+    "mapTo": "e2rf_hw_aged",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/plaster/m_worn_brushed_plaster/t_worn_brushed_plaster_b.color.dds",
+        "normalMap": "/assets/materials/tileable/plaster/m_worn_brushed_plaster/t_worn_brushed_plaster_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/plaster/m_worn_brushed_plaster/t_worn_brushed_plaster_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/plaster/m_worn_brushed_plaster/t_worn_brushed_plaster_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_aged",
+      "mapTo": "e2rf_hw_aged",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.6,
+            0.57,
+            0.48,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_brick_red": {
+    "name": "e2rf_hw_brick_red",
+    "mapTo": "e2rf_hw_brick_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/brick/brick_plain/t_brick_plain_b.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_brick_red",
+      "mapTo": "e2rf_hw_brick_red",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.55,
+            0.32,
+            0.26,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_silicate": {
+    "name": "e2rf_hw_silicate",
+    "mapTo": "e2rf_hw_silicate",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/brick/brick_painted/t_brick_painted_b.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_ao.data.dds",
+        "baseColorFactor": [
+          0.891,
+          0.875,
+          0.827,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_silicate",
+      "mapTo": "e2rf_hw_silicate",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.82,
+            0.8,
+            0.76,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_siding": {
+    "name": "e2rf_hw_siding",
+    "mapTo": "e2rf_hw_siding",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/wood/eca_bld_woodcladding_new/eca_bld_woodcladding_new_d.dds",
+        "normalMap": "/assets/materials/tileable/wood/eca_bld_woodcladding_new/eca_bld_woodcladding_new_n.dds",
+        "baseColorFactor": [
+          1.0,
+          0.973,
+          0.846,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_siding",
+      "mapTo": "e2rf_hw_siding",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.72,
+            0.68,
+            0.58,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_wood": {
+    "name": "e2rf_hw_wood",
+    "mapTo": "e2rf_hw_wood",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/wood/ut_bld_wood_old/t_ut_bld_wood_old_b.color.dds",
+        "normalMap": "/assets/materials/tileable/wood/ut_bld_wood_old/t_ut_bld_wood_old_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/wood/ut_bld_wood_old/t_ut_bld_wood_old_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/wood/ut_bld_wood_old/t_ut_bld_wood_old_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_wood",
+      "mapTo": "e2rf_hw_wood",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.36,
+            0.3,
+            0.24,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_oldbrick": {
+    "name": "e2rf_hw_oldbrick",
+    "mapTo": "e2rf_hw_oldbrick",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/brick/t_italy_bld_old_bricks/t_italy_bld_old_bricks_b.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/t_italy_bld_old_bricks/t_italy_bld_old_bricks_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/brick/t_italy_bld_old_bricks/t_italy_bld_old_bricks_r.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_oldbrick",
+      "mapTo": "e2rf_hw_oldbrick",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.48,
+            0.28,
+            0.22,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_flatbrick": {
+    "name": "e2rf_hw_flatbrick",
+    "mapTo": "e2rf_hw_flatbrick",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/brick/t_italy_bld_big_flat_bricks/t_italy_bld_big_flat_bricks_b.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/t_italy_bld_big_flat_bricks/t_italy_bld_big_flat_bricks_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/brick/t_italy_bld_big_flat_bricks/t_italy_bld_big_flat_bricks_r.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_flatbrick",
+      "mapTo": "e2rf_hw_flatbrick",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.62,
+            0.4,
+            0.32,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_stone": {
+    "name": "e2rf_hw_stone",
+    "mapTo": "e2rf_hw_stone",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/brick/stone_brick_irregular/t_stone_brick_irregular_b.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/stone_brick_irregular/t_stone_brick_irregular_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/brick/stone_brick_irregular/t_stone_brick_irregular_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/brick/stone_brick_irregular/t_stone_brick_irregular_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_stone",
+      "mapTo": "e2rf_hw_stone",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.62,
+            0.6,
+            0.56,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_hw_boards": {
+    "name": "e2rf_hw_boards",
+    "mapTo": "e2rf_hw_boards",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/wood/weatherboards/t_weatherboards_b.color.dds",
+        "normalMap": "/assets/materials/tileable/wood/weatherboards/t_weatherboards_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/wood/weatherboards/t_weatherboards_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/wood/weatherboards/t_weatherboards_ao.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_hw_boards",
+      "mapTo": "e2rf_hw_boards",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.72,
+            0.64,
+            0.5,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_win_pvc": {
+    "name": "e2rf_win_pvc",
+    "mapTo": "e2rf_win_pvc",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GLASS",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/trim/plastic/windows_doors/t_windows_doors_b.color.dds",
+        "normalMap": "/assets/materials/trim/plastic/windows_doors/t_windows_doors_nm.normal.dds",
+        "roughnessMap": "/assets/materials/trim/plastic/windows_doors/t_windows_doors_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/trim/plastic/windows_doors/t_windows_doors_ao.data.dds",
+        "roughnessFactor": 0.08,
+        "metallicFactor": 0.15,
+        "clearCoatFactor": 1.0,
+        "clearCoatRoughnessFactor": 0.05
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_win_pvc",
+      "mapTo": "e2rf_win_pvc",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "GLASS",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.26,
+            0.34,
+            0.42,
+            1
+          ],
+          "baseColorFactor": [
+            0.26,
+            0.34,
+            0.42,
+            1
+          ],
+          "roughnessFactor": 0.08,
+          "metallicFactor": 0.15,
+          "clearCoatFactor": 1.0,
+          "clearCoatRoughnessFactor": 0.05
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_win_wood": {
+    "name": "e2rf_win_wood",
+    "mapTo": "e2rf_win_wood",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GLASS",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/atlas/t_italy_bld_windows/t_italy_bld_windows_b.color.dds",
+        "normalMap": "/assets/materials/atlas/t_italy_bld_windows/t_italy_bld_windows_nm.normal.dds",
+        "roughnessMap": "/assets/materials/atlas/t_italy_bld_windows/t_italy_bld_windows_r.data.dds",
+        "roughnessFactor": 0.08,
+        "metallicFactor": 0.15,
+        "clearCoatFactor": 1.0,
+        "clearCoatRoughnessFactor": 0.05
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_win_wood",
+      "mapTo": "e2rf_win_wood",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "GLASS",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.25,
+            0.32,
+            0.38,
+            1
+          ],
+          "baseColorFactor": [
+            0.25,
+            0.32,
+            0.38,
+            1
+          ],
+          "roughnessFactor": 0.08,
+          "metallicFactor": 0.15,
+          "clearCoatFactor": 1.0,
+          "clearCoatRoughnessFactor": 0.05
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_door_house": {
+    "name": "e2rf_door_house",
+    "mapTo": "e2rf_door_house",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "WOOD",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/atlas/m_door/doors1_d.dds",
+        "normalMap": "/assets/materials/atlas/m_door/doors1_n.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_door_house",
+      "mapTo": "e2rf_door_house",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "WOOD",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.32,
+            0.24,
+            0.18,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_plinth_brown": {
+    "name": "e2rf_plinth_brown",
+    "mapTo": "e2rf_plinth_brown",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/concrete/concrete_painted/t_concrete_painted_b.color.dds",
+        "normalMap": "/assets/materials/tileable/concrete/concrete_painted/t_concrete_painted_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/concrete/concrete_painted/t_concrete_painted_r.data.dds",
+        "baseColorFactor": [
+          0.471,
+          0.287,
+          0.237,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_plinth_brown",
+      "mapTo": "e2rf_plinth_brown",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "baseColorMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_b.color.dds",
+          "normalMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_nm.normal.dds",
+          "roughnessMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_r.data.dds",
+          "ambientOcclusionMap": "/assets/materials/tileable/concrete/concrete_plain/t_concrete_plain_ao.data.dds"
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_chimney": {
+    "name": "e2rf_chimney",
+    "mapTo": "e2rf_chimney",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/brick/brick_plain/t_brick_plain_b.color.dds",
+        "normalMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/brick/brick_painted/t_brick_plain_ao.data.dds",
+        "baseColorFactor": [
+          0.86,
+          0.8,
+          0.76,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_chimney",
+      "mapTo": "e2rf_chimney",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ROCK",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.42,
+            0.24,
+            0.2,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_pipe": {
+    "name": "e2rf_pipe",
+    "mapTo": "e2rf_pipe",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "diffuseColor": [
+          0.5,
+          0.51,
+          0.52,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_glyphs": {
+    "name": "e2rf_glyphs",
+    "mapTo": "e2rf_glyphs",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/glyphs.color.dds",
+        "opacityMap": "/e2r_stream/fast-art/v10/real/glyphs_o.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "alphaTest": true,
+    "alphaRef": 110,
+    "castShadows": false
+  },
+  "e2rf_plate": {
+    "name": "e2rf_plate",
+    "mapTo": "e2rf_plate",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "diffuseColor": [
+          0.08,
+          0.18,
+          0.4,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_paint_red": {
+    "name": "e2rf_paint_red",
+    "mapTo": "e2rf_paint_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "diffuseColor": [
+          0.72,
+          0.1,
+          0.08,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_fascia": {
+    "name": "e2rf_fascia",
+    "mapTo": "e2rf_fascia",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "diffuseColor": [
+          0.11,
+          0.12,
+          0.13,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_manhole": {
+    "name": "e2rf_manhole",
+    "mapTo": "e2rf_manhole",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/baked_props/italy_ground_parts/t_manhole_01_decal_b.color.dds",
+        "normalMap": "/assets/materials/baked_props/italy_ground_parts/t_manhole_01_decal_nm.normal.dds",
+        "roughnessMap": "/assets/materials/baked_props/italy_ground_parts/t_manhole_01_decal_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/baked_props/italy_ground_parts/t_manhole_01_decal_ao.data.dds",
+        "opacityMap": "/assets/materials/baked_props/italy_ground_parts/t_manhole_01_decal_o.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "alphaTest": true,
+    "alphaRef": 77,
+    "castShadows": false,
+    "e2rFallback": {
+      "name": "e2rf_manhole",
+      "mapTo": "e2rf_manhole",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.42,
+            0.41,
+            0.4,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_drain": {
+    "name": "e2rf_drain",
+    "mapTo": "e2rf_drain",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/decalroad/detail/m_metal_grid_drain/t_metal_grid_drain_b.color.dds",
+        "normalMap": "/assets/materials/decalroad/detail/m_metal_grid_drain/t_metal_grid_drain_nm.normal.dds",
+        "roughnessMap": "/assets/materials/decalroad/detail/m_metal_grid_drain/t_metal_grid_drain_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/decalroad/detail/m_metal_grid_drain/t_metal_grid_drain_ao.data.dds",
+        "opacityMap": "/assets/materials/decalroad/detail/m_metal_grid_drain/t_metal_grid_drain_o.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "alphaTest": true,
+    "alphaRef": 77,
+    "castShadows": false,
+    "e2rFallback": {
+      "name": "e2rf_drain",
+      "mapTo": "e2rf_drain",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.3,
+            0.29,
+            0.28,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_patch": {
+    "name": "e2rf_patch",
+    "mapTo": "e2rf_patch",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/decalroad/asphalt/road_patches1/t_asphalt_patchstrip_b.color.dds",
+        "opacityMap": "/assets/materials/decalroad/asphalt/road_patches1/t_asphalt_patchstrip_o.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "alphaTest": true,
+    "alphaRef": 77,
+    "castShadows": false,
+    "e2rFallback": {
+      "name": "e2rf_patch",
+      "mapTo": "e2rf_patch",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "ASPHALT",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.17,
+            0.17,
+            0.18,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_ac_unit": {
+    "name": "e2rf_ac_unit",
+    "mapTo": "e2rf_ac_unit",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_b.color.dds",
+        "normalMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_ao.data.dds",
+        "baseColorFactor": [
+          0.997,
+          0.997,
+          0.969,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_ac_unit",
+      "mapTo": "e2rf_ac_unit",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.84,
+            0.84,
+            0.82,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_dish": {
+    "name": "e2rf_dish",
+    "mapTo": "e2rf_dish",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_b.color.dds",
+        "normalMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tileable/metal/m_metal_wall_corrugate/t_metal_wall_corrugated_ao.data.dds",
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false,
+    "e2rFallback": {
+      "name": "e2rf_dish",
+      "mapTo": "e2rf_dish",
+      "class": "Material",
+      "version": 1.5,
+      "groundType": "METAL",
+      "doubleSided": false,
+      "Stages": [
+        {
+          "diffuseColor": [
+            0.86,
+            0.86,
+            0.85,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ]
+    }
+  },
+  "e2rf_footway": {
+    "name": "e2rf_footway",
+    "mapTo": "e2rf_footway",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/paving.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/paving.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_footway_asphalt": {
+    "name": "e2rf_footway_asphalt",
+    "mapTo": "e2rf_footway_asphalt",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/road_base.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/road_base.normal.dds",
+        "roughnessMap": "/e2r_stream/fast-art/v10/real/road_base.data.dds",
+        "ambientOcclusionMap": "/e2r_stream/fast-art/v10/real/road_base_ao.data.dds",
+        "detailScale": [
+          15.0,
+          15.0
+        ],
+        "detailNormalMapStrength": 1.0,
+        "detailRoughnessMapStrength": 0.15,
+        "detailMap": "/e2r_stream/fast-art/v10/real/road_city_dc.data.dds",
+        "detailBaseColorMapStrength": 0.08,
+        "detailNormalMap": "/e2r_stream/fast-art/v10/real/road_city_dn.normal.dds",
+        "roughnessDetailMap": "/e2r_stream/fast-art/v10/real/road_city_dr.data.dds",
+        "baseColorFactor": [
+          0.865,
+          0.865,
+          0.856,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_trodden": {
+    "name": "e2rf_trodden",
+    "mapTo": "e2rf_trodden",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/trodden.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/trodden.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_fence_wall": {
+    "name": "e2rf_fence_wall",
+    "mapTo": "e2rf_fence_wall",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/fence_po2.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_fence_mesh": {
+    "name": "e2rf_fence_mesh",
+    "mapTo": "e2rf_fence_mesh",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tileable/metal/chainlink/t_chainlink_fence_b.color.dds",
+        "normalMap": "/assets/materials/tileable/metal/chainlink/t_chainlink_fence_nm.normal.dds",
+        "opacityMap": "/e2r_stream/fast-art/v10/real/chainlink_o.data.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "alphaTest": true,
+    "alphaRef": 30,
+    "castShadows": false
+  },
+  "e2rf_car": {
+    "name": "e2rf_car",
+    "mapTo": "e2rf_car",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/cars.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_yard": {
+    "name": "e2rf_yard",
+    "mapTo": "e2rf_yard",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/yard.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_brand_sign": {
+    "name": "e2rf_brand_sign",
+    "mapTo": "e2rf_brand_sign",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brand_sign.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_brand_photo": {
+    "name": "e2rf_brand_photo",
+    "mapTo": "e2rf_brand_photo",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brand_photo.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_storefront": {
+    "name": "e2rf_storefront",
+    "mapTo": "e2rf_storefront",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/storefront.color.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wire": {
+    "name": "e2rf_wire",
+    "mapTo": "e2rf_wire",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "diffuseColor": [
+          0.05,
+          0.05,
+          0.05,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "castShadows": false
+  },
+  "e2rf_roof_gold": {
+    "name": "e2rf_roof_gold",
+    "mapTo": "e2rf_roof_gold",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "diffuseColor": [
+          0.83,
+          0.66,
+          0.22,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_railing_blue": {
+    "name": "e2rf_railing_blue",
+    "mapTo": "e2rf_railing_blue",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/railing.color.dds",
+        "opacityMap": "/e2r_stream/fast-art/v10/real/railing_o.data.dds",
+        "baseColorFactor": [
+          0.20392156862745098,
+          0.3843137254901961,
+          0.5882352941176471,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "alphaTest": true,
+    "alphaRef": 60,
+    "castShadows": false
+  },
+  "e2rf_railing_green": {
+    "name": "e2rf_railing_green",
+    "mapTo": "e2rf_railing_green",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/railing.color.dds",
+        "opacityMap": "/e2r_stream/fast-art/v10/real/railing_o.data.dds",
+        "baseColorFactor": [
+          0.1803921568627451,
+          0.40784313725490196,
+          0.27450980392156865,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "alphaTest": true,
+    "alphaRef": 60,
+    "castShadows": false
+  },
+  "e2rf_railing_dark": {
+    "name": "e2rf_railing_dark",
+    "mapTo": "e2rf_railing_dark",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/railing.color.dds",
+        "opacityMap": "/e2r_stream/fast-art/v10/real/railing_o.data.dds",
+        "baseColorFactor": [
+          0.20392156862745098,
+          0.21176470588235294,
+          0.2196078431372549,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "alphaTest": true,
+    "alphaRef": 60,
+    "castShadows": false
+  },
+  "e2rf_sand": {
+    "name": "e2rf_sand",
+    "mapTo": "e2rf_sand",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "SAND",
+    "Stages": [
+      {
+        "diffuseColor": [
+          0.8,
+          0.71,
+          0.53,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_park": {
+    "name": "e2rf_park",
+    "mapTo": "e2rf_park",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_b.color.dds",
+        "normalMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_r.data.dds",
+        "roughnessFactor": 0.94,
+        "detailMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_b.dds",
+        "detailNormalMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_nm.dds",
+        "roughnessDetailMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_r.dds",
+        "detailScale": [
+          12.0,
+          12.0
+        ],
+        "detailBaseColorMapStrength": 0.55,
+        "detailNormalMapStrength": 1.0,
+        "detailRoughnessMapStrength": 0.4
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_meadow": {
+    "name": "e2rf_meadow",
+    "mapTo": "e2rf_meadow",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_b.color.dds",
+        "normalMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_r.data.dds",
+        "roughnessFactor": 0.94,
+        "detailMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_b.dds",
+        "detailNormalMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_nm.dds",
+        "roughnessDetailMap": "/assets/materials/terrain/grass/t_dirt_vegetation/t_dirt_vegetation_r.dds",
+        "detailScale": [
+          12.0,
+          12.0
+        ],
+        "detailBaseColorMapStrength": 0.38,
+        "detailNormalMapStrength": 1.0,
+        "detailRoughnessMapStrength": 0.4
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_farmland": {
+    "name": "e2rf_farmland",
+    "mapTo": "e2rf_farmland",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_farmland.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_farmland.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_orchard": {
+    "name": "e2rf_orchard",
+    "mapTo": "e2rf_orchard",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_ground.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_ground.normal.dds",
+        "roughnessFactor": 0.95,
+        "baseColorFactor": [
+          0.59,
+          0.72,
+          0.38,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_vineyard": {
+    "name": "e2rf_vineyard",
+    "mapTo": "e2rf_vineyard",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_b.color.dds",
+        "normalMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_ao.data.dds",
+        "baseColorFactor": [
+          0.7,
+          0.65,
+          0.46,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_scrub": {
+    "name": "e2rf_scrub",
+    "mapTo": "e2rf_scrub",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_ground.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_ground.normal.dds",
+        "roughnessFactor": 0.95,
+        "baseColorFactor": [
+          0.57,
+          0.64,
+          0.37,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_heath": {
+    "name": "e2rf_heath",
+    "mapTo": "e2rf_heath",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_ground.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_ground.normal.dds",
+        "roughnessFactor": 0.95,
+        "baseColorFactor": [
+          0.68,
+          0.62,
+          0.43,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_bare_rock": {
+    "name": "e2rf_bare_rock",
+    "mapTo": "e2rf_bare_rock",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_b.color.dds",
+        "normalMap": "/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_r.data.dds",
+        "baseColorFactor": [
+          0.87,
+          0.87,
+          0.84,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_scree": {
+    "name": "e2rf_scree",
+    "mapTo": "e2rf_scree",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRAVEL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/rock/terrain_dirt_rocky/t_dirt_rocky_b.color.dds",
+        "normalMap": "/assets/materials/terrain/rock/terrain_dirt_rocky/t_dirt_rocky_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/rock/terrain_dirt_rocky/t_dirt_rocky_r.data.dds",
+        "baseColorFactor": [
+          0.85,
+          0.82,
+          0.76,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_beach": {
+    "name": "e2rf_beach",
+    "mapTo": "e2rf_beach",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "SAND",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/sand/t_sand/t_sand_b.color.dds",
+        "normalMap": "/assets/materials/terrain/sand/t_sand/t_sand_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/sand/t_sand/t_sand_r.data.dds",
+        "baseColorFactor": [
+          1,
+          0.96,
+          0.85,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wetland": {
+    "name": "e2rf_wetland",
+    "mapTo": "e2rf_wetland",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "MUD",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_b.color.dds",
+        "normalMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_ao.data.dds",
+        "baseColorFactor": [
+          0.4,
+          0.44,
+          0.32,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_glacier": {
+    "name": "e2rf_glacier",
+    "mapTo": "e2rf_glacier",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "SNOW",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_glacier.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_glacier.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_bare_ground": {
+    "name": "e2rf_bare_ground",
+    "mapTo": "e2rf_bare_ground",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_b.color.dds",
+        "normalMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_ao.data.dds",
+        "baseColorFactor": [
+          0.86,
+          0.78,
+          0.62,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_road_worn": {
+    "name": "e2rf_road_worn",
+    "mapTo": "e2rf_road_worn",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/road_base.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/road_base.normal.dds",
+        "roughnessMap": "/e2r_stream/fast-art/v10/real/road_base.data.dds",
+        "ambientOcclusionMap": "/e2r_stream/fast-art/v10/real/road_base_ao.data.dds",
+        "detailScale": [
+          15.0,
+          15.0
+        ],
+        "detailNormalMapStrength": 1.0,
+        "detailRoughnessMapStrength": 0.15,
+        "detailMap": "/e2r_stream/fast-art/v10/real/road_worn_dc.data.dds",
+        "detailBaseColorMapStrength": 0.1,
+        "detailNormalMap": "/e2r_stream/fast-art/v10/real/road_worn_dn.normal.dds",
+        "roughnessDetailMap": "/e2r_stream/fast-art/v10/real/road_worn_dr.data.dds",
+        "baseColorFactor": [
+          1.0,
+          0.998,
+          0.951,
+          1
+        ],
+        "roughnessFactor": 0.96
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_road_gravel": {
+    "name": "e2rf_road_gravel",
+    "mapTo": "e2rf_road_gravel",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRAVEL",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/rock/terrain_dirt_rocky/t_dirt_rocky_b.color.dds",
+        "normalMap": "/assets/materials/terrain/rock/terrain_dirt_rocky/t_dirt_rocky_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/rock/terrain_dirt_rocky/t_dirt_rocky_r.data.dds",
+        "baseColorFactor": [
+          0.78,
+          0.74,
+          0.68,
+          1
+        ],
+        "roughnessFactor": 0.98
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_road_dirt": {
+    "name": "e2rf_road_dirt",
+    "mapTo": "e2rf_road_dirt",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_b.color.dds",
+        "normalMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_ao.data.dds",
+        "baseColorFactor": [
+          0.7,
+          0.58,
+          0.4,
+          1
+        ],
+        "roughnessFactor": 0.98
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_road_broken": {
+    "name": "e2rf_road_broken",
+    "mapTo": "e2rf_road_broken",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_b.color.dds",
+        "normalMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_nm.normal.dds",
+        "roughnessMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/terrain/soil/dirt_crumbly/t_dirt_crumbly_ao.data.dds",
+        "baseColorFactor": [
+          0.58,
+          0.52,
+          0.36,
+          1
+        ],
+        "roughnessFactor": 0.98
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_road_track": {
+    "name": "e2rf_road_track",
+    "mapTo": "e2rf_road_track",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/terrain/grass/groundmesh_grass2/groundmesh_grass_b.color.dds",
+        "baseColorFactor": [
+          0.62,
+          0.68,
+          0.4,
+          1
+        ],
+        "roughnessFactor": 0.98
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_desert": {
+    "name": "e2rf_desert",
+    "mapTo": "e2rf_desert",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "DIRT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_desert.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_desert.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_dune": {
+    "name": "e2rf_dune",
+    "mapTo": "e2rf_dune",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "SAND",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_dune.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_dune.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_steppe": {
+    "name": "e2rf_steppe",
+    "mapTo": "e2rf_steppe",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_steppe.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_steppe.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_dry_grass": {
+    "name": "e2rf_dry_grass",
+    "mapTo": "e2rf_dry_grass",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_dry_grass.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_dry_grass.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_tundra": {
+    "name": "e2rf_tundra",
+    "mapTo": "e2rf_tundra",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRASS",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_tundra.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_tundra.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_alpine": {
+    "name": "e2rf_alpine",
+    "mapTo": "e2rf_alpine",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "GRAVEL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_alpine.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_alpine.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_snow": {
+    "name": "e2rf_snow",
+    "mapTo": "e2rf_snow",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "SNOW",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_snow.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_snow.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_snow_edge": {
+    "name": "e2rf_snow_edge",
+    "mapTo": "e2rf_snow_edge",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "SNOW",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/ground_snow_edge.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/ground_snow_edge.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_dash": {
+    "name": "e2rf_hw_dash",
+    "mapTo": "e2rf_hw_dash",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_dash.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_dash.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_dash_cream": {
+    "name": "e2rf_hw_dash_cream",
+    "mapTo": "e2rf_hw_dash_cream",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_dash.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_dash.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          0.993,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_flaking": {
+    "name": "e2rf_hw_flaking",
+    "mapTo": "e2rf_hw_flaking",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_flaking.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_flaking.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_flaking_yellow": {
+    "name": "e2rf_hw_flaking_yellow",
+    "mapTo": "e2rf_hw_flaking_yellow",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_flaking_yellow.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_flaking_yellow.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_render_white": {
+    "name": "e2rf_hw_render_white",
+    "mapTo": "e2rf_hw_render_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_render.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_render.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_render_ochre": {
+    "name": "e2rf_hw_render_ochre",
+    "mapTo": "e2rf_hw_render_ochre",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_render.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_render.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          0.974,
+          0.742,
+          0.473,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_render_terracotta": {
+    "name": "e2rf_hw_render_terracotta",
+    "mapTo": "e2rf_hw_render_terracotta",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_render.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_render.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          0.863,
+          0.529,
+          0.399,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_render_sand": {
+    "name": "e2rf_hw_render_sand",
+    "mapTo": "e2rf_hw_render_sand",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_render.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_render.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          0.9,
+          0.705,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_render_teal": {
+    "name": "e2rf_hw_render_teal",
+    "mapTo": "e2rf_hw_render_teal",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_render.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_render.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          0.501,
+          0.77,
+          0.77,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_render_pink": {
+    "name": "e2rf_hw_render_pink",
+    "mapTo": "e2rf_hw_render_pink",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_render.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_render.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          0.696,
+          0.64,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_adobe": {
+    "name": "e2rf_hw_adobe",
+    "mapTo": "e2rf_hw_adobe",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_adobe.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_adobe.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_block": {
+    "name": "e2rf_hw_block",
+    "mapTo": "e2rf_hw_block",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_block.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_block.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_ashlar": {
+    "name": "e2rf_hw_ashlar",
+    "mapTo": "e2rf_hw_ashlar",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_ashlar.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_ashlar.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_sandstone": {
+    "name": "e2rf_hw_sandstone",
+    "mapTo": "e2rf_hw_sandstone",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_sandstone.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_sandstone.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_fieldstone": {
+    "name": "e2rf_hw_fieldstone",
+    "mapTo": "e2rf_hw_fieldstone",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_fieldstone.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_fieldstone.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_clapboard_white": {
+    "name": "e2rf_hw_clapboard_white",
+    "mapTo": "e2rf_hw_clapboard_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_clapboard.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_clapboard.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_clapboard_blue": {
+    "name": "e2rf_hw_clapboard_blue",
+    "mapTo": "e2rf_hw_clapboard_blue",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_clapboard.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_clapboard.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          0.741,
+          0.867,
+          0.954,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_clapboard_yellow": {
+    "name": "e2rf_hw_clapboard_yellow",
+    "mapTo": "e2rf_hw_clapboard_yellow",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_clapboard.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_clapboard.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          0.983,
+          0.692,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_vinyl_white": {
+    "name": "e2rf_hw_vinyl_white",
+    "mapTo": "e2rf_hw_vinyl_white",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_vinyl.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_vinyl.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_vinyl_grey": {
+    "name": "e2rf_hw_vinyl_grey",
+    "mapTo": "e2rf_hw_vinyl_grey",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_vinyl.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_vinyl.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          0.828,
+          0.848,
+          0.838,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_vinyl_cream": {
+    "name": "e2rf_hw_vinyl_cream",
+    "mapTo": "e2rf_hw_vinyl_cream",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_vinyl.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_vinyl.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0,
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          0.838,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_falu": {
+    "name": "e2rf_hw_falu",
+    "mapTo": "e2rf_hw_falu",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_boards_red.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_boards_red.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_stock": {
+    "name": "e2rf_hw_stock",
+    "mapTo": "e2rf_hw_stock",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_stock.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_stock.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_brick_dark": {
+    "name": "e2rf_hw_brick_dark",
+    "mapTo": "e2rf_hw_brick_dark",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_brick_dark.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_brick_dark.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_clinker": {
+    "name": "e2rf_hw_clinker",
+    "mapTo": "e2rf_hw_clinker",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_clinker.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_clinker.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_tin": {
+    "name": "e2rf_hw_tin",
+    "mapTo": "e2rf_hw_tin",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_tin_rust.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_tin_rust.normal.dds",
+        "roughnessFactor": 0.72,
+        "metallicFactor": 0.4
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_hw_zinc": {
+    "name": "e2rf_hw_zinc",
+    "mapTo": "e2rf_hw_zinc",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_tin_zinc.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_tin_zinc.normal.dds",
+        "roughnessFactor": 0.55,
+        "metallicFactor": 0.6
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_roof_clay": {
+    "name": "e2rf_roof_clay",
+    "mapTo": "e2rf_roof_clay",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_clay.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_clay.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_pantile": {
+    "name": "e2rf_roof_pantile",
+    "mapTo": "e2rf_roof_pantile",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_pantile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_pantile.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_concrete": {
+    "name": "e2rf_roof_concrete",
+    "mapTo": "e2rf_roof_concrete",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_concrete.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_concrete.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_slate": {
+    "name": "e2rf_roof_slate",
+    "mapTo": "e2rf_roof_slate",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_slate.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_slate.normal.dds",
+        "roughnessFactor": 0.6,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_shingle": {
+    "name": "e2rf_roof_shingle",
+    "mapTo": "e2rf_roof_shingle",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_shingle.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_shingle.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_thatch": {
+    "name": "e2rf_roof_thatch",
+    "mapTo": "e2rf_roof_thatch",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_thatch.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_thatch.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_tin": {
+    "name": "e2rf_roof_tin",
+    "mapTo": "e2rf_roof_tin",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_tin.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_tin.normal.dds",
+        "roughnessFactor": 0.72,
+        "metallicFactor": 0.4
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_zinc": {
+    "name": "e2rf_roof_zinc",
+    "mapTo": "e2rf_roof_zinc",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_zinc.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_zinc.normal.dds",
+        "roughnessFactor": 0.55,
+        "metallicFactor": 0.6
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_prof_red": {
+    "name": "e2rf_roof_prof_red",
+    "mapTo": "e2rf_roof_prof_red",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_profile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_profile.normal.dds",
+        "roughnessFactor": 0.5,
+        "metallicFactor": 0.55,
+        "baseColorFactor": [
+          0.556,
+          0.197,
+          0.168,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_prof_green": {
+    "name": "e2rf_roof_prof_green",
+    "mapTo": "e2rf_roof_prof_green",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_profile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_profile.normal.dds",
+        "roughnessFactor": 0.5,
+        "metallicFactor": 0.55,
+        "baseColorFactor": [
+          0.207,
+          0.421,
+          0.314,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_prof_brown": {
+    "name": "e2rf_roof_prof_brown",
+    "mapTo": "e2rf_roof_prof_brown",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_profile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_profile.normal.dds",
+        "roughnessFactor": 0.5,
+        "metallicFactor": 0.55,
+        "baseColorFactor": [
+          0.372,
+          0.265,
+          0.236,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_roof_prof_grey": {
+    "name": "e2rf_roof_prof_grey",
+    "mapTo": "e2rf_roof_prof_grey",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_roof_profile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_roof_profile.normal.dds",
+        "roughnessFactor": 0.5,
+        "metallicFactor": 0.55,
+        "baseColorFactor": [
+          0.595,
+          0.615,
+          0.615,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_fence_prof_green": {
+    "name": "e2rf_fence_prof_green",
+    "mapTo": "e2rf_fence_prof_green",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_profile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_profile.normal.dds",
+        "roughnessFactor": 0.5,
+        "metallicFactor": 0.55,
+        "baseColorFactor": [
+          0.236,
+          0.479,
+          0.353,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_fence_prof_brown": {
+    "name": "e2rf_fence_prof_brown",
+    "mapTo": "e2rf_fence_prof_brown",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_profile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_profile.normal.dds",
+        "roughnessFactor": 0.5,
+        "metallicFactor": 0.55,
+        "baseColorFactor": [
+          0.459,
+          0.314,
+          0.256,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_fence_prof_grey": {
+    "name": "e2rf_fence_prof_grey",
+    "mapTo": "e2rf_fence_prof_grey",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "METAL",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_profile.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_profile.normal.dds",
+        "roughnessFactor": 0.5,
+        "metallicFactor": 0.55,
+        "baseColorFactor": [
+          0.692,
+          0.712,
+          0.712,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_fence_brick": {
+    "name": "e2rf_fence_brick",
+    "mapTo": "e2rf_fence_brick",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_brick_red.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_brick_red.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_fence_stone": {
+    "name": "e2rf_fence_stone",
+    "mapTo": "e2rf_fence_stone",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_fieldstone.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_fieldstone.normal.dds",
+        "roughnessFactor": 0.92,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true
+  },
+  "e2rf_fence_boards": {
+    "name": "e2rf_fence_boards",
+    "mapTo": "e2rf_fence_boards",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "WOOD",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/fence_boards.color.dds",
+        "opacityMap": "/e2r_stream/fast-art/v10/real/fence_boards_o.data.dds",
+        "roughnessFactor": 0.92
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": true,
+    "alphaTest": true,
+    "alphaRef": 60
+  },
+  "e2rf_road_sett": {
+    "name": "e2rf_road_sett",
+    "mapTo": "e2rf_road_sett",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ASPHALT",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/sh_setts.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/sh_setts.normal.dds",
+        "roughnessFactor": 0.8,
+        "metallicFactor": 0
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "Birch_Bark_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/birch/t_birch_bark/t_birch_bark_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/birch/t_birch_bark/t_birch_bark_b.color.png",
+        "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+        "detailScale": [
+          0.25,
+          2
+        ],
+        "normalMap": "/assets/materials/tree/birch/t_birch_bark/t_birch_bark_nm.normal.png",
+        "roughnessMap": "/assets/materials/tree/birch/t_birch_bark/t_birch_bark_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "annotation": "NATURE",
+    "class": "Material",
+    "groundType": "WOOD",
+    "mapTo": "Birch_Bark_01",
+    "materialTag0": "vegetation",
+    "name": "Birch_Bark_01",
+    "version": 1.5
+  },
+  "Birch_Branch_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/birch/t_birch_branch/t_birch_branch_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/birch/t_birch_branch/t_birch_branch_b.color.png",
+        "normalMap": "/assets/materials/tree/birch/t_birch_branch/t_birch_branch_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/birch/t_birch_branch/t_birch_branch_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/birch/t_birch_branch/t_birch_branch_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 60,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "WOOD",
+    "invertBackFaceNormals": true,
+    "mapTo": "Birch_Branch_01",
+    "materialTag0": "vegetation",
+    "name": "Birch_Branch_01",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "Moss_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/oak/t_moss/t_moss_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/oak/t_moss/t_moss_b.color.png",
+        "normalMap": "/assets/materials/tree/oak/t_moss/t_moss_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/oak/t_moss/t_moss_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/oak/t_moss/t_moss_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 139,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "GRASS",
+    "invertBackFaceNormals": true,
+    "mapTo": "Moss_01",
+    "materialTag0": "vegetation",
+    "name": "Moss_01",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "Oak_bark_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_bark/t_oak_bark_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/oak/t_oak_bark/t_oak_bark_b.color.png",
+        "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+        "normalMap": "/assets/materials/tree/oak/t_oak_bark/t_oak_bark_nm.normal.png",
+        "roughnessMap": "/assets/materials/tree/oak/t_oak_bark/t_oak_bark_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "annotation": "NATURE",
+    "class": "Material",
+    "groundType": "WOOD",
+    "mapTo": "Oak_bark_01",
+    "materialTag0": "vegetation",
+    "name": "Oak_bark_01",
+    "version": 1.5
+  },
+  "Oak_branch_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_branch_01/t_oak_branch_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/oak/t_oak_branch_01/t_oak_branch_b.color.png",
+        "normalMap": "/assets/materials/tree/oak/t_oak_branch_01/t_oak_branch_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/oak/t_oak_branch_01/t_oak_branch_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/oak/t_oak_branch_01/t_oak_branch_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 50,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "WOOD",
+    "invertBackFaceNormals": true,
+    "mapTo": "Oak_branch_01",
+    "materialTag0": "vegetation",
+    "name": "Oak_branch_01",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "Oak_branch_02": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_branch_02/t_oak_branch_02_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/oak/t_oak_branch_02/t_oak_branch_02_b.color.png",
+        "normalMap": "/assets/materials/tree/oak/t_oak_branch_02/t_oak_branch_02_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/oak/t_oak_branch_02/t_oak_branch_02_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/oak/t_oak_branch_02/t_oak_branch_02_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 75,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "WOOD",
+    "invertBackFaceNormals": true,
+    "mapTo": "Oak_branch_02",
+    "materialTag0": "vegetation",
+    "name": "Oak_branch_02",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "beech_blocker": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_b.color.png",
+        "normalMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 90,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "WOOD",
+    "invertBackFaceNormals": true,
+    "mapTo": "beech_blocker",
+    "materialTag0": "vegetation",
+    "name": "beech_blocker",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "beech_branch_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_b.color.png",
+        "normalMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 75,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "WOOD",
+    "invertBackFaceNormals": true,
+    "mapTo": "beech_branch_01",
+    "materialTag0": "vegetation",
+    "name": "beech_branch_01",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "beech_leaves": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_b.color.png",
+        "normalMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 105,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "LEAVES_THIN",
+    "invertBackFaceNormals": true,
+    "mapTo": "beech_leaves",
+    "materialTag0": "vegetation",
+    "name": "beech_leaves",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "beech_trunk": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_trunk/t_beech_bark_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/beech/t_beech_trunk/t_beech_bark_b.color.png",
+        "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+        "normalMap": "/assets/materials/tree/beech/t_beech_trunk/t_beech_bark_nm.normal.png",
+        "roughnessMap": "/assets/materials/tree/beech/t_beech_trunk/t_beech_bark_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 10,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "groundType": "WOOD",
+    "mapTo": "beech_trunk",
+    "materialTag0": "vegetation",
+    "name": "beech_trunk",
+    "version": 1.5
+  },
+  "leaves_strong": {
+    "Stages": [
+      {},
+      {},
+      {},
+      {}
+    ],
+    "annotation": "NATURE",
+    "class": "Material",
+    "groundType": "leaves_strong",
+    "mapTo": "leaves_strong",
+    "name": "leaves_strong",
+    "version": 1.5
+  },
+  "m_ind_beech_blocker": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_b.color.png",
+        "normalMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/beech/t_beech_blocker/t_beech_blocker_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 90,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "WOOD",
+    "invertBackFaceNormals": true,
+    "mapTo": "m_ind_beech_blocker",
+    "materialTag0": "vegetation",
+    "name": "m_ind_beech_blocker",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "m_ind_beech_leaves": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_b.color.png",
+        "normalMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 105,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "LEAVES_THIN",
+    "invertBackFaceNormals": true,
+    "mapTo": "m_ind_beech_leaves",
+    "materialTag0": "vegetation",
+    "name": "m_ind_beech_leaves",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "m_ind_birch_leaves_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/birch/t_birch_leaves_ind/t_birch_leaves_ind_b.color.png",
+        "normalMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 100,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "LEAVES_THIN",
+    "invertBackFaceNormals": true,
+    "mapTo": "m_ind_birch_leaves_01",
+    "materialTag0": "vegetation",
+    "name": "m_ind_birch_leaves_01",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "m_oak_leaves_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/oak/t_italy_oak_leaves/t_italy_oak_leaves_b.color.png",
+        "normalMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 110,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "LEAVES_THIN",
+    "invertBackFaceNormals": true,
+    "mapTo": "m_oak_leaves_01",
+    "materialTag0": "vegetation",
+    "name": "m_oak_leaves_01",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "m_oak_leaves_02": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/oak/t_italy_oak_leaves_02/t_italy_oak_leaves_02_b.color.png",
+        "normalMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 110,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "LEAVES_THIN",
+    "invertBackFaceNormals": true,
+    "mapTo": "m_oak_leaves_02",
+    "materialTag0": "vegetation",
+    "name": "m_oak_leaves_02",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "oak_leaves_01": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/oak/t_italy_oak_leaves/t_italy_oak_leaves_b.color.png",
+        "normalMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 110,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "LEAVES_THIN",
+    "invertBackFaceNormals": true,
+    "mapTo": "oak_leaves_01",
+    "materialTag0": "vegetation",
+    "name": "oak_leaves_01",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "oak_leaves_02": {
+    "Stages": [
+      {
+        "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_ao.data.png",
+        "baseColorMap": "/assets/materials/tree/oak/t_italy_oak_leaves_02/t_italy_oak_leaves_02_b.color.png",
+        "normalMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_nm.normal.png",
+        "opacityMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_o.data.png",
+        "pixelSpecular": true,
+        "roughnessMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_r.data.png"
+      },
+      {},
+      {},
+      {}
+    ],
+    "alphaRef": 110,
+    "alphaTest": true,
+    "annotation": "NATURE",
+    "class": "Material",
+    "doubleSided": true,
+    "groundType": "LEAVES_THIN",
+    "invertBackFaceNormals": true,
+    "mapTo": "oak_leaves_02",
+    "materialTag0": "vegetation",
+    "name": "oak_leaves_02",
+    "subSurface": true,
+    "subSurfaceIntensity": 1,
+    "translucentBlendOp": "None",
+    "version": 1.5
+  },
+  "leaves_thin": {
+    "Stages": [
+      {},
+      {},
+      {},
+      {}
+    ],
+    "annotation": "NATURE",
+    "class": "Material",
+    "groundType": "leaves_thin",
+    "mapTo": "leaves_thin",
+    "name": "leaves_thin",
+    "version": 1.5
+  },
+  "m_poplar_leaves_01": {
+    "name": "m_poplar_leaves_01",
+    "mapTo": "m_poplar_leaves_01",
+    "class": "Material",
+    "version": 1.5,
+    "alphaTest": true,
+    "alphaRef": 70,
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tree/poplar/t_poplar_leaves_01/t_poplar_leaves_b.color.dds",
+        "normalMap": "/assets/materials/tree/poplar/t_poplar_leaves_01/t_poplar_leaves_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tree/poplar/t_poplar_leaves_01/t_poplar_leaves_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tree/poplar/t_poplar_leaves_01/t_poplar_leaves_ao.data.dds",
+        "opacityMap": "/assets/materials/tree/poplar/t_poplar_leaves_01/t_poplar_leaves_o.data.dds",
+        "baseColorFactor": [
+          0.5,
+          0.8,
+          0.74,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ]
+  },
+  "m_poplar_leaves_02": {
+    "name": "m_poplar_leaves_02",
+    "mapTo": "m_poplar_leaves_02",
+    "class": "Material",
+    "version": 1.5,
+    "alphaTest": true,
+    "alphaRef": 70,
+    "Stages": [
+      {
+        "baseColorMap": "/assets/materials/tree/poplar/t_poplar_leaves_02/t_poplar_leaves_02_b.color.dds",
+        "normalMap": "/assets/materials/tree/poplar/t_poplar_leaves_02/t_poplar_leaves_02_nm.normal.dds",
+        "roughnessMap": "/assets/materials/tree/poplar/t_poplar_leaves_02/t_poplar_leaves_02_r.data.dds",
+        "ambientOcclusionMap": "/assets/materials/tree/poplar/t_poplar_leaves_02/t_poplar_leaves_02_ao.data.dds",
+        "opacityMap": "/assets/materials/tree/poplar/t_poplar_leaves_02/t_poplar_leaves_02_o.data.dds",
+        "baseColorFactor": [
+          0.5,
+          0.8,
+          0.74,
+          1
+        ]
+      },
+      {},
+      {},
+      {}
+    ]
+  }
+}

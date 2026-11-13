@@ -11,35 +11,49 @@ permissions:
 
 jobs:
   build:
-    name: Build & Release
+    name: Build & Release AroundWorldNG
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-fast.txt
           pip install pyinstaller
 
       - name: Build standalone executable with PyInstaller
         run: |
-          pyinstaller --noconfirm --onedir --name AroundWorldNG --add-data "ui;ui" --add-data "exporter/*.json;exporter" --collect-all scipy --collect-all shapely --collect-all PIL main.py
-          # Copy readme and requirements into dist folder
-          copy README.md dist\AroundWorldNG\
-          Compress-Archive -Path dist\AroundWorldNG\* -DestinationPath AroundWorldNG-Windows-x64.zip
+          pyinstaller -y AroundWorldNG.spec
+
+      - name: Package standalone distribution
+        run: |
+          Copy-Item -Path "mod" -Destination "dist\AroundWorldNG\mod" -Recurse
+          New-Item -ItemType Directory -Path "dist\AroundWorldNG\data\geofabrik" -Force
+          Copy-Item -Path "data\geofabrik\*" -Destination "dist\AroundWorldNG\data\geofabrik\" -Force
+          New-Item -ItemType Directory -Path "dist\AroundWorldNG\data\pbf" -Force
+          New-Item -ItemType Directory -Path "dist\AroundWorldNG\data\osm_tiles" -Force
+          Copy-Item -Path "README.md", "README.txt", "LICENSE", "THIRD_PARTY_NOTICES.md", "preview_detailing.png", "BUILD_INFO.json" -Destination "dist\AroundWorldNG\"
+          Set-Content -Path "dist\AroundWorldNG\country_setup.json" -Value '{\n "mods": "",\n "bookmarks": []\n}'
+          Compress-Archive -Path dist\AroundWorldNG\* -DestinationPath AroundWorldNG-Standalone-Win64.zip
+
+      - name: Package lightweight source distribution
+        run: |
+          Compress-Archive -Path AroundWorldNG.bat, Setup.bat, requirements-fast.txt, README.md, README.txt, LICENSE, THIRD_PARTY_NOTICES.md, BUILD_INFO.json, preview_detailing.png, aroundworldng, mod, data -DestinationPath AroundWorldNG-Source.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: AroundWorldNG-Windows-x64.zip
+          files: |
+            AroundWorldNG-Standalone-Win64.zip
+            AroundWorldNG-Source.zip
           generate_release_notes: true
           draft: false
           prerelease: false

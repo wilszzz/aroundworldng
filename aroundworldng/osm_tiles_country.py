@@ -1,0 +1,293 @@
+"""Cut a country .osm.pbf (Ukraine: 877 MB) into the static tile archive of earthng/osm_tiles.py.
+
+    C:/js/Earth2Road/.venv/Scripts/python.exe earthng/osm_tiles_country.py C:/js/Earth2Road/out/districts/.inputs/geofabrik/ukraine-260918.osm.pbf --out data/osm_tiles/ukraine-260918
+
+osm_tiles.cut keeps a tile bitmask per node: fine for an oblast (2725 tiles), not for the ~25 000
+tiles of a country. One extract (osm_extract_pbf.py) reads the whole country in ~6.5 min, so
+blocks are not cut from the country one by one either. Instead a tree: the country is extracted
+into groups of at most FANOUT blocks, each group into its blocks, and each block (BLOCK degrees,
+aligned to the cell grid) is cut by osm_tiles.cut with the block's buffered box as the package
+box. An extract of an extract selects the same data (every way touching the child box touches the
+parent box and is complete there), and a block's package box admits exactly its own cells, so the
+tiles equal those of one cut of the whole country.
+
+Resumable: a finished block leaves <work>/blocks/<bx>_<by>/index.json; extracts are deleted once
+their children are done. The final index.json lists every tile, as osm_tiles.cut writes it.
+"""
+import argparse
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import sys
+import time
+
+import osmium
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import osm_tiles  # noqa: E402
+import sysmem  # noqa: E402
+from sysmem import replace_dir  # noqa: E402
+from osm_tiles import BUFFER, CELL, SELECT  # noqa: E402
+
+FANOUT = 16
+RESERVE_GB = 3      # free memory a cut task needs before it starts (see main)
+
+
+def block_box(cells, package_box):
+    """Buffered box of a range of cells, clipped to the package (osm_tiles.coverage's rounding)."""
+    x0, y0, x1, y1 = cells
+    pw, ps, pe, pn = package_box
+    return [max(pw, round(x0 * CELL - BUFFER, 6)), max(ps, round(y0 * CELL - BUFFER, 6)),
+            min(pe, round(x1 * CELL + BUFFER, 6)), min(pn, round(y1 * CELL + BUFFER, 6))]
+
+
+def split(n, parts):
+    """n items into `parts` runs of near-equal length, as (start, stop)."""
+    edges = [round(i * n / parts) for i in range(parts + 1)]
+    return [(a, b) for a, b in zip(edges, edges[1:]) if b > a]
+
+
+def plan(package_box, block):
+    """Tree of extracts: {'box', 'blocks': [(bx, by)], 'children': [...]}; leaves are single blocks."""
+    step = round(block / CELL)
+    pw, ps, pe, pn = package_box
+    bx0, by0 = math.floor(pw / block), math.floor(ps / block)
+    bx1, by1 = math.floor(pe / block) + 1, math.floor(pn / block) + 1
+
+    def cells(bxa, bya, bxb, byb):
+        return bxa * step, bya * step, bxb * step, byb * step
+
+    def node(bxa, bya, bxb, byb):
+        out = {'box': block_box(cells(bxa, bya, bxb, byb), package_box),
+               'blocks': [(x, y) for x in range(bxa, bxb) for y in range(bya, byb)]}
+        nx, ny = bxb - bxa, byb - bya
+        if nx * ny == 1:
+            out['children'] = []
+        elif nx * ny <= FANOUT:
+            out['children'] = [node(x, y, x + 1, y + 1) for x in range(bxa, bxb) for y in range(bya, byb)]
+        else:
+            per = math.isqrt(FANOUT)
+            out['children'] = [node(bxa + a, bya + c, bxa + b, bya + d)
+                               for a, b in split(nx, math.ceil(nx / per)) for c, d in split(ny, math.ceil(ny / per))]
+        return out
+    return node(bx0, by0, bx1, by1)
+
+
+def name(n):
+    x0, y0 = min(n['blocks']); x1, y1 = max(n['blocks'])
+    return f'{x0}_{y0}' if (x0, y0) == (x1, y1) else f'{x0}_{y0}-{x1}_{y1}'
+
+
+def run_select(src, boxes, picks):
+    """One read of src picks the objects of every child box; each pick is pickled beside its
+    extract for run_write. A parent used to be read once per child (16 times for a block group)."""
+    import pickle
+    import osm_extract_pbf
+    for pick, path in zip(osm_extract_pbf.select(src, boxes), picks):
+        tmp = path.with_name(path.name + '.part')
+        with open(tmp, 'wb') as f:
+            pickle.dump(pick, f, protocol=pickle.HIGHEST_PROTOCOL)
+        tmp.replace(path)
+    return picks
+
+
+def run_write(src, dst, pick):
+    import pickle
+    import osm_extract_pbf
+    if not dst.exists():
+        with open(pick, 'rb') as f:
+            osm_extract_pbf.write(src, dst, pickle.load(f))
+    pick.unlink(missing_ok=True)
+    return dst
+
+
+def run_cut(src, block_dir, box):
+    """Cut one block; the per-block index.json is the done marker, written last."""
+    tmp = block_dir.with_name(block_dir.name + '.part')
+    if tmp.exists():
+        shutil.rmtree(tmp)
+    osm_tiles.cut(src, tmp, box)
+    replace_dir(tmp, block_dir)
+    return block_dir
+
+
+def assemble_blocks(blocks, destination):
+    """Keep completed blocks intact until the whole package is published.
+
+    Hardlinks cost no second copy on the usual same-volume workspace; fall back to
+    copying across volumes or on filesystems without links. A cancelled assembly
+    can discard destination and retry using the unchanged block caches.
+    """
+    tiles = {}
+    for block in blocks:
+        part = json.loads((block / 'index.json').read_text(encoding='utf8'))
+        for key, tile in part['tiles'].items():
+            if key in tiles:
+                raise ValueError(f'tile {key} in two blocks')
+            source, target = block / tile['file'], destination / tile['file']
+            try:
+                os.link(source, target)
+            except FileExistsError:
+                raise  # never overwrite a hardlink into another completed block
+            except OSError:
+                shutil.copyfile(source, target)
+            tiles[key] = tile
+    return dict(sorted(tiles.items()))
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    p.add_argument('pbf', type=Path)
+    p.add_argument('--out', type=Path, required=True, help='new directory: the tile archive')
+    p.add_argument('--work', type=Path, help='intermediate extracts and blocks (default <out>.work)')
+    p.add_argument('--block', type=float, default=1.5, help='block side in degrees, a multiple of the cell')
+    p.add_argument('--jobs', type=int, default=4)
+    p.add_argument('--heavy-jobs', type=int, default=0,
+                   help='tasks reading the whole source at once (default --jobs); the rest read a part of it')
+    p.add_argument('--package-box', type=float, nargs=4, metavar=('W', 'S', 'E', 'N'))
+    a = p.parse_args()
+    if a.out.exists():
+        raise SystemExit(f'{a.out} exists')
+    if abs(a.block / CELL - round(a.block / CELL)) > 1e-9:
+        raise SystemExit(f'--block must be a multiple of {CELL}')
+    t0 = time.monotonic()
+    box = osmium.io.Reader(str(a.pbf), osmium.osm.osm_entity_bits.NOTHING).header().box()
+    extract = [box.bottom_left.lon, box.bottom_left.lat, box.top_right.lon, box.top_right.lat] if box.valid() else None
+    package_box = extract if a.package_box is None else osm_tiles.source_box(a.package_box, extract)
+    if package_box is None:
+        raise SystemExit(f'{a.pbf} has no bounding box; pass --package-box')
+    work = a.work or a.out.with_name(a.out.name + '.work')
+    # blocks cut by older selection rules are not resumed (osm_select.VERSION)
+    marker = work / 'select.json'
+    if work.exists() and not (marker.is_file() and json.loads(marker.read_text(encoding='utf8')) == SELECT):
+        shutil.rmtree(work)
+    (work / 'blocks').mkdir(parents=True, exist_ok=True)
+    marker.write_text(json.dumps(SELECT), encoding='utf8')
+    (work / 'extracts').mkdir(exist_ok=True)
+    root = plan(package_box, a.block)
+
+    def leaves(n):
+        return [n] if not n['children'] else [l for c in n['children'] for l in leaves(c)]
+
+    def done(n):
+        return all((work / 'blocks' / name(l) / 'index.json').exists() for l in leaves(n))
+
+    total = len(leaves(root))
+    print(f'{total} blocks of {a.block} deg, package {package_box}', flush=True)
+    with ProcessPoolExecutor(a.jobs) as pool:
+        running = {}
+        # A task that reads the whole source (the first level: Ukraine, up to 4.4 GB each) waits
+        # for a heavy slot; group extracts and block cuts take about 1.5 GB and use every job.
+        heavy_jobs = max(1, min(a.jobs, a.heavy_jobs or a.jobs))
+        heavy, waiting = set(), []
+
+        def allowed(args):
+            if args[0] == a.pbf and len(heavy) >= heavy_jobs:
+                return False
+            # dense blocks (Kyiv) take more than the planned share: with 12 jobs Ukraine's cut
+            # once left no free memory. A task starts only with RESERVE_GB free, or alone.
+            return not running or sysmem.free_memory_gb() >= RESERVE_GB
+
+        def submit(fn, args, meta):
+            if waiting or not allowed(args):
+                waiting.append((fn, args, meta))
+                return
+            launch(fn, args, meta)
+
+        def launch(fn, args, meta):
+            f = pool.submit(fn, *args)
+            running[f] = meta
+            if args[0] == a.pbf:
+                heavy.add(f)
+
+        def drain():
+            while waiting and allowed(waiting[0][1]):
+                launch(*waiting.pop(0))
+
+        def start(n, src):
+            """n's data is in src: cut it (a block) or extract its children from it."""
+            if done(n):
+                return
+            if not n['children']:
+                submit(run_cut, (src, work / 'blocks' / name(n), n['box']), (n, src, 'cut'))
+            else:
+                todo = [c for c in n['children'] if not done(c)]
+                n['pending'] = len(todo)
+                fresh = []
+                for c in todo:
+                    dst = work / 'extracts' / f'{name(c)}.osm.pbf'
+                    if dst.exists():                  # a resumed run: this child is extracted already
+                        start(c, dst)
+                    else:
+                        fresh.append(c)
+                if fresh:
+                    picks = [work / 'extracts' / f'{name(c)}.pick' for c in fresh]
+                    submit(run_select, (src, [c['box'] for c in fresh], picks), (fresh, src, 'select'))
+                return
+            n['pending'] = sum(1 for c in n['children'] if not done(c))
+
+        parents = {}
+
+        def index_parents(n, src):
+            for c in n['children']:
+                parents[id(c)] = (n, src)
+                index_parents(c, work / 'extracts' / f'{name(c)}.osm.pbf')
+        index_parents(root, a.pbf)
+
+        def finished(n):
+            """n and its subtree are done: its extract is no longer read; tell the parent."""
+            src = work / 'extracts' / f'{name(n)}.osm.pbf'
+            if src.exists():
+                src.unlink()
+            parent = parents.get(id(n))
+            if parent:
+                pn, _ = parent
+                pn['pending'] -= 1
+                if pn['pending'] == 0:
+                    finished(pn)
+
+        start(root, a.pbf)
+        blocks_done = sum(1 for l in leaves(root) if done(l))
+        while running:
+            ready, _ = wait(running, return_when=FIRST_COMPLETED)
+            for f in ready:
+                n, src, kind = running.pop(f)
+                f.result()
+                heavy.discard(f)
+                if kind == 'select':
+                    for c in n:
+                        dst = work / 'extracts' / f'{name(c)}.osm.pbf'
+                        submit(run_write, (src, dst, work / 'extracts' / f'{name(c)}.pick'), (c, src, 'extract'))
+                elif kind == 'extract':
+                    n['pending'] = 0
+                    start(n, work / 'extracts' / f'{name(n)}.osm.pbf')
+                else:
+                    blocks_done += 1
+                    print(f'block {name(n)} cut: {blocks_done}/{total} ({time.monotonic()-t0:.0f} s)', flush=True)
+                    finished(n)
+            drain()
+
+    index = {'cell': CELL, 'buffer': BUFFER, 'source': a.pbf.name, 'package_box': package_box,
+             'block': a.block, 'select': SELECT, 'tiles': {}}
+    tmp = a.out.with_name(a.out.name + '.part')
+    if tmp.exists():
+        shutil.rmtree(tmp)
+    tmp.mkdir(parents=True)
+    index['tiles'] = assemble_blocks((work / 'blocks' / name(leaf) for leaf in leaves(root)), tmp)
+    index['seconds'] = round(time.monotonic() - t0, 1)
+    # Retain settlements and simplified roads before the original PBF may be removed.
+    from build_map import build as build_map
+    build_map(a.pbf, tmp / 'map')
+    (tmp / 'index.json').write_text(json.dumps(index, indent=1), encoding='utf8')
+    replace_dir(tmp, a.out)
+    shutil.rmtree(work)
+    sizes = [t['bytes'] for t in index['tiles'].values()]
+    print(f"written {len(sizes)} tiles to {a.out}, {sum(sizes)/2**30:.2f} GB total, "
+          f"max {max(sizes, default=0)/2**20:.2f} MB ({index['seconds']} s)", flush=True)
+
+
+if __name__ == '__main__':
+    main()

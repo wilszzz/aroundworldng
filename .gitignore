@@ -1,26 +1,37 @@
-# Python
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache and bytecode
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-env/
-venv/
-.venv/
-ENV/
+.pytest_cache/
 
-# Build and generated maps
+# User local settings & history
+country_setup.json
+startup_error.log
+
+# Build & Out caches
 build/
+out/
+
+# Big caches and downloaded data
+data/pbf/*
+!data/pbf/.gitkeep
+data/osm_tiles/*
+!data/osm_tiles/.gitkeep
+
+# Scratch & Dev artifacts
+scratch/
+test_*.png
+preview_render_*.png
+*.bak
+
+# Distribution and release packages
 dist/
-*.egg-info/
+release/
 *.zip
-*.png.bak
-
-# IDE & OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# External reference archives
-reference/
+*.tar.gz
