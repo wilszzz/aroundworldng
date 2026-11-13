@@ -57,11 +57,15 @@ end
 
 -- Keep all runtime entrypoints inside their country's namespace. Reject ambiguous paths
 -- rather than canonicalizing '..', backslashes, URLs or repeated separators.
-local function pathIn(value, namespace)
+local function pathIn(value, namespace, altNamespace)
   if not text(value) or value:find('[\\:%?%#%%]') or value:find('//', 1, true)
     or value:sub(-1) == '/' then return nil end
   local path = value:sub(1, 1) == '/' and value or namespace .. value
-  if path:sub(1, #namespace) ~= namespace then return nil end
+  local ok = (path:sub(1, #namespace) == namespace)
+  if not ok and altNamespace then
+    ok = (path:sub(1, #altNamespace) == altNamespace)
+  end
+  if not ok then return nil end
   for part in path:gmatch('[^/]+') do
     if part == '.' or part == '..' then return nil end
   end
@@ -90,8 +94,16 @@ local function validate(manifest, path)
     return nil, 'kind must be aroundworldng-country or earthng-country'
   end
   if not slug(manifest.id) then return nil, 'id must be a lowercase slug' end
-  local namespace = path:match('^(/.+/countries/' .. manifest.id .. '/)') or (ROOT .. manifest.id .. '/')
+  local escapedId = manifest.id:gsub('%-', '%%-')
+  local prefix = path:match('^(/[^/]+/countries/' .. escapedId .. '/)')
+  local namespace = prefix or (ROOT .. manifest.id .. '/')
   if path ~= namespace .. 'manifest.json' then return nil, 'manifest location must match its country id' end
+  local altNamespace
+  if namespace:find('^/aroundworldng/') then
+    altNamespace = namespace:gsub('^/aroundworldng/', '/earthng/')
+  elseif namespace:find('^/earthng/') then
+    altNamespace = namespace:gsub('^/earthng/', '/aroundworldng/')
+  end
   if not text(manifest.title) or not text(manifest.version) then return nil, 'title and version must be nonempty strings' end
   if manifest.runtime ~= 'native' and manifest.runtime ~= 'baked' and manifest.runtime ~= 'source' then
     return nil, 'runtime must be native, baked or source'
@@ -104,7 +116,7 @@ local function validate(manifest, path)
     if type(region) ~= 'table' or not slug(region.id) then return nil, 'each region must have a lowercase slug id' end
     if ids[region.id] then return nil, 'duplicate region id: ' .. region.id end
     ids[region.id] = true
-    local regionPath = pathIn(region.manifest, namespace)
+    local regionPath = pathIn(region.manifest, namespace, altNamespace)
     if not regionPath or regionPath:sub(-5) ~= '.json' then return nil, 'region manifest must be a JSON path inside its country namespace' end
     if not exists(regionPath) then return nil, 'missing mounted region manifest: ' .. regionPath end
     local regionCoverage, regionError = boxes(region.coverage)
@@ -121,7 +133,7 @@ local function validate(manifest, path)
   if manifest.runtime ~= 'source' and #regions == 0 then return nil, 'playable countries require at least one region' end
   local entry = copy(manifest)
   if manifest.entrypoint ~= nil then
-    entry.entrypoint = pathIn(manifest.entrypoint, namespace)
+    entry.entrypoint = pathIn(manifest.entrypoint, namespace, altNamespace)
     if not entry.entrypoint or not exists(entry.entrypoint) then return nil, 'entrypoint must be a mounted file inside its country namespace' end
   end
   entry.manifest, entry.namespace, entry.coverage, entry.regions = path, namespace, coverage, regions

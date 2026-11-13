@@ -47,6 +47,34 @@ else:
     HERE = Path(__file__).resolve().parent
     ROOT = HERE.parent
 
+
+def _find_resource(filename: str) -> Path:
+    candidates = []
+    if hasattr(sys, '_MEIPASS'):
+        mp = Path(sys._MEIPASS).resolve()
+        candidates.extend([mp / filename, mp / 'aroundworldng' / filename])
+    if getattr(sys, 'frozen', False):
+        exe_dir = Path(sys.executable).resolve().parent
+        internal = exe_dir / '_internal'
+        candidates.extend([
+            internal / filename,
+            internal / 'aroundworldng' / filename,
+            exe_dir / filename,
+            exe_dir / 'aroundworldng' / filename,
+        ])
+    here = Path(__file__).resolve().parent
+    repo = here.parent if here.name == 'aroundworldng' else here
+    candidates.extend([
+        here / filename,
+        here / 'aroundworldng' / filename,
+        repo / filename,
+        repo / 'aroundworldng' / filename,
+    ])
+    for c in candidates:
+        if c.is_file():
+            return c
+    return here / filename
+
 SKY = [
     {'class': 'ScatterSky', 'name': 'sunsky', 'azimuth': 142, 'elevation': 48, 'brightness': 0.85, 'castShadows': True,
      'flareType': 'BNG_Sunflare_2', 'flareScale': 3, 'moonEnabled': True, 'moonMat': 'Moon_Glow_Mat', 'moonScale': 0.06,
@@ -715,15 +743,34 @@ def export_standalone_level(
         }
     }
 
-    terrain_materials = {
-        'templateTerrainMaterialTextureSet': {
+    # Load Terrain Materials
+    ter_mat_file = _find_resource('terrain_materials.json')
+    if ter_mat_file.is_file():
+        try:
+            terrain_materials = json.loads(ter_mat_file.read_text(encoding='utf-8'))
+        except Exception:
+            terrain_materials = {}
+    else:
+        terrain_materials = {}
+
+    if 'templateTerrainMaterialTextureSet' not in terrain_materials:
+        terrain_materials['templateTerrainMaterialTextureSet'] = {
             'name': 'templateTerrainMaterialTextureSet',
             'class': 'TerrainMaterialTextureSet',
             'baseTexSize': [512, 512],
             'detailTexSize': [1024, 1024],
             'macroTexSize': [1024, 1024],
         }
-    }
+
+    # Load Road Materials
+    road_mat_file = _find_resource('road_materials.json')
+    if road_mat_file.is_file():
+        try:
+            road_materials = json.loads(road_mat_file.read_text(encoding='utf-8'))
+        except Exception:
+            road_materials = {}
+    else:
+        road_materials = {}
 
     preview_jpg = generate_preview_image(title, roads_sketch, (min_x, min_y, max_x, max_y))
 
@@ -741,6 +788,8 @@ def export_standalone_level(
         z.writestr(f"levels/{level_slug}/theTerrain.terrain.json", json.dumps(terrain_json, ensure_ascii=False, indent=2))
         z.writestr(f"levels/{level_slug}/art/shapes/buildings/main.materials.json", json.dumps(bld_materials, indent=2))
         z.writestr(f"levels/{level_slug}/art/terrains/main.materials.json", json.dumps(terrain_materials, indent=2))
+        z.writestr(f"levels/{level_slug}/art/road/main.materials.json", json.dumps(road_materials, indent=2))
+        z.writestr(f"levels/{level_slug}/art/main.materials.json", json.dumps({**road_materials, **bld_materials}, indent=2))
 
         # Main SimGroup files
         z.writestr(f"levels/{level_slug}/main/items.level.json", json.dumps({'class': 'SimGroup', 'name': 'MissionGroup'}) + '\n')

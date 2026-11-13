@@ -38,8 +38,8 @@ jobs:
           Copy-Item -Path "mod" -Destination "dist\AroundWorldNG\mod" -Recurse
           Copy-Item -Path "aroundworldng" -Destination "dist\AroundWorldNG\aroundworldng" -Recurse -Exclude "__pycache__"
           New-Item -ItemType Directory -Path "dist\AroundWorldNG\_internal\aroundworldng" -Force
-          Copy-Item -Path "aroundworldng\fast_tree_materials.json", "aroundworldng\ready_packs.json" -Destination "dist\AroundWorldNG\_internal\" -Force
-          Copy-Item -Path "aroundworldng\fast_tree_materials.json", "aroundworldng\ready_packs.json" -Destination "dist\AroundWorldNG\_internal\aroundworldng\" -Force
+          Copy-Item -Path "aroundworldng\fast_tree_materials.json", "aroundworldng\ready_packs.json", "aroundworldng\terrain_materials.json", "aroundworldng\road_materials.json" -Destination "dist\AroundWorldNG\_internal\" -Force
+          Copy-Item -Path "aroundworldng\fast_tree_materials.json", "aroundworldng\ready_packs.json", "aroundworldng\terrain_materials.json", "aroundworldng\road_materials.json" -Destination "dist\AroundWorldNG\_internal\aroundworldng\" -Force
           New-Item -ItemType Directory -Path "dist\AroundWorldNG\data\geofabrik" -Force
           Copy-Item -Path "data\geofabrik\*" -Destination "dist\AroundWorldNG\data\geofabrik\" -Force
           New-Item -ItemType Directory -Path "dist\AroundWorldNG\data\pbf" -Force
