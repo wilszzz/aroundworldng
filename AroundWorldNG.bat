@@ -1,7 +1,7 @@
 @echo off
+chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
-rem AroundWorldNG Map Builder Launcher
 title AroundWorldNG — Студия и генератор карт для BeamNG.drive
 
 if exist "%~dp0aroundworldng\launch_builder.py" (
