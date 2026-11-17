@@ -54,11 +54,4 @@ AROUNDWORLDNG / EARTHNG — UPDATE 2.1
    - Предыдущие резервные копии сохранены:
      C:\Users\wilsz\Desktop\AWNG_backup_working
      C:\Users\wilsz\Desktop\AWNG_backup_novostroyki_phase1
-
-6. HOTFIX 2.1.1 (ГЕНЕРАЦИЯ ЗДАНИЙ И БАЛКОНОВ):
-   - Устранена ошибка Lua при генерации: `attempt to perform arithmetic on local 'a' (a nil value)`
-     в generator.lua (строка 536 в функции ihash).
-   - Причина: вызов ihash(h, k, ...) в BLD.balconies находился перед циклом for k, где k был nil.
-   - Исправление: расчет варианта балкона перенесен внутрь цикла колонок, а функция ihash
-     сделана полностью nil-safe (поддерживает аргументы по умолчанию).
 ================================================================================

@@ -53,8 +53,15 @@ def pack_archive(zip_path: Path, dds_files: list[Path], materials_bytes: bytes, 
                 zout.writestr(fn, data)
                 seen.add(fn)
 
-    # Atomic replace
-    shutil.move(str(tmp_path), str(zip_path))
+    # In-place overwrite (safe even if BeamNG has the file open for reading)
+    with open(tmp_path, "rb") as fin, open(zip_path, "r+b") as fout:
+        fout.seek(0)
+        shutil.copyfileobj(fin, fout)
+        fout.truncate()
+    try:
+        tmp_path.unlink()
+    except Exception:
+        pass
     print(f"  Successfully updated {zip_path} (new size: {zip_path.stat().st_size} bytes)")
 
 def verify_archive(zip_path: Path, expected_textures: list[str]):
