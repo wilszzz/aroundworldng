@@ -306,13 +306,21 @@ class Setup:
                                         command=self.browse_mods)
         self.btn_browse.pack(side='left')
 
-        self.btn_sync = ctk.CTkButton(sys_box, text='Синхронизировать ядро', height=28,
+        self.btn_install_all = ctk.CTkButton(sys_box, text='Установить мод в BeamNG (1 клик)', height=28,
+                                            fg_color='#1f6f43', hover_color='#2ea043',
+                                            text_color='#ffffff',
+                                            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                                            corner_radius=3,
+                                            command=self.one_click_install)
+        self.btn_install_all.pack(fill='x', pady=(4, 2))
+
+        self.btn_sync = ctk.CTkButton(sys_box, text='Синхронизировать ядро', height=26,
                                       fg_color=PALETTE['btn_default'], hover_color=PALETTE['btn_default_hover'],
                                       text_color=PALETTE['text_primary'],
-                                      font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+                                      font=ctk.CTkFont(family="Segoe UI", size=10),
                                       corner_radius=3,
                                       command=self.refresh_planet)
-        self.btn_sync.pack(fill='x')
+        self.btn_sync.pack(fill='x', pady=(2, 0))
 
         # =========================================================================
         # 2. CENTER PANEL (Flexible / Expands) — Viewport & Telemetry Console
@@ -1182,6 +1190,20 @@ class Setup:
             finally:
                 self.lines.put(self.reload_map)
 
+        self.run(target)
+
+    def one_click_install(self):
+        if self.running:
+            return
+        mods = self.mods.get()
+        def target():
+            try:
+                self.say("--- Установка в 1 клик ---")
+                installed = country_fetch.install_core_and_ready_map(mods, self.say, cancel=self.cancel)
+                if installed:
+                    self.say("Готово! Мод и карта установлены в папку модов BeamNG.")
+            except Exception as exc:
+                self.say(f"Ошибка установки: {exc}")
         self.run(target)
 
 

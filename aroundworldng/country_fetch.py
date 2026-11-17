@@ -920,9 +920,18 @@ def refresh_planet(mods, emit=print, cancel=None):
 
     check_stopped(cancel)
 
-    zip_path = Path(mods) / 'mods' / 'aroundworldng_planet.zip'
+    target_dir = get_mods_dir(mods)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    zip_path = target_dir / 'aroundworldng_planet.zip'
     if not zip_path.is_file():
-        zip_path = Path(mods) / 'mods' / 'earthng_planet.zip'
+        zip_path = target_dir / 'earthng_planet.zip'
+    if not zip_path.is_file():
+        for cand in [ROOT / 'mod' / 'aroundworldng_planet.zip', ROOT / 'aroundworldng_planet.zip']:
+            if cand.is_file():
+                emit(f"Копирование ядра {cand.name} в папку модов BeamNG...")
+                shutil.copy2(cand, target_dir / 'aroundworldng_planet.zip')
+                zip_path = target_dir / 'aroundworldng_planet.zip'
+                break
     if not zip_path.is_file():
         raise FileNotFoundError(f'missing {zip_path}. Build the planet first: aroundworldng/build_mod.py')
     replacements = {}
@@ -988,6 +997,53 @@ def refresh_planet(mods, emit=print, cancel=None):
         temporary.unlink(missing_ok=True)
     emit(f'planet code updated ({replaced} files) in {zip_path.name} and {other_name}')
     return zip_path
+
+
+def install_core_and_ready_map(mods, emit=print, cancel=None):
+    """Install core planet mod and ready-to-play map directly into BeamNG mods folder."""
+    target_dir = get_mods_dir(mods)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    installed = []
+
+    # 1. Install planet core
+    planet_src = None
+    for cand in [ROOT / 'mod' / 'aroundworldng_planet.zip', ROOT / 'aroundworldng_planet.zip']:
+        if cand.is_file():
+            planet_src = cand
+            break
+    if planet_src:
+        dst = target_dir / 'aroundworldng_planet.zip'
+        emit(f"Установка ядра мода: {planet_src.name} -> {dst.name} ({planet_src.stat().st_size / 1024**2:.1f} МБ)")
+        shutil.copy2(planet_src, dst)
+        installed.append(dst.name)
+        # Keep earthng_planet.zip in sync if used
+        try:
+            shutil.copy2(planet_src, target_dir / 'earthng_planet.zip')
+        except OSError:
+            pass
+
+    # 2. Install ready map (Saint Petersburg / Kudrovo)
+    map_src = None
+    for cand in [
+        ROOT / 'mod' / 'aroundworldng_russia-saint-petersburg.zip',
+        ROOT / 'out' / 'country-setup' / 'aroundworldng_russia-saint-petersburg.zip',
+        ROOT / 'out' / 'native-packs' / 'aroundworldng_russia-saint-petersburg.zip',
+    ]:
+        if cand.is_file():
+            map_src = cand
+            break
+    if map_src:
+        dst = target_dir / 'aroundworldng_russia-saint-petersburg.zip'
+        emit(f"Установка готовой карты: {map_src.name} -> {dst.name} ({map_src.stat().st_size / 1024**2:.1f} МБ)")
+        shutil.copy2(map_src, dst)
+        installed.append(dst.name)
+
+    if installed:
+        emit(f"Успешно установлено в BeamNG mods: {', '.join(installed)}")
+        emit("Все файлы на месте! Теперь запустите BeamNG.drive и выберите уровень «Вокруг Света NG».")
+    else:
+        emit("Архивы модов не найдены в папке mod/. Проверьте наличие aroundworldng_planet.zip.")
+    return installed
 
 
 def main():
