@@ -5856,5 +5856,617 @@
       {},
       {}
     ]
+  },
+  "e2rf_wall_pls_d_pik_orange": {
+    "name": "e2rf_wall_pls_d_pik_orange",
+    "mapTo": "e2rf_wall_pls_d_pik_orange",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_orange.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_orange.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_pik_orange_end": {
+    "name": "e2rf_wall_pls_d_pik_orange_end",
+    "mapTo": "e2rf_wall_pls_d_pik_orange_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_orange_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_orange_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_pik_cyan": {
+    "name": "e2rf_wall_pls_d_pik_cyan",
+    "mapTo": "e2rf_wall_pls_d_pik_cyan",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_cyan.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_cyan.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_pik_cyan_end": {
+    "name": "e2rf_wall_pls_d_pik_cyan_end",
+    "mapTo": "e2rf_wall_pls_d_pik_cyan_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_cyan_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_cyan_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_pik_yellow": {
+    "name": "e2rf_wall_pls_d_pik_yellow",
+    "mapTo": "e2rf_wall_pls_d_pik_yellow",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_yellow.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_yellow.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_pik_yellow_end": {
+    "name": "e2rf_wall_pls_d_pik_yellow_end",
+    "mapTo": "e2rf_wall_pls_d_pik_yellow_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_yellow_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_pik_yellow_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_clinker_dark": {
+    "name": "e2rf_wall_brk_d_clinker_dark",
+    "mapTo": "e2rf_wall_brk_d_clinker_dark",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_clinker_dark.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_clinker_dark.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_clinker_dark_end": {
+    "name": "e2rf_wall_brk_d_clinker_dark_end",
+    "mapTo": "e2rf_wall_brk_d_clinker_dark_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_clinker_dark_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_clinker_dark_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_setl_scandi": {
+    "name": "e2rf_wall_pls_d_setl_scandi",
+    "mapTo": "e2rf_wall_pls_d_setl_scandi",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_setl_scandi.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_setl_scandi.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_setl_scandi_end": {
+    "name": "e2rf_wall_pls_d_setl_scandi_end",
+    "mapTo": "e2rf_wall_pls_d_setl_scandi_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_setl_scandi_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_setl_scandi_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_setl_cappuccino": {
+    "name": "e2rf_wall_pls_d_setl_cappuccino",
+    "mapTo": "e2rf_wall_pls_d_setl_cappuccino",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_setl_cappuccino.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_setl_cappuccino.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_setl_cappuccino_end": {
+    "name": "e2rf_wall_pls_d_setl_cappuccino_end",
+    "mapTo": "e2rf_wall_pls_d_setl_cappuccino_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_setl_cappuccino_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_setl_cappuccino_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_samolet_azure": {
+    "name": "e2rf_wall_pls_d_samolet_azure",
+    "mapTo": "e2rf_wall_pls_d_samolet_azure",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_samolet_azure.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_samolet_azure.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_samolet_azure_end": {
+    "name": "e2rf_wall_pls_d_samolet_azure_end",
+    "mapTo": "e2rf_wall_pls_d_samolet_azure_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_samolet_azure_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_samolet_azure_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_lsr_terracotta": {
+    "name": "e2rf_wall_pls_d_lsr_terracotta",
+    "mapTo": "e2rf_wall_pls_d_lsr_terracotta",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_lsr_terracotta.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_lsr_terracotta.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_lsr_terracotta_end": {
+    "name": "e2rf_wall_pls_d_lsr_terracotta_end",
+    "mapTo": "e2rf_wall_pls_d_lsr_terracotta_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_lsr_terracotta_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_lsr_terracotta_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_kapital_amber": {
+    "name": "e2rf_wall_brk_d_kapital_amber",
+    "mapTo": "e2rf_wall_brk_d_kapital_amber",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_kapital_amber.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_kapital_amber.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_kapital_amber_end": {
+    "name": "e2rf_wall_brk_d_kapital_amber_end",
+    "mapTo": "e2rf_wall_brk_d_kapital_amber_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_kapital_amber_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_kapital_amber_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_kapital_terracotta": {
+    "name": "e2rf_wall_brk_d_kapital_terracotta",
+    "mapTo": "e2rf_wall_brk_d_kapital_terracotta",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_kapital_terracotta.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_kapital_terracotta.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_kapital_terracotta_end": {
+    "name": "e2rf_wall_brk_d_kapital_terracotta_end",
+    "mapTo": "e2rf_wall_brk_d_kapital_terracotta_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_kapital_terracotta_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_kapital_terracotta_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_svetliy_mir": {
+    "name": "e2rf_wall_pls_d_svetliy_mir",
+    "mapTo": "e2rf_wall_pls_d_svetliy_mir",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_svetliy_mir.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_svetliy_mir.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_svetliy_mir_end": {
+    "name": "e2rf_wall_pls_d_svetliy_mir_end",
+    "mapTo": "e2rf_wall_pls_d_svetliy_mir_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_svetliy_mir_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_svetliy_mir_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_galaktika": {
+    "name": "e2rf_wall_brk_d_galaktika",
+    "mapTo": "e2rf_wall_brk_d_galaktika",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_galaktika.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_galaktika.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_galaktika_end": {
+    "name": "e2rf_wall_brk_d_galaktika_end",
+    "mapTo": "e2rf_wall_brk_d_galaktika_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_galaktika_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_galaktika_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_strizhi_glass": {
+    "name": "e2rf_wall_pls_d_strizhi_glass",
+    "mapTo": "e2rf_wall_pls_d_strizhi_glass",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_strizhi_glass.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_strizhi_glass.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_strizhi_glass_end": {
+    "name": "e2rf_wall_pls_d_strizhi_glass_end",
+    "mapTo": "e2rf_wall_pls_d_strizhi_glass_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_strizhi_glass_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_strizhi_glass_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_life_wood": {
+    "name": "e2rf_wall_pls_d_life_wood",
+    "mapTo": "e2rf_wall_pls_d_life_wood",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_life_wood.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_life_wood.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_life_wood_end": {
+    "name": "e2rf_wall_pls_d_life_wood_end",
+    "mapTo": "e2rf_wall_pls_d_life_wood_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_life_wood_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_life_wood_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_ispanskie_kvartaly": {
+    "name": "e2rf_wall_brk_d_ispanskie_kvartaly",
+    "mapTo": "e2rf_wall_brk_d_ispanskie_kvartaly",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_ispanskie_kvartaly.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_ispanskie_kvartaly.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_brk_d_ispanskie_kvartaly_end": {
+    "name": "e2rf_wall_brk_d_ispanskie_kvartaly_end",
+    "mapTo": "e2rf_wall_brk_d_ispanskie_kvartaly_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/brk_d_ispanskie_kvartaly_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/brk_d_ispanskie_kvartaly_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_zeleny_kvartal": {
+    "name": "e2rf_wall_pls_d_zeleny_kvartal",
+    "mapTo": "e2rf_wall_pls_d_zeleny_kvartal",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_zeleny_kvartal.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_zeleny_kvartal.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_zeleny_kvartal_end": {
+    "name": "e2rf_wall_pls_d_zeleny_kvartal_end",
+    "mapTo": "e2rf_wall_pls_d_zeleny_kvartal_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_zeleny_kvartal_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_zeleny_kvartal_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_chistoe_nebo": {
+    "name": "e2rf_wall_pls_d_chistoe_nebo",
+    "mapTo": "e2rf_wall_pls_d_chistoe_nebo",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_chistoe_nebo.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_chistoe_nebo.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_chistoe_nebo_end": {
+    "name": "e2rf_wall_pls_d_chistoe_nebo_end",
+    "mapTo": "e2rf_wall_pls_d_chistoe_nebo_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_chistoe_nebo_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_chistoe_nebo_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_monolith_glass": {
+    "name": "e2rf_wall_pls_d_monolith_glass",
+    "mapTo": "e2rf_wall_pls_d_monolith_glass",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_monolith_glass.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_monolith_glass.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
+  },
+  "e2rf_wall_pls_d_monolith_glass_end": {
+    "name": "e2rf_wall_pls_d_monolith_glass_end",
+    "mapTo": "e2rf_wall_pls_d_monolith_glass_end",
+    "class": "Material",
+    "version": 1.5,
+    "groundType": "ROCK",
+    "Stages": [
+      {
+        "baseColorMap": "/e2r_stream/fast-art/v10/real/pls_d_monolith_glass_end.color.dds",
+        "normalMap": "/e2r_stream/fast-art/v10/real/pls_d_monolith_glass_end.normal.dds"
+      },
+      {},
+      {},
+      {}
+    ],
+    "doubleSided": false
   }
 }

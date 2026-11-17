@@ -97,7 +97,15 @@ FLAT_LIKE = {'brk_d_sil': 'brk_white', 'brk_d_red': 'brk_red', 'brk_d_old': 'brk
              'pls_d_stalin_red': 'pls_peach', 'pls_d_aged': 'pls_yellow', 'pls_d_flake': 'pls_grey', 'pls_d_new': 'pls_cream',
              'pls_d_euro': 'pls_cream', 'pls_d_euro_warm': 'pls_yellow', 'pls_d_ashlar': 'pls_cream', 'pls_d_shutter': 'pls_yellow',
              'pls_d_white': 'pls_cream', 'pls_d_sand': 'pls_yellow', 'pls_d_adobe': 'pls_peach', 'pls_d_tile': 'pls_cream',
-             'pls_d_stain': 'pls_grey', 'pls_d_blue': 'pls_blue', 'pls_d_pink': 'pls_peach', **PATCHED}
+             'pls_d_stain': 'pls_grey', 'pls_d_blue': 'pls_blue', 'pls_d_pink': 'pls_peach',
+             'pls_d_pik_orange': 'pls_cream', 'pls_d_pik_cyan': 'pls_grey', 'pls_d_pik_yellow': 'pls_yellow',
+             'brk_d_clinker_dark': 'brk_red', 'pls_d_setl_scandi': 'pls_cream', 'pls_d_setl_cappuccino': 'pls_peach',
+             'pls_d_samolet_azure': 'pls_blue', 'pls_d_lsr_terracotta': 'brk_red',
+             'brk_d_kapital_amber': 'brk_red', 'brk_d_kapital_terracotta': 'brk_red',
+             'pls_d_svetliy_mir': 'pls_cream', 'brk_d_galaktika': 'brk_red',
+             'pls_d_strizhi_glass': 'pls_cream', 'pls_d_life_wood': 'pls_grey',
+             'brk_d_ispanskie_kvartaly': 'brk_red', 'pls_d_zeleny_kvartal': 'pls_cream',
+             'pls_d_chistoe_nebo': 'pls_blue', 'pls_d_monolith_glass': 'off_blue', **PATCHED}
 
 
 def like(name):

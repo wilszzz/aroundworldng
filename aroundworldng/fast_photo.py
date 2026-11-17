@@ -68,6 +68,14 @@ DRAWN = {
     'pls_d_ashlar': (.81, .77, .69), 'pls_d_shutter': (.84, .63, .38), 'pls_d_white': (.93, .93, .89), 'pls_d_sand': (.80, .71, .57),
     'pls_d_adobe': (.75, .60, .44), 'pls_d_tile': (.89, .88, .85), 'pls_d_stain': (.73, .71, .65), 'pls_d_blue': (.38, .63, .67),
     'pls_d_pink': (.85, .53, .50),
+    'pls_d_pik_orange': (.94, .94, .93), 'pls_d_pik_cyan': (.87, .88, .89), 'pls_d_pik_yellow': (.85, .84, .82),
+    'brk_d_clinker_dark': (.20, .18, .17), 'pls_d_setl_scandi': (.85, .82, .76), 'pls_d_setl_cappuccino': (.83, .76, .67),
+    'pls_d_samolet_azure': (.86, .88, .92), 'pls_d_lsr_terracotta': (.70, .35, .22),
+    'brk_d_kapital_amber': (.82, .62, .38), 'brk_d_kapital_terracotta': (.72, .31, .19),
+    'pls_d_svetliy_mir': (.95, .95, .94), 'brk_d_galaktika': (.24, .19, .16),
+    'pls_d_strizhi_glass': (.91, .89, .86), 'pls_d_life_wood': (.21, .22, .24),
+    'brk_d_ispanskie_kvartaly': (.57, .27, .19), 'pls_d_zeleny_kvartal': (.93, .92, .90),
+    'pls_d_chistoe_nebo': (.88, .89, .91), 'pls_d_monolith_glass': (.19, .24, .31),
 }
 for _n, _c in DRAWN.items():
     PHOTO_WALLS[_n] = ('facade', _c, 12.0)

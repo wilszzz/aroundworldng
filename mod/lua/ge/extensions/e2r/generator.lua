@@ -16,6 +16,7 @@ local FINE_DEM = {grid = 12.5, pullFull = 3, pullZero = 15}
 -- through options.tune. Metres.
 local TUNE = {roadLift = ROAD_LIFT, groundDrop = .25, pullFull = 8, pullZero = 35, shoulder = 3, margin = .12,
   terrainStep = 25, sidewalk = 2, curb = .25, vergeCut = 1, vergeSink = 0, pressEven = 0, mitre = 2,
+  maxSlope = .10,
   simplifyXY = 0, simplifyZ = .02, fenceStep = 4, wallThick = .2, fenceThick = .08}
 -- Covers that take a whole ground triangle over (lower rank wins where they overlap).
 local CLAIM = {paved = 1, water = 2, glacier = 3, bare_rock = 4, scree = 5, beach = 6,
@@ -3287,10 +3288,10 @@ BLD.spec = {
   -- towers stay panel and loggia, what is lower goes by height as a mixed look does
   postsoviet = {
     byHeight = true,
-    panel = 'pls_d_new 3 pls_d_euro 3 pls_d_blue 2 pls_d_tile 2 brk_d_new 2 pnl_white 2 pnl_beige 1',
-    brick = 'brk_d_new 4 brk_d_sil 3 brk_d_dark 2 brk_d_red 2',
-    plaster = 'pls_d_new 3 pls_d_euro 3 pls_d_euro_warm 2 pls_d_blue 2 pls_d_tile 2',
-    new = 'pls_d_new 3 brk_d_new 3 pls_d_blue 2 off_ribbon 2 off_blue 2',
+    panel = 'pls_d_svetliy_mir 3 pls_d_chistoe_nebo 3 pls_d_pik_orange 3 pls_d_pik_cyan 3 pls_d_setl_scandi 2 pls_d_strizhi_glass 2 pls_d_zeleny_kvartal 2 pls_d_lsr_terracotta 2',
+    brick = 'brk_d_kapital_amber 4 brk_d_kapital_terracotta 4 brk_d_galaktika 3 brk_d_ispanskie_kvartaly 3 brk_d_clinker_dark 3 brk_d_new 2',
+    plaster = 'pls_d_svetliy_mir 4 pls_d_strizhi_glass 3 pls_d_life_wood 3 pls_d_setl_cappuccino 3 pls_d_pik_orange 3 pls_d_pik_yellow 2 pls_d_samolet_azure 2',
+    new = 'brk_d_kapital_amber 4 brk_d_kapital_terracotta 4 pls_d_svetliy_mir 4 brk_d_galaktika 3 pls_d_strizhi_glass 3 pls_d_life_wood 3 brk_d_ispanskie_kvartaly 3 pls_d_zeleny_kvartal 3 pls_d_chistoe_nebo 3 pls_d_monolith_glass 3 pls_d_pik_orange 3 pls_d_pik_cyan 3 pls_d_setl_scandi 3 pls_d_setl_cappuccino 2 pls_d_samolet_azure 2 pls_d_lsr_terracotta 2',
     houses = 'hw_white 7 hw_yellow 5 hw_blue 6 hw_green 4 hw_pink 2 hw_aged 6 hw_dash 4 hw_dash_cream 4 hw_brick_red 9 hw_oldbrick 6 hw_flatbrick 5 '
       .. 'hw_flaking 6 hw_flaking_yellow 4 hw_stone 5 hw_silicate 9 hw_siding 8 hw_boards 10',
     roofs = 'roof_sheet 6 roof_mtile_red 3 roof_mtile_brown 3 roof_mtile_green 2 roof_prof_red 2 roof_prof_brown 2 roof_prof_green 1 '
@@ -3818,16 +3819,32 @@ local function wallMaterial(building, look, height, footprint)
   local house = not tags.e2r_part and BLD.house(tags, height, h, region)
   if house then return house end
   if material == 'glass' or b == 'office' or b == 'commercial' or b == 'retail' or b == 'hotel' or tags.office then
-    local family = height > 20 and {'off_blue', 'off_green', 'off_grey', 'off_ribbon'} or {'off_ribbon', 'off_ribbon_dark'}
+    local family = height > 20 and {'pls_d_monolith_glass', 'pls_d_strizhi_glass', 'off_ribbon_dark', 'off_ribbon'} or {'off_ribbon_dark', 'pls_d_monolith_glass'}
     return 'wall_' .. family[h % #family + 1]
   end
   local novostroyki = {
-    'pls_d_new', 'pls_d_euro', 'pls_d_euro_warm', 'pls_d_tile',
-    'brk_d_new', 'brk_d_sil', 'brk_d_dark', 'brk_d_red',
-    'pnl_white', 'pnl_beige', 'lgg_cream'
+    'brk_d_kapital_amber', 'brk_d_kapital_terracotta',
+    'pls_d_svetliy_mir', 'brk_d_galaktika',
+    'pls_d_strizhi_glass', 'pls_d_life_wood',
+    'brk_d_ispanskie_kvartaly', 'pls_d_zeleny_kvartal',
+    'pls_d_chistoe_nebo', 'pls_d_monolith_glass',
+    'pls_d_pik_orange', 'pls_d_pik_cyan', 'pls_d_pik_yellow',
+    'brk_d_clinker_dark', 'pls_d_setl_scandi', 'pls_d_setl_cappuccino',
+    'pls_d_samolet_azure', 'pls_d_lsr_terracotta',
+    'pls_d_new', 'brk_d_new'
   }
-  local brick = {'brk_d_new', 'brk_d_sil', 'brk_d_dark', 'brk_d_red'}
-  local plaster = {'pls_d_new', 'pls_d_euro', 'pls_d_euro_warm', 'pls_d_tile'}
+  local brick = {
+    'brk_d_kapital_amber', 'brk_d_kapital_terracotta', 'brk_d_galaktika',
+    'brk_d_ispanskie_kvartaly', 'brk_d_clinker_dark', 'brk_d_new',
+    'brk_d_sil', 'brk_d_dark', 'brk_d_red'
+  }
+  local plaster = {
+    'pls_d_svetliy_mir', 'pls_d_strizhi_glass', 'pls_d_life_wood',
+    'pls_d_zeleny_kvartal', 'pls_d_chistoe_nebo', 'pls_d_monolith_glass',
+    'pls_d_pik_orange', 'pls_d_pik_cyan', 'pls_d_pik_yellow',
+    'pls_d_setl_scandi', 'pls_d_setl_cappuccino', 'pls_d_samolet_azure',
+    'pls_d_lsr_terracotta', 'pls_d_new', 'pls_d_euro', 'pls_d_euro_warm'
+  }
   local family
   if material == 'brick' then family = brick
   elseif material == 'plaster' or material == 'stucco' then family = plaster
@@ -3969,6 +3986,36 @@ function BLD.socle(scene, a, b, length, bottom, base)
     wallPoint(a, b, length, length, .04, z0, length / 3, 0),
     wallPoint(a, b, length, length, .04, z1, length / 3, .1),
     wallPoint(a, b, length, 0, .04, z1, 0, .1)}, false)
+end
+
+-- Protective perimeter apron (отмостка) and slope retaining wall (подпорная стенка)
+function BLD.apron(scene, a, b, length, along, base, ground, top)
+  if length < 0.5 then return end
+  local apronW = 1.8
+  local pa = wallPoint(a, b, length, 0, apronW, 0, 0, 0)
+  local pb = wallPoint(a, b, length, length, apronW, 0, 0, 0)
+  local ga = ground(pa[1], pa[2])
+  local gb = ground(pb[1], pb[2])
+
+  -- 1. Protective concrete apron (отмостка) surrounding the building
+  scene.polygon('plinth', {
+    {a[1], a[2], base - 0.06, along / 3, 0},
+    {b[1], b[2], base - 0.06, (along + length) / 3, 0},
+    {pb[1], pb[2], base - 0.09, (along + length) / 3, apronW / 3},
+    {pa[1], pa[2], base - 0.09, along / 3, apronW / 3}
+  }, false)
+
+  -- 2. Retaining wall (подпорная стенка) if uphill ground rises above base + 0.35m
+  if ga > base + 0.35 or gb > base + 0.35 then
+    local zTopA = math.min(top - 1.0, math.max(base + 0.2, ga))
+    local zTopB = math.min(top - 1.0, math.max(base + 0.2, gb))
+    scene.polygon('plinth', {
+      {pa[1], pa[2], base - 0.09, along / 3, 0},
+      {pb[1], pb[2], base - 0.09, (along + length) / 3, 0},
+      {pb[1], pb[2], zTopB, (along + length) / 3, (zTopB - base) / 3},
+      {pa[1], pa[2], zTopA, along / 3, (zTopA - base) / 3}
+    }, false)
+  end
 end
 
 -- Same winding as the wall loop: outer CCW faces the street, a clockwise court faces the yard.
@@ -4636,8 +4683,8 @@ end
 -- columns of a wall, never two side by side, from the first floor up. A
 -- concrete slab, a parapet of profiled sheet (pale or brown by building), and on about half
 -- of them glazing (the office glass) up to the slab above, a roof slab over the top one.
-BLD.BALCONY = {column = .35, glazed = .60, width = {.12, .82}, depth = .95, minFloors = 3, maxFloors = 25,
-  panelFloors = 25}
+BLD.BALCONY = {column = .48, glazed = .78, width = {.10, .85}, depth = 1.05, minFloors = 2, maxFloors = 28,
+  panelFloors = 28}
 
 -- Whether the 3 m column k of a building (hash h) carries a balcony stack, for a wall kind.
 function BLD.balconyColumn(kind, height, h, k)
@@ -4656,7 +4703,17 @@ function BLD.balconies(scene, a, b, length, along, base, height, kind, h, spans)
   local B, D = BLD.BALCONY, BLD.DETAIL
   if length < 6 then return 0 end
   local floors = math.floor((height - .3) / D.cell)
-  local sheet = h % 3 == 0 and 'clad_tin' or 'clad_metal'
+  local isModern = kind:find('_d_', 1, true) ~= nil
+  local sheet
+  if isModern then
+    local variant = ihash(h, k, 0, 71) % 4
+    if variant == 0 then sheet = 'wall_glass'
+    elseif variant == 1 then sheet = 'clad_metal'
+    elseif variant == 2 then sheet = 'plinth'
+    else sheet = 'wall_glass' end
+  else
+    sheet = h % 3 == 0 and 'clad_metal' or 'plinth'
+  end
   local n = 0
   for k = math.ceil((along + .3) / D.cell), math.floor((along + length - .3) / D.cell) - 1 do
     if BLD.balconyColumn(kind, height, h, k) then
@@ -4676,8 +4733,9 @@ function BLD.balconies(scene, a, b, length, along, base, height, kind, h, spans)
           BLD.box(scene, sheet, a, b, length, s1 - .05, s1, .02, o - .05, z + 1.05 - .93, z + 1.05, true, true, false)
           if ihash(h, k, f, 67) % 1000 < B.glazed * 1000 then
             local g0, g1 = z + 1.05, z + D.cell - .02
+            local glassMat = isModern and 'wall_glass' or 'wall_off_grey'
             local function pane(p, q, r, t)
-              scene.polygon('wall_off_grey', {p, q, r, t}, false)
+              scene.polygon(glassMat, {p, q, r, t}, false)
             end
             local u0, u1 = (along + s0) / 6, (along + s1) / 6
             pane(wallPoint(a, b, length, s0, o - .03, g0, u0, .02), wallPoint(a, b, length, s1, o - .03, g0, u1, .02),
@@ -8483,6 +8541,369 @@ function BLD.shopSpans(scene, spans, wallKind, scale, upper, seam, base, length,
   if at < length then piece(wallKind, at, length, scale) end
 end
 
+local TERRAIN = {}
+
+local function isCourtyardKind(kind, tags)
+  tags = tags or NONE
+  if kind == 'playground' or tags.leisure == 'playground' then return 'playground' end
+  if kind == 'pitch' or tags.leisure == 'pitch' or tags.sport ~= nil then return 'pitch' end
+  if kind == 'parking' or tags.amenity == 'parking' then return 'parking' end
+  if kind == 'park' or tags.leisure == 'park' or tags.leisure == 'garden' or tags.leisure == 'recreation_ground' then return 'park' end
+  if kind == 'residential' or tags.landuse == 'residential' then return 'residential' end
+  return nil
+end
+
+function TERRAIN.buildingPads(lists, nodes, lower, nodeKey, step, n0x, n0y, count, rect, demAt, pulled, press, pause)
+  local buildings = lists.buildings or NONE
+  for _, building in ipairs(buildings) do
+    if building.rings and building.rings[1] and #building.rings[1] >= 3 then
+      local exterior = cleanRing(building.rings[1])
+      if #exterior >= 3 then
+        local b = ringBounds(building.rings)
+        if boundsTouch(rect, b, step * 2) then
+          local tags = building.tags or NONE
+          local lifted = (building.minHeight or number(tags.min_height, 0)) > 0
+          local isRoof = tags.building == 'roof'
+
+          local zMin, zMax, zSum = math.huge, -math.huge, 0
+          for _, p in ipairs(exterior) do
+            local z = (demAt and demAt(p[1], p[2])) or (pulled and pulled(p[1], p[2])) or 0
+            if z < zMin then zMin = z end
+            if z > zMax then zMax = z end
+            zSum = zSum + z
+          end
+          local cx, cy = (b[1] + b[3]) * 0.5, (b[2] + b[4]) * 0.5
+          local zCenter = (demAt and demAt(cx, cy)) or (pulled and pulled(cx, cy)) or (zSum / #exterior)
+
+          -- Architectural Rule:
+          -- Unified construction pad base elevation:
+          -- Ground floor / entrance level is anchored so it sits stably into terrain,
+          -- never floating more than 1.2m above zMin.
+          local bBase = math.min(zCenter, zMin + math.min(1.2, math.max(0, zMax - zMin) * 0.35))
+          bBase = math.max(zMin - 0.15, bBase)
+          building.bBase = bBase
+
+          if not lifted and not isRoof then
+            local padTarget = bBase - 0.12
+            -- Press building perimeter and apron buffer (2.0m outward)
+            local mOut = 2.0
+            for k = 1, #exterior do
+              local p1 = exterior[k]
+              local p2 = exterior[k % #exterior + 1]
+              local dx, dy = p2[1] - p1[1], p2[2] - p1[2]
+              local len = math.sqrt(dx * dx + dy * dy)
+              if len > 1e-4 then
+                local nx, ny = dy / len, -dx / len
+                local samples = math.max(1, math.ceil(len / 4))
+                for s = 0, samples do
+                  local t = s / samples
+                  local px = p1[1] + dx * t
+                  local py = p1[2] + dy * t
+                  press(px, py, padTarget)
+                  press(px + nx * mOut, py + ny * mOut, padTarget)
+                end
+              end
+            end
+            -- Interior points
+            press(cx, cy, padTarget)
+            press((cx + b[1]) * 0.5, cy, padTarget)
+            press((cx + b[3]) * 0.5, cy, padTarget)
+            press(cx, (cy + b[2]) * 0.5, padTarget)
+            press(cx, (cy + b[4]) * 0.5, padTarget)
+
+            -- Also lower any lattice nodes inside footprint + apron
+            local minGx = math.floor((b[1] - 2.5) / step)
+            local maxGx = math.floor((b[3] + 2.5) / step) + 1
+            local minGy = math.floor((b[2] - 2.5) / step)
+            local maxGy = math.floor((b[4] + 2.5) / step) + 1
+            for gy = minGy, maxGy do
+              for gx = minGx, maxGx do
+                if gx >= n0x - 1 and gx <= n0x + count + 3 and gy >= n0y - 1 and gy <= n0y + count + 3 then
+                  local x, y = gx * step, gy * step
+                  if inside(building.rings, x, y) or nearEdge(building.rings, x, y, 2.5) then
+                    local k = nodeKey(gx, gy)
+                    if nodes[k] and nodes[k] > padTarget then
+                      nodes[k] = padTarget
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  if pause then pause() end
+end
+
+function TERRAIN.terraceAreas(lists, segmentBins, nodes, lower, nodeKey, step, n0x, n0y, count, rect, demAt, pulled, press, pause)
+  local areas = lists.areas or NONE
+  local points = lists.points or NONE
+  local terraceList = {}
+
+  for _, area in ipairs(areas) do
+    local kind = isCourtyardKind(area.kind, area.tags)
+    if kind and area.rings and area.rings[1] and #area.rings[1] >= 3 then
+      local b = ringBounds(area.rings)
+      if boundsTouch(rect, b, step * 2) then
+        terraceList[#terraceList + 1] = {rings = area.rings, bounds = b, kind = kind}
+      end
+    end
+  end
+
+  for _, pt in ipairs(points) do
+    if pt.kind == 'playground' and pt.pos then
+      local px, py = pt.pos[1], pt.pos[2]
+      local r = 9
+      local b = {px - r, py - r, px + r, py + r}
+      if boundsTouch(rect, b, step * 2) then
+        local ring = {}
+        for k = 1, 12 do
+          local t = k * math.pi / 6
+          ring[k] = {px + math.cos(t) * r, py + math.sin(t) * r}
+        end
+        terraceList[#terraceList + 1] = {rings = {ring}, bounds = b, kind = 'playground', center = {px, py}}
+      end
+    end
+  end
+
+  if #terraceList == 0 then return end
+
+  -- Only search for immediately adjacent roads within maxRadius (12m), and only if delta <= 1.5m
+  local function adjacentRoadHeight(cx, cy, zLocal, maxRadius)
+    maxRadius = maxRadius or 12
+    local r2 = maxRadius * maxRadius
+    local minBx = math.floor((cx - maxRadius) / 50)
+    local maxBx = math.floor((cx + maxRadius) / 50)
+    local minBy = math.floor((cy - maxRadius) / 50)
+    local maxBy = math.floor((cy + maxRadius) / 50)
+    local bestDist, bestZ = math.huge, nil
+    for by = minBy, maxBy do
+      for bx = minBx, maxBx do
+        local bin = segmentBins[(bx + 32768) * 65536 + by + 32768]
+        if bin then
+          for _, s in ipairs(bin) do
+            if s.surface then
+              local a, b = s.a, s.b
+              local t = math.max(0, math.min(1, ((cx - a[1]) * s.dx + (cy - a[2]) * s.dy) / s.len2))
+              local qx, qy = a[1] + t * s.dx, a[2] + t * s.dy
+              local d2 = (cx - qx) ^ 2 + (cy - qy) ^ 2
+              if d2 <= r2 then
+                local z = (a[3] or 0) + t * ((b[3] or 0) - (a[3] or 0))
+                if math.abs(z - zLocal) <= 1.5 and d2 < bestDist then
+                  bestDist = d2
+                  bestZ = z
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+    return bestZ
+  end
+
+  local function nodeHasRoad(x, y)
+    local bin = segmentBins[(math.floor(x / 50) + 32768) * 65536 + math.floor(y / 50) + 32768]
+    if not bin then return false end
+    for _, s in ipairs(bin) do
+      if s.surface then
+        local a, b = s.a, s.b
+        local t = math.max(0, math.min(1, ((x - a[1]) * s.dx + (y - a[2]) * s.dy) / s.len2))
+        local d2 = (x - (a[1] + t * s.dx)) ^ 2 + (y - (a[2] + t * s.dy)) ^ 2
+        if d2 <= (s.width * 0.5 + 1.2) ^ 2 then return true end
+      end
+    end
+    return false
+  end
+
+  for _, item in ipairs(terraceList) do
+    local b = item.bounds
+    local cx, cy = (b[1] + b[3]) * 0.5, (b[2] + b[4]) * 0.5
+    local zLocal = (demAt and demAt(cx, cy)) or (pulled and pulled(cx, cy)) or 0
+    local nearZ = adjacentRoadHeight(cx, cy, zLocal, 12)
+    local flatTarget = zLocal
+    if nearZ then
+      flatTarget = 0.5 * nearZ + 0.5 * zLocal
+    end
+    -- STRICT SAFETY CLAMP: Courtyard / Playground can NEVER deviate from local terrain by more than 0.75m!
+    flatTarget = math.max(zLocal - 0.75, math.min(zLocal + 0.75, flatTarget))
+
+    local minGx = math.floor((b[1] - step * 0.5) / step)
+    local maxGx = math.floor((b[3] + step * 0.5) / step) + 1
+    local minGy = math.floor((b[2] - step * 0.5) / step)
+    local maxGy = math.floor((b[4] + step * 0.5) / step) + 1
+
+    for gy = minGy, maxGy do
+      for gx = minGx, maxGx do
+        if gx >= n0x - 1 and gx <= n0x + count + 3 and gy >= n0y - 1 and gy <= n0y + count + 3 then
+          local x, y = gx * step, gy * step
+          if inside(item.rings, x, y) or nearEdge(item.rings, x, y, step * 0.4) then
+            local k = nodeKey(gx, gy)
+            if nodes[k] ~= nil then
+              local onRoad = nodeHasRoad(x, y)
+              if not onRoad then
+                local curZ = nodes[k] - (lower[k] or 0)
+                local diff = curZ - flatTarget
+                if math.abs(diff) > 0.05 then
+                  local shift = math.max(-0.6, math.min(0.6, -diff * 0.5))
+                  nodes[k] = curZ + shift
+                  lower[k] = 0
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+    if pause then pause() end
+  end
+end
+
+function TERRAIN.relax(nodes, lower, nodeKey, step, n0x, n0y, count, segmentBins, lists, maxSlope, pause)
+  maxSlope = maxSlope or 0.10
+  local maxDelta = maxSlope * step
+  local maxDeltaDiag = maxSlope * step * 1.4142
+
+  local Z = {}
+  local roadCeiling = {}
+  local fixedNodes = {}
+
+  local function checkRoad(x, y)
+    local bin = segmentBins[(math.floor(x / 50) + 32768) * 65536 + math.floor(y / 50) + 32768]
+    if not bin then return false end
+    for _, s in ipairs(bin) do
+      if s.surface then
+        local a, b = s.a, s.b
+        local t = math.max(0, math.min(1, ((x - a[1]) * s.dx + (y - a[2]) * s.dy) / s.len2))
+        local d2 = (x - (a[1] + t * s.dx)) ^ 2 + (y - (a[2] + t * s.dy)) ^ 2
+        if d2 <= (s.width * 0.5 + 1.2) ^ 2 then return true end
+      end
+    end
+    return false
+  end
+
+  for gy = n0y - 1, n0y + count + 3 do
+    for gx = n0x - 1, n0x + count + 3 do
+      local k = nodeKey(gx, gy)
+      local zn = nodes[k]
+      if zn ~= nil then
+        local drop = lower[k] or 0
+        local eff = zn - drop
+        Z[k] = eff
+        local onRoad = checkRoad(gx * step, gy * step)
+        if onRoad or drop > 0 then
+          fixedNodes[k] = true
+          roadCeiling[k] = eff
+        end
+      end
+    end
+  end
+
+  -- Building pads are fixed ceilings
+  if lists and lists.buildings then
+    for _, building in ipairs(lists.buildings) do
+      if building.rings and building.rings[1] and #building.rings[1] >= 3 then
+        local b = ringBounds(building.rings)
+        local minGx = math.floor((b[1] - 2.5) / step)
+        local maxGx = math.floor((b[3] + 2.5) / step) + 1
+        local minGy = math.floor((b[2] - 2.5) / step)
+        local maxGy = math.floor((b[4] + 2.5) / step) + 1
+        local bBase = building.bBase
+        for gy = minGy, maxGy do
+          for gx = minGx, maxGx do
+            if gx >= n0x - 1 and gx <= n0x + count + 3 and gy >= n0y - 1 and gy <= n0y + count + 3 then
+              if inside(building.rings, gx * step, gy * step) or nearEdge(building.rings, gx * step, gy * step, 2.5) then
+                local k = nodeKey(gx, gy)
+                fixedNodes[k] = true
+                if bBase then
+                  local padCeil = bBase - 0.12
+                  roadCeiling[k] = math.min(roadCeiling[k] or math.huge, padCeil)
+                  if Z[k] and Z[k] > padCeil then Z[k] = padCeil end
+                elseif Z[k] then
+                  roadCeiling[k] = math.min(roadCeiling[k] or math.huge, Z[k])
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  local deltas = {
+    {1, 0, maxDelta, 1.0},
+    {-1, 0, maxDelta, 1.0},
+    {0, 1, maxDelta, 1.0},
+    {0, -1, maxDelta, 1.0},
+    {1, 1, maxDeltaDiag, 0.7071},
+    {1, -1, maxDeltaDiag, 0.7071},
+    {-1, 1, maxDeltaDiag, 0.7071},
+    {-1, -1, maxDeltaDiag, 0.7071},
+  }
+
+  -- 6 passes of Laplace harmonic relaxation + slope limiting
+  for iter = 1, 6 do
+    local gxStart, gxEnd, gxStep = n0x - 1, n0x + count + 3, 1
+    local gyStart, gyEnd, gyStep = n0y - 1, n0y + count + 3, 1
+    if iter % 2 == 0 then
+      gxStart, gxEnd, gxStep = n0x + count + 3, n0x - 1, -1
+      gyStart, gyEnd, gyStep = n0y + count + 3, n0y - 1, -1
+    end
+
+    for gy = gyStart, gyEnd, gyStep do
+      for gx = gxStart, gxEnd, gxStep do
+        local k = nodeKey(gx, gy)
+        local zk = Z[k]
+        if zk ~= nil then
+          if not fixedNodes[k] then
+            local sumZ, sumW = 0, 0
+            local minNeighbor, maxNeighbor = math.huge, -math.huge
+            for _, d in ipairs(deltas) do
+              local kn = nodeKey(gx + d[1], gy + d[2])
+              local zn = Z[kn]
+              if zn ~= nil then
+                sumZ = sumZ + zn * d[4]
+                sumW = sumW + d[4]
+                if zn < minNeighbor then minNeighbor = zn end
+                if zn > maxNeighbor then maxNeighbor = zn end
+              end
+            end
+            if sumW > 0 then
+              local laplaceZ = sumZ / sumW
+              zk = zk * 0.45 + laplaceZ * 0.55
+              if minNeighbor < math.huge and zk > minNeighbor + maxDelta then
+                zk = minNeighbor + maxDelta
+              end
+              if maxNeighbor > -math.huge and zk < maxNeighbor - maxDelta then
+                zk = maxNeighbor - maxDelta
+              end
+            end
+          end
+
+          if roadCeiling[k] and zk > roadCeiling[k] then
+            zk = roadCeiling[k]
+          end
+
+          Z[k] = zk
+        end
+      end
+    end
+    if pause and iter % 2 == 0 then pause() end
+  end
+
+  for gy = n0y - 1, n0y + count + 3 do
+    for gx = n0x - 1, n0x + count + 3 do
+      local k = nodeKey(gx, gy)
+      if Z[k] ~= nil then
+        nodes[k] = Z[k]
+        lower[k] = 0
+      end
+    end
+  end
+end
+
 local function build(cells, i, j, options)
   options = options or {}
   local pause = options.pause or options.yield or function() end
@@ -8721,32 +9142,7 @@ local function build(cells, i, j, options)
     end
     pause()
   end
-  do
-    for _, building in ipairs(lists.buildings or NONE) do
-      if building.rings and building.rings[1] and #building.rings[1] >= 3 then
-        local b = ringBounds(building.rings)
-        if boundsTouch(rect, b, step) then
-          local bBase = demAt((b[1] + b[3]) * 0.5, (b[2] + b[4]) * 0.5)
-          if bBase then
-            local minGx = math.floor(b[1] / step)
-            local maxGx = math.floor(b[3] / step) + 1
-            local minGy = math.floor(b[2] / step)
-            local maxGy = math.floor(b[4] / step) + 1
-            for gy = minGy, maxGy do
-              for gx = minGx, maxGx do
-                if inside(building.rings, gx * step, gy * step) then
-                  local k = nodeKey(gx, gy)
-                  if nodes[k] and nodes[k] > bBase - 0.25 then
-                    nodes[k] = bBase - 0.25
-                  end
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-  end
+
   local function lattice(x, y)
     local fx, fy = x / step, y / step
     local gx, gy = floor(fx), floor(fy)
@@ -8769,12 +9165,25 @@ local function build(cells, i, j, options)
     if za == nil or zb == nil or zc == nil then return end
     local excess = wa * za + wb * zb + wc * zc - target
     if excess <= 0 then return end
-    local ha, hb, hc = math.max(0, za - target), math.max(0, zb - target), math.max(0, zc - target)
-    local f = excess / (wa * ha + wb * hb + wc * hc)
-    if tune.pressEven > 0 then ha, hb, hc, f = 1, 1, 1, excess end
-    for _, pair in ipairs({{ka, ha}, {kb, hb}, {kc, hc}}) do
-      local drop = pair[2] * f
-      if drop > (lower[pair[1]] or 0) then lower[pair[1]] = drop end
+    local ha = wa > 0.02 and math.max(0, za - target) or 0
+    local hb = wb > 0.02 and math.max(0, zb - target) or 0
+    local hc = wc > 0.02 and math.max(0, zc - target) or 0
+    local denom = wa * ha + wb * hb + wc * hc
+    if denom > 1e-6 then
+      local f = excess / denom
+      if tune.pressEven > 0 then ha, hb, hc, f = 1, 1, 1, excess end
+      if ha > 0 then
+        local drop = ha * f
+        if drop > (lower[ka] or 0) then lower[ka] = drop end
+      end
+      if hb > 0 then
+        local drop = hb * f
+        if drop > (lower[kb] or 0) then lower[kb] = drop end
+      end
+      if hc > 0 then
+        local drop = hc * f
+        if drop > (lower[kc] or 0) then lower[kc] = drop end
+      end
     end
   end
   -- The ground as drawn: each lattice cell is two triangles split along its (x0, y0)-(x1, y1)
@@ -9887,6 +10296,9 @@ local function build(cells, i, j, options)
       press((p[1] + q[1] + c[1]) / 3, (p[2] + q[2] + c[2]) / 3, (p[3] + q[3] + c[3]) / 3 - tune.margin)
     end
   end
+  TERRAIN.buildingPads(lists, nodes, lower, nodeKey, step, n0x, n0y, count, rect, demAt, pulled, press, pause)
+  TERRAIN.terraceAreas(lists, segmentBins, nodes, lower, nodeKey, step, n0x, n0y, count, rect, demAt, pulled, press, pause)
+  TERRAIN.relax(nodes, lower, nodeKey, step, n0x, n0y, count, segmentBins, lists, tune.maxSlope or .10, pause)
   normalCache = {} -- no more press() calls; covers repeatedly shade shared lattice corners
   -- Ground cover lies on the ground as drawn: cut by lattice cell and diagonal, so each piece is
   -- in one ground triangle and exactly parallel to it. The pressed ground keeps it under the
@@ -10440,11 +10852,11 @@ local function build(cells, i, j, options)
 
       local low, cx, cy = math.huge, 0, 0
       for _, p in ipairs(exterior) do low, cx, cy = math.min(low, ground(p[1], p[2])), cx + p[1], cy + p[2] end
-      local base = sourceCount > 0 and sourceSum / sourceCount or ground(cx / #exterior, cy / #exterior)
+      local base = building.bBase or (sourceCount > 0 and sourceSum / sourceCount) or ground(cx / #exterior, cy / #exterior)
       if sourceCount > 0 then low = sourceLow end
       local height = BLD.partWalls(math.max(2.2, math.min(850, BLD.height(building, tags, footprint, h))), tags, footprint, options.far)
       local lifted = (building.minHeight or number(tags.min_height, 0)) > 0
-      local bottom = lifted and base + (building.minHeight or number(tags.min_height, 0)) or low - .3
+      local bottom = lifted and base + (building.minHeight or number(tags.min_height, 0)) or math.min(low - .35, base - .4)
       local top, kind = base + height, BLD.wallMaterial(building, look, height, footprint)
       -- building=roof stands open on columns (BLD.shopCanopy); a canopy over pumps clears a
       -- lorry unless OSM gives its height
@@ -10528,8 +10940,8 @@ local function build(cells, i, j, options)
           if length < 4.2 and (kind:find('wall_pnl_', 1, true) == 1 or kind:find('wall_lgg_', 1, true) == 1 or kind:find('wall_brk_', 1, true) == 1) then wallKind = kind .. '_end' end
           local door = doors and ((use == 'garages' and length >= 6) or (use == 'garage' and length <= 6.5))
           local scale = BLD.facadeScale(wallKind)
-          local seam = plinth and math.min(top, math.max(bottom, base + BLD.plinth)) or bottom
-          if seam > bottom then
+          local seam = math.max(bottom, plinth and math.min(top, base + BLD.plinth) or base)
+          if not lifted and bottom < seam then
             scene.polygon(plinthKind, {{a[1], a[2], bottom, along / 3, (bottom - base) / 3},
               {b[1], b[2], bottom, (along + length) / 3, (bottom - base) / 3},
               {b[1], b[2], seam, (along + length) / 3, (seam - base) / 3},
@@ -10593,6 +11005,9 @@ local function build(cells, i, j, options)
           end
           if dress and dress.mass and length > .4 then BLD.cornice(scene, a, b, length, top) end
           if BLD.city and raw == rings[1] and length > 6 and not plinth then BLD.socle(scene, a, b, length, bottom, base) end
+          if not lifted and not open and raw == rings[1] and not options.far then
+            BLD.apron(scene, a, b, length, along, base, ground, top)
+          end
           if BLD.city and raw == rings[1] and length >= 6 then
             BLD.probe = BLD.wallPoint(a, b, length, length * .5, 8, 0, 0, 0)
             BLD.onroad = BLD.street(segmentBins, BLD.probe[1], BLD.probe[2], 18)
