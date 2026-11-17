@@ -79,11 +79,16 @@ Write-Host "[2/3] Копирование файлов в BeamNG.drive..." -Foreg
 if ($planetSrc) {
     Write-Host "  - Установка ядра AroundWorldNG ($([math]::Round((Get-Item $planetSrc).Length / 1MB, 1)) МБ)..." -ForegroundColor White
     Copy-Item -Path $planetSrc -Destination "$targetMods\aroundworldng_planet.zip" -Force
-    # Keep compatibility with earthng
     Copy-Item -Path $planetSrc -Destination "$targetMods\earthng_planet.zip" -Force -ErrorAction SilentlyContinue
     Write-Host "    [+] Ядро мода установлено (18 стилей новостроек, 3D-балконы, генератор)." -ForegroundColor Green
 } else {
-    Write-Host "  [!] Файл aroundworldng_planet.zip не найден рядом со скриптом." -ForegroundColor Red
+    Write-Host "  [-] Локальный файл ядра не найден. Скачивание с GitHub Release v2.1.0 (260 МБ)..." -ForegroundColor Yellow
+    $planetUrl = "https://github.com/wilszzz/aroundworldng/releases/download/v2.1.0/aroundworldng_planet.zip"
+    curl.exe -L --progress-bar -o "$targetMods\aroundworldng_planet.zip" $planetUrl
+    Copy-Item -Path "$targetMods\aroundworldng_planet.zip" -Destination "$targetMods\earthng_planet.zip" -Force -ErrorAction SilentlyContinue
+    if (Test-Path "$targetMods\aroundworldng_planet.zip") {
+        Write-Host "    [+] Ядро мода успешно скачано и установлено!" -ForegroundColor Green
+    }
 }
 
 if ($mapSrc) {
@@ -91,7 +96,12 @@ if ($mapSrc) {
     Copy-Item -Path $mapSrc -Destination "$targetMods\aroundworldng_russia-saint-petersburg.zip" -Force
     Write-Host "    [+] Карта Санкт-Петербурга и Кудрово установлена." -ForegroundColor Green
 } else {
-    Write-Host "  [-] Готовая карта Санкт-Петербурга не найдена локально." -ForegroundColor Yellow
+    Write-Host "  [-] Локальная карта не найдена. Скачивание с GitHub Release v2.1.0 (25 МБ)..." -ForegroundColor Yellow
+    $mapUrl = "https://github.com/wilszzz/aroundworldng/releases/download/v2.1.0/aroundworldng_russia-saint-petersburg.zip"
+    curl.exe -L --progress-bar -o "$targetMods\aroundworldng_russia-saint-petersburg.zip" $mapUrl
+    if (Test-Path "$targetMods\aroundworldng_russia-saint-petersburg.zip") {
+        Write-Host "    [+] Карта Санкт-Петербурга и Кудрово успешно скачана!" -ForegroundColor Green
+    }
 }
 
 Write-Host ""
