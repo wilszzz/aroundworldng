@@ -7,40 +7,108 @@ Write-Host "          AroundWorldNG — Установка мода в BeamNG.dr
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# 1. Detect BeamNG mods folder
+# 1. Detect candidate BeamNG mods folders
 $modsCandidates = @(
     "$env:LOCALAPPDATA\BeamNG\BeamNG.drive\current\mods",
     "$env:LOCALAPPDATA\BeamNG\BeamNG.drive\0.33\mods",
     "$env:LOCALAPPDATA\BeamNG\BeamNG.drive\0.32\mods",
     "$env:LOCALAPPDATA\BeamNG\BeamNG.drive\0.31\mods",
-    "$env:LOCALAPPDATA\BeamNG\BeamNG.drive\0.30\mods"
+    "$env:LOCALAPPDATA\BeamNG\BeamNG.drive\0.30\mods",
+    "D:\SteamLibrary\steamapps\common\BeamNG.drive\mods",
+    "D:\Games\BeamNG.drive\mods",
+    "D:\BeamNG.drive\mods",
+    "D:\BeamNG\mods"
 )
 
-$targetMods = $null
+$autoFound = $null
 foreach ($cand in $modsCandidates) {
     if (Test-Path $cand) {
-        $targetMods = $cand
+        $autoFound = $cand
         break
     }
 }
 
-if (-not $targetMods) {
-    $baseBeam = "$env:LOCALAPPDATA\BeamNG\BeamNG.drive"
-    if (Test-Path $baseBeam) {
-        $targetMods = "$baseBeam\current\mods"
-        New-Item -ItemType Directory -Path $targetMods -Force | Out-Null
+function Pick-Folder([string]$initial) {
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        $fbd = New-Object System.Windows.Forms.FolderBrowserDialog
+        $fbd.Description = "Выберите папку mods игры BeamNG.drive (например, на диске D:)"
+        $fbd.ShowNewFolderButton = $true
+        if ($initial -and (Test-Path $initial)) {
+            $fbd.SelectedPath = $initial
+        }
+        $topForm = New-Object System.Windows.Forms.Form
+        $topForm.TopMost = $true
+        $res = $fbd.ShowDialog($topForm)
+        if ($res -eq [System.Windows.Forms.DialogResult]::OK -and $fbd.SelectedPath) {
+            return $fbd.SelectedPath
+        }
+    } catch {
+        # Fallback if forms not supported
     }
+    return $null
+}
+
+$targetMods = $null
+
+if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+    Write-Host "[1/3] Выбор папки установки мода:" -ForegroundColor Cyan
+    if ($autoFound) {
+        Write-Host "  Найдена стандартная папка: $autoFound" -ForegroundColor Gray
+    }
+    Write-Host ""
+    Write-Host "  [1] Выбрать папку через проводник (откроется окно - диск D:\ и т.д.)" -ForegroundColor Yellow
+    Write-Host "  [2] Ввести путь вручную (например: D:\BeamNG\mods)" -ForegroundColor White
+    if ($autoFound) {
+        Write-Host "  [3] Использовать авто-определённую папку: $autoFound" -ForegroundColor White
+    }
+    Write-Host ""
+
+    $choice = Read-Host "Выберите вариант [1, 2" + $(if ($autoFound) { ", 3" } else { "" }) + "] (по умолчанию 1)"
+    if (-not $choice) { $choice = "1" }
+
+    if ($choice -eq "2") {
+        $manual = Read-Host "Введите полный путь к папке mods"
+        if ($manual) { $targetMods = $manual.Trim('"`''') }
+    } elseif ($choice -eq "3" -and $autoFound) {
+        $targetMods = $autoFound
+    } else {
+        Write-Host "Открывается окно проводника для выбора папки..." -ForegroundColor Cyan
+        $picked = Pick-Folder $autoFound
+        if ($picked) {
+            $targetMods = $picked
+        } else {
+            Write-Host "Окно было закрыто без выбора." -ForegroundColor Yellow
+            $manual = Read-Host "Введите путь вручную (или нажмите Enter для $autoFound)"
+            if ($manual) { $targetMods = $manual.Trim('"`''') } else { $targetMods = $autoFound }
+        }
+    }
+} else {
+    $targetMods = $autoFound
 }
 
 if (-not $targetMods) {
-    Write-Host "[!] Папка BeamNG.drive не найдена автоматически." -ForegroundColor Yellow
-    $targetMods = Read-Host "Введите полный путь к вашей папке mods в BeamNG"
-    if (-not (Test-Path $targetMods)) {
-        New-Item -ItemType Directory -Path $targetMods -Force | Out-Null
+    if ($autoFound) {
+        $targetMods = $autoFound
+    } else {
+        $targetMods = "$env:LOCALAPPDATA\BeamNG\BeamNG.drive\current\mods"
     }
 }
 
-Write-Host "[1/3] Папка модов определена:" -ForegroundColor Green
+# Auto-correct if user selected BeamNG root without \mods
+if ($targetMods -and (Split-Path -Leaf $targetMods).ToLower() -ne "mods") {
+    if (Test-Path "$targetMods\mods") {
+        $targetMods = "$targetMods\mods"
+    } elseif (Test-Path "$targetMods\BeamNG.drive.exe" -or (Test-Path "$targetMods\Bin64")) {
+        $targetMods = "$targetMods\mods"
+    }
+}
+
+if (-not (Test-Path $targetMods)) {
+    New-Item -ItemType Directory -Path $targetMods -Force | Out-Null
+}
+
+Write-Host "Выбрана папка установки:" -ForegroundColor Green
 Write-Host "      $targetMods" -ForegroundColor White
 Write-Host ""
 
