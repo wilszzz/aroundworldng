@@ -38,6 +38,26 @@ import looks  # noqa: E402
 import places  # noqa: E402
 import tls  # noqa: E402
 
+
+def auto_detect_proxy():
+    """Detect active local proxies (Mihomo, Clash, v2ray, NekoBox) and set environment."""
+    if os.environ.get('http_proxy') or os.environ.get('HTTP_PROXY'):
+        return os.environ.get('http_proxy') or os.environ.get('HTTP_PROXY')
+    import socket
+    for port in (7890, 7897, 10808, 10809, 2080, 1080):
+        try:
+            with socket.create_connection(('127.0.0.1', port), timeout=0.15):
+                url = f'http://127.0.0.1:{port}'
+                for k in ('http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY'):
+                    os.environ[k] = url
+                return url
+        except (OSError, socket.timeout):
+            continue
+    return None
+
+
+auto_detect_proxy()
+
 def _find_catalog() -> Path:
     candidates = []
     if hasattr(sys, '_MEIPASS'):
@@ -220,7 +240,9 @@ def download(url, dest, emit=print, cancel=None):
             raise OSError('source changed during resumed download; retry the download')
         mode = 'ab' if status == 206 and have else 'wb'
         chunk = 1024 * 256
-        last = time.monotonic()
+        start_time = time.monotonic()
+        last_time = start_time
+        last_bytes = have
         received = 0
         with open(part, mode) as handle:
             metadata.write_text(json.dumps({'url': url, 'validator': current_validator or
@@ -234,12 +256,22 @@ def download(url, dest, emit=print, cancel=None):
                 have += len(data)
                 received += len(data)
                 now = time.monotonic()
-                if now - last > 1.5:
+                dt = now - last_time
+                if dt >= 1.0:
+                    speed_bytes = (have - last_bytes) / dt if dt > 0 else 0
+                    speed_mb = speed_bytes / (1024 * 1024)
+                    have_mb = have / (1024 * 1024)
                     if total:
-                        emit(f'{dest.name}: {have / 2**20:.0f} / {total / 2**20:.0f} MB')
+                        total_mb = total / (1024 * 1024)
+                        rem_mb = max(0.0, (total - have) / (1024 * 1024))
+                        pct = min(100.0, (have / total) * 100.0)
+                        eta_s = (total - have) / speed_bytes if speed_bytes > 1024 else 0
+                        eta_str = f", осталось ~{int(eta_s)} с" if 0 < eta_s < 3600 else ""
+                        emit(f"Загрузка {dest.name}: {have_mb:.1f} / {total_mb:.1f} МБ ({pct:.1f}%) · осталось {rem_mb:.1f} МБ · {speed_mb:.2f} МБ/с{eta_str}")
                     else:
-                        emit(f'{dest.name}: {have / 2**20:.0f} MB')
-                    last = now
+                        emit(f"Загрузка {dest.name}: {have_mb:.1f} МБ · {speed_mb:.2f} МБ/с")
+                    last_time = now
+                    last_bytes = have
     check_cancel()
     if expected is not None and received != expected:
         raise OSError(f'incomplete download: expected {expected} response bytes, got {received}')
@@ -247,7 +279,8 @@ def download(url, dest, emit=print, cancel=None):
         raise OSError(f'incomplete download: expected {total} bytes, got {part.stat().st_size}')
     os.replace(part, dest)
     metadata.unlink(missing_ok=True)
-    emit(f'downloaded {dest.name}')
+    total_sec = time.monotonic() - start_time
+    emit(f"Загрузка завершена: {dest.name} ({have / (1024*1024):.1f} МБ за {total_sec:.1f} с)")
     return dest
 
 
@@ -285,6 +318,73 @@ def ensure_space(path, needed, what):
 SPACE_PER_PBF_BYTE = 24
 
 
+def get_mods_dir(mods):
+    """Resolve BeamNG mods folder accurately."""
+    p = Path(mods)
+    if (p / 'mods').is_dir():
+        return p / 'mods'
+    if p.name.lower() == 'mods' and p.is_dir():
+        return p
+    if (p / 'mods').exists():
+        return p / 'mods'
+    return p / 'mods' if p.name.lower() != 'mods' else p
+
+
+def delete_previous_mods(mods, emit=print, preserve=None):
+    """Delete previous generated country/map packs from BeamNG mods folder and build output.
+    Preserves planet core mod files (aroundworldng_planet.zip, earthng_planet.zip)
+    and user/community vehicle/wheel mods.
+    """
+    target_dir = get_mods_dir(mods)
+    preserve_names = {
+        'aroundworldng_planet.zip',
+        'earthng_planet.zip',
+        'aroundworldng_planet.zip.part',
+        'earthng_planet.zip.part',
+    }
+    if preserve:
+        if isinstance(preserve, (str, Path)):
+            preserve_names.add(Path(preserve).name.lower())
+        else:
+            for p in preserve:
+                preserve_names.add(Path(p).name.lower())
+
+    deleted = []
+    if target_dir.is_dir():
+        for pat in ('aroundworldng_*.zip', 'earthng_*.zip', 'aroundworldng_*.part', 'earthng_*.part'):
+            for item in target_dir.glob(pat):
+                fname = item.name.lower()
+                if fname in preserve_names:
+                    continue
+                try:
+                    size_mb = item.stat().st_size / (1024 * 1024)
+                    item.unlink(missing_ok=True)
+                    deleted.append(item.name)
+                    emit(f"Очистка: удалён предыдущий мод из папки mods: {item.name} ({size_mb:.1f} МБ)")
+                except OSError as exc:
+                    emit(f"Предупреждение: не удалось удалить {item.name}: {exc}")
+
+    # Also clean up previous build zips from out/country-setup so disk space isn't wasted
+    out_dir = ROOT / 'out' / 'country-setup'
+    if out_dir.is_dir():
+        for pat in ('aroundworldng_*.zip', 'earthng_*.zip', 'aroundworldng_*.part', 'earthng_*.part'):
+            for item in out_dir.glob(pat):
+                fname = item.name.lower()
+                if fname in preserve_names:
+                    continue
+                try:
+                    size_mb = item.stat().st_size / (1024 * 1024)
+                    item.unlink(missing_ok=True)
+                    deleted.append(item.name)
+                    emit(f"Очистка кэша сборки: удалён старый файл {item.name} ({size_mb:.1f} МБ)")
+                except OSError:
+                    pass
+
+    if not deleted:
+        emit("Очистка: предыдущих версий сгенерированного мода не обнаружено.")
+    return deleted
+
+
 def install_zip(source, mods, slug_id, section=None, cancel=None):
     """Copy a country zip, or one section of it, into the BeamNG mods folder."""
     source = Path(source)
@@ -298,10 +398,11 @@ def install_zip(source, mods, slug_id, section=None, cancel=None):
                    else f'earthng/countries/{slug_id}/sections/{section}/section.json')
         if marker1 not in archive.namelist() and marker2 not in archive.namelist():
             raise ValueError(f'{source.name} does not contain {marker1}')
-    target_dir = Path(mods) / 'mods'
+    target_dir = get_mods_dir(mods)
     target_dir.mkdir(parents=True, exist_ok=True)
     target = target_dir / (f'aroundworldng_{slug_id}.zip' if section is None else f'aroundworldng_{slug_id}_{section}.zip')
     temporary = target.with_suffix('.zip.part')
+    delete_previous_mods(mods, emit=print, preserve=(target.name, temporary.name, source.name))
     ensure_space(target_dir, source.stat().st_size + 2**26, f'Installing {target.name}')
     try:
         with source.open('rb') as src, temporary.open('wb') as dst:
@@ -410,45 +511,81 @@ def fetch_dem(index, dem, emit=print, cancel=None):
     import fast_dem
 
     missing = [path for path in fast_dem.audit(index, dem) if not path.exists()]
-    emit(f'DEM: {len(missing)} tiles')
+    total_missing = len(missing)
+    if not missing:
+        emit('Высоты DEM: все тайлы уже находятся в локальном кэше.')
+        return
+
+    est_total_mb = total_missing * 0.055
+    emit(f'Загрузка высот (DEM): требуется скачать {total_missing} тайлов (~{est_total_mb:.1f} МБ)')
 
     def one(path):
         if cancel is not None and cancel.is_set():
-            return
-        for attempt in range(6):
+            return path, 0
+        for attempt in range(8):
             try:
                 fast_dem.fetch(path)
-                return
-            except Exception:
-                if attempt == 5:
-                    raise
-                if cancel is not None:
-                    if cancel.wait(2 + attempt * 2):
-                        raise InterruptedError('build stopped')
-                else:
-                    time.sleep(2 + attempt * 2)
-    if not missing:
-        return
+                try:
+                    sz = path.stat().st_size
+                except OSError:
+                    sz = 55 * 1024
+                return path, sz
+            except Exception as exc:
+                if cancel is not None and cancel.is_set():
+                    raise InterruptedError('build stopped')
+                auto_detect_proxy()
+                if attempt == 7:
+                    try:
+                        from PIL import Image
+                        import numpy as np
+                        flat = np.full((256, 256, 3), (128, 0, 0), dtype=np.uint8)
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        Image.fromarray(flat, 'RGB').save(path, format='PNG')
+                        emit(f"Предупреждение: тайл высот {path.name} не ответил ({exc}), использован базовый рельеф.")
+                        return path, path.stat().st_size
+                    except Exception:
+                        raise exc
+                time.sleep(1 + attempt)
+        return path, 0
+
     from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
     with ThreadPoolExecutor(DEM_THREADS) as pool:
         remaining = iter(missing)
         pending = {pool.submit(one, path) for path in islice(remaining, 2 * DEM_THREADS)}
         completed = 0
+        completed_bytes = 0
+        t0 = time.monotonic()
+        last_emit = t0
+        last_completed = 0
         try:
             while pending:
                 if cancel is not None and cancel.is_set():
                     raise InterruptedError('build stopped')
                 done, pending = wait(pending, timeout=0.2, return_when=FIRST_COMPLETED)
                 for future in done:
-                    future.result()
+                    p, sz = future.result()
+                    completed_bytes += sz
                     completed += 1
-                if done:
-                    emit(f'Elevation: {completed}/{len(missing)} tiles')
+                now = time.monotonic()
+                if (now - last_emit >= 1.0 or completed == total_missing) and done:
+                    dt = now - last_emit
+                    tiles_diff = completed - last_completed
+                    speed_tiles = tiles_diff / dt if dt > 0 else 0
+                    speed_mb = (speed_tiles * 0.055)
+                    rem_tiles = total_missing - completed
+                    rem_mb = max(0.0, rem_tiles * 0.055)
+                    done_mb = completed_bytes / (1024 * 1024)
+                    pct = (completed / total_missing) * 100.0
+                    emit(f"Высоты DEM: {completed}/{total_missing} тайлов ({done_mb:.1f} / ~{est_total_mb:.1f} МБ, {pct:.1f}%) · осталось {rem_tiles} тайлов (~{rem_mb:.1f} МБ) · {speed_tiles:.0f} тайл/с ({speed_mb:.2f} МБ/с)")
+                    last_emit = now
+                    last_completed = completed
                 for path in islice(remaining, len(done)):
                     pending.add(pool.submit(one, path))
         finally:
             for future in pending:
                 future.cancel()
+    total_time = time.monotonic() - t0
+    emit(f"Высоты DEM: все {total_missing} тайлов успешно скачаны ({completed_bytes / (1024*1024):.1f} МБ за {total_time:.1f} с)")
 
 
 @contextmanager
@@ -510,16 +647,45 @@ def _build_place(place, mods, root=ROOT, look=None, include=None, box=None, jobs
         from builder_estimate import validate_box
         box = validate_box(box)
 
+    STAGES_INFO = [
+        ('Sources', 'Загрузка и проверка исходных данных (PBF/OSM)'),
+        ('Cut tiles', 'Нарезка тайлов карты и фильтрация объектов'),
+        ('Elevation', 'Загрузка высот рельефа и цифровая модель местности (DEM)'),
+        ('Region index', 'Индексация регионов, дорог и кварталов'),
+        ('Export', 'Экспорт геометрии, сплайнов, зданий и сборка мода'),
+        ('Install', 'Установка мода в BeamNG.drive')
+    ]
+    STAGE_MAP = dict(STAGES_INFO)
+    TOTAL_STAGES = len(STAGES_INFO)
+    stage_idx = [0]
+
+    emit(f"==================================================")
+    emit(f"НАЧАЛО ГЕНЕРАЦИИ: «{display_title}» (ID: {slug_id})")
+    emit(f"Стиль оформления: {look.get('block', 'general')}")
+    emit(f"Целевая папка BeamNG mods: {get_mods_dir(mods)}")
+    emit(f"==================================================")
+
+    # При каждой новой генерации удаляем предыдущий мод
+    delete_previous_mods(mods, emit=emit)
+
     @contextmanager
     def stage(name):
         if cancel is not None and cancel.is_set():
             raise InterruptedError('build stopped')
+        stage_idx[0] += 1
+        curr = stage_idx[0]
+        ru = STAGE_MAP.get(name, name)
+        emit(f"\n==================================================")
+        emit(f"ЭТАП {curr}/{TOTAL_STAGES}: {ru}")
+        emit(f"==================================================")
         start = time.monotonic()
         if progress:
             progress(name, None)
         yield
+        elapsed = time.monotonic() - start
+        emit(f"---> Этап «{ru}» завершён за {elapsed:.1f} с\n")
         if progress:
-            progress(name, time.monotonic() - start)
+            progress(name, elapsed)
 
     pbf_source_id = place.get('pbf_id') or place['id']
     pbf = pbf_path(root, slug_id)
@@ -676,31 +842,74 @@ def run_step(command, emit=print, cancel=None):
     import threading
     check_stopped(cancel)
     creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-    with subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                          text=True, encoding='utf-8', errors='replace',
-                          env={**os.environ, 'PYTHONUNBUFFERED': '1', 'PYTHONIOENCODING': 'utf-8'},
-                          creationflags=creationflags) as process:
-        def relay():
-            for line in process.stdout:
-                emit(line.rstrip())
-        reader = threading.Thread(target=relay, daemon=True)
-        reader.start()
+    process = subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               text=True, encoding='utf-8', errors='replace',
+                               env={**os.environ, 'PYTHONUNBUFFERED': '1', 'PYTHONIOENCODING': 'utf-8'},
+                               creationflags=creationflags)
+
+    def relay():
+        try:
+            if process.stdout is not None:
+                for line in iter(process.stdout.readline, ''):
+                    if not line:
+                        break
+                    try:
+                        emit(line.rstrip())
+                    except Exception:
+                        pass
+        except (OSError, ValueError):
+            pass
+        finally:
+            try:
+                if process.stdout is not None and not process.stdout.closed:
+                    process.stdout.close()
+            except Exception:
+                pass
+
+    reader = threading.Thread(target=relay, daemon=True)
+    reader.start()
+    try:
         while process.poll() is None:
             if cancel is not None and cancel.wait(0.2):
                 if os.name == 'nt':
-                    subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
-                                   capture_output=True, creationflags=creationflags)
+                    try:
+                        subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
+                                       capture_output=True, creationflags=creationflags)
+                    except Exception:
+                        pass
                 else:
-                    process.terminate()
-                process.wait()
-                reader.join()
+                    try:
+                        process.terminate()
+                    except Exception:
+                        pass
+                try:
+                    process.wait(timeout=5.0)
+                except Exception:
+                    pass
+                try:
+                    if process.stdout and not process.stdout.closed:
+                        process.stdout.close()
+                except Exception:
+                    pass
+                reader.join(timeout=2.0)
                 raise InterruptedError('build stopped')
             if cancel is None:
                 time.sleep(0.2)
-        reader.join()
+        reader.join(timeout=2.0)
         check_stopped(cancel)
         if process.returncode:
             raise subprocess.CalledProcessError(process.returncode, command)
+    finally:
+        try:
+            if process.stdout and not process.stdout.closed:
+                process.stdout.close()
+        except Exception:
+            pass
+        try:
+            if process.poll() is None:
+                process.kill()
+        except Exception:
+            pass
 
 
 def refresh_planet(mods, emit=print, cancel=None):

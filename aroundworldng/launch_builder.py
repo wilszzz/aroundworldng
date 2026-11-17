@@ -260,12 +260,17 @@ def show_error(message):
         pass
 
 
-def run_gui(status):
+def run_gui(status, auto_build=None):
     """The window, as country_ui.main, plus a shown/failed status and logged callback errors."""
     import threading
     root = None
     try:
         sys.path.insert(0, str(HERE))
+        try:
+            import country_fetch
+            country_fetch.auto_detect_proxy()
+        except Exception:
+            pass
         import country_ui
 
         def report(kind, value, tb):
@@ -276,6 +281,35 @@ def run_gui(status):
         if hasattr(root, 'report_callback_exception'):
             root.report_callback_exception = lambda *info: report(*info)
         app = country_ui.Setup(root)
+
+        if auto_build:
+            def trigger_auto_build():
+                if not app.places:
+                    root.after(500, trigger_auto_build)
+                    return
+                q = str(auto_build).casefold()
+                matched = None
+                for p in app.places:
+                    if q in p['name'].casefold() or q in p['id'].casefold():
+                        matched = p
+                        break
+                if not matched and app.places:
+                    matched = app.places[0]
+                if matched:
+                    app.select_place(matched)
+
+                def do_build():
+                    try:
+                        if hasattr(app, 'optimize_source'):
+                            app.optimize_source()
+                    except Exception:
+                        pass
+                    app.build()
+
+                root.after(1200, do_build)
+
+            root.after(1000, trigger_auto_build)
+
         root.after_idle(lambda: status and write_status(status, 'shown'))
         root.mainloop()
         return 0
@@ -301,9 +335,10 @@ def main(argv=None):
     parser.add_argument('--status')
     parser.add_argument('--check', action='store_true')
     parser.add_argument('--after-setup', action='store_true')
+    parser.add_argument('--auto-build', help='Automatically select region and build map')
     args = parser.parse_args(argv)
     if args.gui:
-        return run_gui(args.status)
+        return run_gui(args.status, auto_build=args.auto_build)
     return launch(argv)
 
 

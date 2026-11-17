@@ -142,29 +142,136 @@ def road_feature(fid, data):
             'tags': data['tags'], 'nodes': [str(n) for n in data['nodes']]}
 
 
+URBAN_LANDUSE = {'residential', 'commercial', 'retail', 'industrial', 'construction',
+                 'garages', 'institutional', 'civic', 'service'}
+URBAN_AMENITY = {'school', 'kindergarten', 'university', 'college', 'hospital', 'parking',
+                 'community_centre', 'public_building', 'clinic'}
+URBAN_LEISURE = {'playground', 'pitch', 'sports_centre', 'stadium'}
+URBAN_HIGHWAYS = {'residential', 'living_street', 'service', 'pedestrian', 'footway', 'cycleway'}
+
+
+def detect_cell_urban(cell, xs, ys):
+    """Detect building footprints and urban zone mask over the grid (xs, ys).
+    Returns (building_mask, urban_mask) as 2D boolean arrays of shape (len(ys), len(xs))."""
+    ny, nx = len(ys), len(xs)
+    gx, gy = np.meshgrid(xs, ys)
+    coords_x, coords_y = gx.ravel(), gy.ravel()
+
+    building_polys = []
+    for b in cell.get('buildings', []):
+        rings = b.get('rings', [])
+        if rings and len(rings[0]) >= 3:
+            try:
+                p = shapely.Polygon([(pt[0], pt[1]) for pt in rings[0]])
+                if p.is_valid and not p.is_empty:
+                    building_polys.append(p)
+            except Exception:
+                pass
+
+    area_polys = []
+    for a in cell.get('areas', []):
+        tags = a.get('tags', {})
+        kind = a.get('kind', '')
+        if (tags.get('landuse') in URBAN_LANDUSE or kind in ('residential', 'paved', 'playground') or
+                tags.get('amenity') in URBAN_AMENITY or tags.get('leisure') in URBAN_LEISURE or
+                (tags.get('highway') in ('pedestrian', 'living_street', 'service') and tags.get('area') == 'yes')):
+            rings = a.get('rings', [])
+            if rings and len(rings[0]) >= 3:
+                try:
+                    p = shapely.Polygon([(pt[0], pt[1]) for pt in rings[0]])
+                    if p.is_valid and not p.is_empty:
+                        area_polys.append(p)
+                except Exception:
+                    pass
+
+    road_lines = []
+    for r in cell.get('roads', []):
+        tags = r.get('tags', {})
+        if tags.get('highway') in URBAN_HIGHWAYS:
+            pts = r.get('points', [])
+            if len(pts) >= 2:
+                try:
+                    line = shapely.LineString([(pt[0], pt[1]) for pt in pts])
+                    if line.is_valid and not line.is_empty:
+                        road_lines.append(line)
+                except Exception:
+                    pass
+
+    if building_polys:
+        try:
+            b_union = shapely.union_all(building_polys)
+            # Buffer by 5.0m so points on walls and perimeter edges are strictly covered
+            b_footprints = shapely.buffer(b_union, 5.0)
+            shapely.prepare(b_footprints)
+            building_mask = shapely.contains_xy(b_footprints, coords_x, coords_y).reshape(ny, nx)
+            buffered_buildings = [shapely.buffer(b_union, 40.0)]
+        except Exception:
+            building_mask = np.zeros((ny, nx), bool)
+            buffered_buildings = []
+    else:
+        building_mask = np.zeros((ny, nx), bool)
+        buffered_buildings = []
+
+    urban_parts = area_polys + buffered_buildings
+    if road_lines:
+        try:
+            r_union = shapely.union_all(road_lines)
+            urban_parts.append(shapely.buffer(r_union, 25.0))
+        except Exception:
+            pass
+
+    if urban_parts:
+        try:
+            u_union = shapely.union_all(urban_parts)
+            shapely.prepare(u_union)
+            urban_mask = shapely.contains_xy(u_union, coords_x, coords_y).reshape(ny, nx)
+        except Exception:
+            urban_mask = np.zeros((ny, nx), bool)
+    else:
+        urban_mask = np.zeros((ny, nx), bool)
+
+    return building_mask, urban_mask
+
+
 class Despiked:
-    """DEM without single-spot spikes and pits. Terrarium has void artefacts of a few pixels
-    (Zanzibar: +254 m and -66 m beside 20 m ground; a green cone in the game). A sample more
-    than SPIKE metres from the median of its 5 x 5 neighbourhood (25 m steps) takes the median.
-    The result depends on the world point alone, so neighbouring cells keep identical seams."""
+    """DEM without single-spot spikes and pits, with adaptive urban filtering.
+    In rural areas, threshold is SPIKE (40 m). In urban zones (buildings, courtyards, residential
+    landuse), threshold is SPIKE_URBAN (3.5 m) with rooftop infill and bilateral/median smoothing
+    to eliminate radar DSM reflections and deep courtyard trenches."""
     SPIKE = 40.
+    SPIKE_URBAN = 3.5
     OFFSETS = np.array([(dx, dy) for dy in range(-2, 3) for dx in range(-2, 3)], dtype=float) * GRID
 
     def __init__(self, terrain):
         self.terrain = terrain
 
+    def __getattr__(self, name):
+        return getattr(self.terrain, name)
+
+    def native(self):
+        native = getattr(self.terrain, 'native', None)
+        return native() if native is not None else None
+
     def sample(self, xy):
         xy = np.asarray(xy, dtype=float).reshape(-1, 2)
         if not len(xy):
             return np.array([])
+        native = self.native()
+        if native is not None:
+            return native.despiked(xy, GRID, self.SPIKE)
         around = (xy[:, None, :] + self.OFFSETS[None, :, :]).reshape(-1, 2)
         heights = np.asarray(self.terrain.sample(around), dtype=float).reshape(len(xy), len(self.OFFSETS))
         centre, median = heights[:, len(self.OFFSETS) // 2], np.median(heights, axis=1)
         return np.where(np.abs(centre - median) > self.SPIKE, median, centre)
 
-    def grid(self, xs, ys):
+    def grid(self, xs, ys, cell=None):
         """sample() of the lattice ys x xs (GRID steps, row-major), each raw height read once:
-        the 5 x 5 neighbourhoods of lattice points are lattice points too."""
+        the 5 x 5 neighbourhoods of lattice points are lattice points too.
+        When cell is given, detects urban zones, infills roofs, lowers spike threshold to SPIKE_URBAN
+        and applies bilateral smoothing."""
+        native = self.native()
+        if native is not None and cell is None:
+            return native.grid(xs, ys, GRID, self.SPIKE)
         step = xs[1] - xs[0] if len(xs) > 1 else GRID
         ex = np.r_[xs[0] - 2*step, xs[0] - step, xs, xs[-1] + step, xs[-1] + 2*step]
         ey = np.r_[ys[0] - 2*step, ys[0] - step, ys, ys[-1] + step, ys[-1] + 2*step]
@@ -172,7 +279,53 @@ class Despiked:
                          dtype=float).reshape(len(ey), len(ex))
         windows = np.lib.stride_tricks.sliding_window_view(raw, (5, 5)).reshape(len(ys), len(xs), 25)
         centre, median = raw[2:-2, 2:-2], np.median(windows, axis=2)
-        return np.where(np.abs(centre - median) > self.SPIKE, median, centre).ravel()
+        rural = np.where(np.abs(centre - median) > self.SPIKE, median, centre)
+
+        if not cell:
+            return rural.ravel()
+
+        building_mask, urban_mask = detect_cell_urban(cell, xs, ys)
+        if not np.any(urban_mask):
+            return rural.ravel()
+
+        infilled = centre.copy()
+        if np.any(building_mask) and not np.all(building_mask):
+            try:
+                from scipy.ndimage import distance_transform_edt
+                indices = distance_transform_edt(building_mask, return_distances=False, return_indices=True)
+                infilled[building_mask] = centre[tuple(indices[:, building_mask])]
+            except Exception:
+                pass
+
+        pad_inf = np.pad(infilled, 2, mode='edge')
+        inf_windows = np.lib.stride_tricks.sliding_window_view(pad_inf, (5, 5)).reshape(len(ys), len(xs), 25)
+        inf_med = np.median(inf_windows, axis=2)
+
+        spike_thresh = np.where(urban_mask, self.SPIKE_URBAN, self.SPIKE)
+        despiked = np.where(np.abs(infilled - inf_med) > spike_thresh, inf_med, infilled)
+
+        # Bilateral filter pass on urban terrain
+        ny, nx = len(ys), len(xs)
+        pad_d = np.pad(despiked, 2, mode='edge')
+        smoothed = np.zeros_like(despiked)
+        w_total = np.zeros_like(despiked)
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                shifted = pad_d[2+dy:2+dy+ny, 2+dx:2+dx+nx]
+                sw = np.exp(-(dx*dx + dy*dy) / (2.0 * 1.5**2))
+                rw = np.exp(-((shifted - despiked)**2) / (2.0 * 2.5**2))
+                w = sw * rw
+                smoothed += w * shifted
+                w_total += w
+        smoothed /= np.maximum(w_total, 1e-6)
+
+        # Soft edge blend (1-cell blur of urban mask)
+        w_urban = urban_mask.astype(float)
+        pad_w = np.pad(w_urban, 1, mode='edge')
+        w_blend = (pad_w[:-2, 1:-1] + pad_w[2:, 1:-1] + pad_w[1:-1, :-2] + pad_w[1:-1, 2:] + 4*w_urban) / 8.0
+
+        final = (1.0 - w_blend) * rural + w_blend * smoothed
+        return final.ravel()
 
 
 def _scenery(store, rect, depth=0):
@@ -269,11 +422,27 @@ def compile_cell(store, rect, include=None):
     xs = np.arange(rect[0], rect[2]+step, step, dtype=float)
     ys = np.arange(rect[1], rect[3]+step, step, dtype=float)
     if isinstance(store.terrain, Despiked):
-        heights = store.terrain.grid(xs, ys)
+        heights = store.terrain.grid(xs, ys, cell=cell)
     else:
         heights = np.asarray(store.terrain.sample(np.array([(x, y) for y in ys for x in xs])), dtype=float)
     if not np.isfinite(heights).all():
         raise ValueError('non-finite terrain grid')
+
+    # Urban Superblock Datum: calculate unified datum planes, clean DTM, and harmonize features
+    try:
+        import urban_datum
+        superblocks = urban_datum.extract_urban_superblocks(cell, rect)
+        if superblocks:
+            perimeter_roads = [r for r in cell.get('roads', [])
+                               if r.get('tags', {}).get('highway') in urban_datum.PERIMETER_HIGHWAYS]
+            for block in superblocks:
+                urban_datum.solve_superblock_datum(block, store.terrain, perimeter_roads)
+            dtm_grid = urban_datum.apply_superblock_datums_to_grid(heights.reshape(len(ys), len(xs)), xs, ys, superblocks)
+            heights = dtm_grid.ravel()
+            urban_datum.harmonize_cell_elements(cell, superblocks, xs, ys, dtm_grid)
+    except Exception:
+        pass
+
     heights = _flood(xs, ys, _coast(store, rect, xs, ys, heights), tidal)
     cell['terrain'] ={'rect': list(rect), 'nx': len(xs), 'ny': len(ys), 'heights': heights.tolist()}
     return cell
@@ -975,10 +1144,8 @@ def build_country(country_id, title, version, regions, out, bbox=None, emit=prin
             if places:
                 manifest['venues'] = len(places)
                 manifest['credits'].extend(venues.credits(places))
-            for prefix in ('aroundworldng', 'earthng'):
+            for prefix in ('aroundworldng',):
                 man = dict(manifest)
-                if prefix == 'earthng':
-                    man['kind'] = 'earthng-country'
                 if section is None:
                     folder = f'{prefix}/countries/{country_id}'
                     _write_json(archive, f'{folder}/manifest.json', man)
@@ -1029,7 +1196,6 @@ def _add_routing(pack, jobs, emit, cancel=None):
         for region, data in built:
             country = regions[region].split('/')[2]
             archive.writestr(f'aroundworldng/countries/{country}/routing/{region}.bin', data)
-            archive.writestr(f'earthng/countries/{country}/routing/{region}.bin', data)
 
 
 def section_region(source, dem, work, core, region_id, outline=None, emit=print):

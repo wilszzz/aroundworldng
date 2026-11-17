@@ -33,6 +33,11 @@ JUNCTION_FLAT = 10.0
 # a street) are tied to one height: on Khreshchatyk the carriageways overlapped by 1 m with
 # profiles up to 1.02 m apart.
 COUPLE = 1000.0
+# Parallel carriageways of dual carriageways, avenues, and divided boulevards are locked
+# with high rigidity to eliminate ski-jump ramps and asymmetric terrain cliffs:
+COUPLE_DUAL = 3000.0
+# Intra-quarter courtyard roads and driveways regularized to the local courtyard plane:
+COUPLE_COURTYARD = 800.0
 # A deck over a road: 4.5 m headroom + the deepest girder (ROADS.deckDepth of a
 # main road, 1.5 m), per layer. A street slab is 1 m and keeps a little more air.
 CLEARANCE, CLEAR_WEIGHT, CLEAR_PASSES = 6.0, 1e4, 12
@@ -41,13 +46,12 @@ CLEARANCE, CLEAR_WEIGHT, CLEAR_PASSES = 6.0, 1e4, 12
 # stays above the 4.5 m headroom rather than silently accepting a shortfall from it.
 DECK_OVERHANG, CLEAR_SLACK, CLEAR_TOL = 2., .1, .05
 CLEAR_EXTRA = 6.
-# Steepest grade the solve may make by class, where the ground itself is gentler. The clearance
-# springs alone raised a deck over 50-80 m: Kyiv's Borshchahivska bridge 14 %, the Povitrianykh
-# Syl overpass 11 %. An edge over its limit gets a stiffer grade weight and the solve runs again,
-# so the rise spreads over a longer approach (real urban overpasses: 4-6 %).
-GRADE_MAX = {'motorway': .05, 'trunk': .05, 'primary': .06, 'secondary': .06, 'tertiary': .07,
-             'motorway_link': .07, 'trunk_link': .07, 'primary_link': .07, 'secondary_link': .07}
-GRADE_DEFAULT, GRADE_PASSES, STIFF_MAX = .08, 4, 30.
+# Steepest grade the solve may make by class (Level 1 skeleton max 4-5%, Level 2 courtyards max 4-5%):
+GRADE_MAX = {'motorway': .04, 'trunk': .04, 'primary': .05, 'secondary': .05, 'tertiary': .055,
+             'motorway_link': .05, 'trunk_link': .05, 'primary_link': .06, 'secondary_link': .06,
+             'residential': .05, 'living_street': .04, 'service': .05,
+             'pedestrian': .04, 'footway': .05, 'cycleway': .05, 'path': .07, 'unclassified': .06}
+GRADE_DEFAULT, GRADE_PASSES, STIFF_MAX = .07, 4, 30.
 
 
 def crossings(pos, seg_of, same, upper, lower, widths, levels):
@@ -124,18 +128,52 @@ def crossings(pos, seg_of, same, upper, lower, widths, levels):
     return (np.array(out[0], int), np.array(out[1], int), np.array(out[2]), np.array(out[3]))
 
 
-def close_pairs(pos, seg_of, width, ground, same):
+def close_pairs(pos, seg_of, width, ground_or_levels, same, is_urban=None,
+                is_major=None, is_oneway=None, names=None):
     """Station -> nearby edge of another ground segment whose strip touches it: lateral
-    distance to the edge < half widths + 0.5 m. Returns station rows a, edge start rows e
-    (edge = e, e+1) and the parameter t of the closest point. Grid hashing, no SciPy."""
-    cell = 24.0
+    distance to the edge < half widths + 0.5 m (weight COUPLE).
+    Also finds:
+    1. Dual Carriageway pairs (parallel ways within 32m): locked with high rigidity COUPLE_DUAL.
+    2. Intra-quarter courtyard pairs (residential/service roads within 35m): regularized with COUPLE_COURTYARD."""
+    cell = 32.0
     e0 = np.flatnonzero(same)                     # edge e0 -> e0+1, both of one segment
+    if not len(e0):
+        if is_urban is not None or is_major is not None:
+            return (np.zeros(0, int), np.zeros(0, int), np.zeros(0)), (np.zeros(0, int), np.zeros(0, int), np.zeros(0), np.zeros(0))
+        return np.zeros(0, int), np.zeros(0, int), np.zeros(0)
+
     mid = (pos[e0] + pos[e0 + 1]) / 2
     M = 1 << 21
     def keys(xy, dx=0, dy=0):
         return (np.floor(xy[:, 0] / cell).astype(np.int64) + dx + M) * (2 * M) + np.floor(xy[:, 1] / cell).astype(np.int64) + dy + M
     ekey = keys(mid); order = np.argsort(ekey, kind='stable'); skey = ekey[order]
+
+    # Precalculate unit direction vectors of edges
+    dxy_e = pos[e0 + 1] - pos[e0]
+    len_e = np.maximum(np.hypot(dxy_e[:, 0], dxy_e[:, 1]), 1e-9)
+    dir_e = dxy_e / len_e[:, None]
+
+    # Precalculate unit direction vectors of stations
+    dir_st = np.zeros_like(pos)
+    dir_st[e0] = dir_e
+    end_st = np.setdiff1d(np.arange(len(pos)), e0)
+    valid_prev = end_st[end_st > 0]
+    prev_in_e0 = same[valid_prev - 1]
+    valid_prev = valid_prev[prev_in_e0]
+    if len(valid_prev):
+        dir_st[valid_prev] = dir_st[valid_prev - 1]
+
+    # Handle float levels vs boolean ground
+    is_bool_ground = np.asarray(ground_or_levels).dtype == bool
+    if is_bool_ground:
+        ground_arr = ground_or_levels
+        level_arr = None
+    else:
+        ground_arr = None
+        level_arr = np.asarray(ground_or_levels, dtype=float)
+
     out = ([], [], [])
+    extra_out = ([], [], [], [])
     for dx in (-1, 0, 1):
         for dy in (-1, 0, 1):
             nk = keys(pos, dx, dy)
@@ -144,18 +182,84 @@ def close_pairs(pos, seg_of, width, ground, same):
             if not cnt.sum():
                 continue
             ia = np.repeat(np.arange(len(pos)), cnt)
-            ie = e0[order[lo[ia] + (np.arange(cnt.sum()) - np.repeat(np.cumsum(cnt) - cnt, cnt))]]
-            keep = (seg_of[ia] != seg_of[ie]) & ground[ia] & ground[ie]
-            ia, ie = ia[keep], ie[keep]
+            ie_idx = order[lo[ia] + (np.arange(cnt.sum()) - np.repeat(np.cumsum(cnt) - cnt, cnt))]
+            ie = e0[ie_idx]
+
+            keep = (seg_of[ia] != seg_of[ie])
+            if level_arr is not None:
+                # Same vertical level (allows parallel carriageway bridges to couple with each other!)
+                keep &= (np.abs(level_arr[seg_of[ia]] - level_arr[seg_of[ie]]) < 0.5)
+            elif ground_arr is not None:
+                keep &= (ground_arr[ia] & ground_arr[ie])
+
+            if not keep.any():
+                continue
+            ia, ie, ie_idx = ia[keep], ie[keep], ie_idx[keep]
             a, b = pos[ie], pos[ie + 1]
             ab = b - a; L2 = np.maximum((ab ** 2).sum(1), 1e-9)
             t = np.clip(((pos[ia] - a) * ab).sum(1) / L2, 0, 1)
-            d = np.linalg.norm(pos[ia] - (a + ab * t[:, None]), axis=1)
-            keep = d < (width[ia] + width[ie]) / 2 + .5
-            out[0].append(ia[keep]); out[1].append(ie[keep]); out[2].append(t[keep])
-    if not out[0]:
-        return np.zeros(0, int), np.zeros(0, int), np.zeros(0)
-    return tuple(np.concatenate(v) for v in out)
+            proj = a + ab * t[:, None]
+            d = np.linalg.norm(pos[ia] - proj, axis=1)
+
+            # 1. Direct touch coupling
+            touch_limit = (width[ia] + width[ie]) / 2 + 0.5
+            touch = d < touch_limit
+            out[0].append(ia[touch]); out[1].append(ie[touch]); out[2].append(t[touch])
+
+            # 2. Non-touching candidates within reach (up to 35m)
+            non_touch = (~touch) & (d < 35.0)
+            if not non_touch.any():
+                continue
+
+            nia, nie, nit, nid, nie_sub = ia[non_touch], ie[non_touch], t[non_touch], d[non_touch], ie_idx[non_touch]
+            sa, sb = seg_of[nia], seg_of[nie]
+
+            # Parallelism / collinearity between station heading and edge heading
+            dot = (dir_st[nia] * dir_e[nie_sub]).sum(axis=1)
+            is_parallel = np.abs(dot) >= 0.65
+
+            # Dual Carriageway Vertical Locking
+            is_dual = is_parallel & (nid < 32.0)
+            has_major = is_major is not None
+            has_oneway = is_oneway is not None
+            has_names = names is not None
+
+            if has_major or has_oneway or has_names:
+                dual_cond = np.zeros(len(nia), bool)
+                if has_major:
+                    dual_cond |= (is_major[sa] & is_major[sb])
+                if has_oneway:
+                    dual_cond |= (is_oneway[sa] | is_oneway[sb])
+                if has_names:
+                    name_match = (names[sa] != '') & (names[sa] == names[sb])
+                    dual_cond |= name_match
+                is_dual &= dual_cond
+            else:
+                is_dual &= (nid < 25.0)
+
+            w_dual = COUPLE_DUAL * (1.0 - (nid / 32.0) ** 2)
+
+            # Courtyard Intra-Quarter Regularization
+            is_court = np.zeros(len(nia), bool)
+            if is_urban is not None:
+                is_court = (~is_dual) & (nid < 35.0) & (is_urban[sa] & is_urban[sb])
+                w_court = COUPLE_COURTYARD * (1.0 - nid / 35.0)
+            else:
+                w_court = np.zeros(len(nia))
+
+            couple_mask = is_dual | is_court
+            if couple_mask.any():
+                cia = nia[couple_mask]
+                cie = nie[couple_mask]
+                cit = nit[couple_mask]
+                cw = np.where(is_dual[couple_mask], w_dual[couple_mask], w_court[couple_mask])
+                extra_out[0].append(cia); extra_out[1].append(cie); extra_out[2].append(cit); extra_out[3].append(cw)
+
+    touch_res = tuple(np.concatenate(v) if v else np.zeros(0, int if i < 2 else float) for i, v in enumerate(out))
+    if is_urban is not None or is_major is not None:
+        extra_res = tuple(np.concatenate(v) if v else np.zeros(0, int if i < 3 else float) for i, v in enumerate(extra_out))
+        return touch_res, extra_res
+    return touch_res
 
 
 def layer(tags):
@@ -283,23 +387,63 @@ def solve(segments, sample, iterations=400, tol=1e-3, emit=None):
     # height only follows the neighbours
     known = np.isfinite(dem)
     dem[~known] = np.median(dem[known]) if known.any() else 0.
-    target = dem.copy(); weight = np.where(known, 1., 1e-3)
+    target = dem.copy()
+    urban_types = {'residential', 'living_street', 'service', 'pedestrian', 'footway', 'cycleway', 'path', 'unclassified'}
+    major_types = {'motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link',
+                   'secondary', 'secondary_link', 'tertiary', 'tertiary_link'}
+    is_urban_seg = np.array([seg['tags'].get('highway') in urban_types for seg in segments], bool)
+    is_major_seg = np.array([seg['tags'].get('highway') in major_types for seg in segments], bool)
+    is_oneway_seg = np.array([
+        str(seg['tags'].get('oneway', '')).lower() in ('yes', '1', 'true', '-1') or
+        seg['tags'].get('highway') == 'motorway'
+        for seg in segments
+    ], bool)
+    seg_names = np.array([str(seg['tags'].get('name') or seg['tags'].get('ref') or '') for seg in segments])
+
     kinds = np.array([{'road': 0, 'bridge': 1, 'tunnel': -1}[kind(seg['tags'])] for seg in segments])
     layers = np.array([max(1., layer(seg['tags'])) for seg in segments])
+    levels = kinds * layers
     k_st = kinds[seg_of]
+    bounds = np.r_[run, len(s)]
+
+    # Level 1 (Major Roads): smooth DEM along highway stations to remove high-frequency terrain noise
+    for k in np.flatnonzero(is_major_seg):
+        sl = slice(int(bounds[k]), int(bounds[k + 1]))
+        sid = ids[sl]
+        if len(sid) >= 3:
+            dem_vals = target[sid]
+            sm = np.empty_like(dem_vals)
+            sm[0] = 0.7 * dem_vals[0] + 0.3 * dem_vals[1]
+            sm[-1] = 0.7 * dem_vals[-1] + 0.3 * dem_vals[-2]
+            sm[1:-1] = 0.25 * dem_vals[:-2] + 0.50 * dem_vals[1:-1] + 0.25 * dem_vals[2:]
+            target[sid] = sm
+
+    # Level 2 (Courtyard Roads): soften DEM noise spikes relative to segment median
+    for k in np.flatnonzero(is_urban_seg):
+        sl = slice(int(bounds[k]), int(bounds[k + 1]))
+        sid = ids[sl]
+        if len(sid) >= 3:
+            dem_vals = target[sid]
+            med = np.median(dem_vals)
+            clipped = np.clip(dem_vals, med - 2.0, med + 2.0)
+            target[sid] = 0.4 * dem_vals + 0.6 * clipped
+
+    is_urban_var = np.zeros(nvar, bool)
+    is_urban_var[ids] = is_urban_seg[seg_of]
+    weight = np.where(known, np.where(is_urban_var, 0.35, 1.0), 1e-3)
     inner = (k_st < 0) & (ids >= len(node_index))
     target[ids[inner]] = dem[ids[inner]] - TUNNEL_DEPTH * layers[seg_of[inner]]
     weight[ids[inner]] = np.where(known[ids[inner]], SOFT, 1e-3)
-    # A span keeps the chord between its abutments. The river bed is not a target, or the
-    # deck sags into the valley. Flat overpasses still want BRIDGE_CLEAR above the ground.
-    bounds = np.r_[run, len(s)]
+    # A bridge deck follows the chord between its abutments across ravines/water.
+    # It does not artificially rise +6.5m above flat ground. Crossing over lower roads
+    # is solved dynamically by the active clearance springs.
     deck = spans(segments, node_index, kinds, dem) if (kinds > 0).any() else {}
     for k in np.flatnonzero(kinds > 0):
         sl = slice(int(bounds[k]), int(bounds[k + 1]))
         sid = ids[sl]
         for n in (int(sid[0]), int(sid[-1])):
             if n in deck:
-                target[n] = max(deck[n], dem[n] + BRIDGE_CLEAR * layers[k])
+                target[n] = deck[n]
                 weight[n] = SOFT if known[n] else 1e-3
         interior = sid >= len(node_index)
         if not interior.any():
@@ -308,21 +452,41 @@ def solve(segments, sample, iterations=400, tol=1e-3, emit=None):
         span = float(ss[-1] - ss[0])
         t = (ss - ss[0]) / span if span > 1e-6 else np.zeros(len(ss))
         chord = deck.get(int(sid[0]), dem[sid[0]]) * (1 - t) + deck.get(int(sid[-1]), dem[sid[-1]]) * t
-        want = np.maximum(chord, dem[sid] + BRIDGE_CLEAR * layers[k])
-        target[sid[interior]] = want[interior]
+        target[sid[interior]] = chord[interior]
         weight[sid[interior]] = np.where(known[sid[interior]], SOFT, 1e-3)
     mw = weight * np.maximum(mass, .5)
     degree = np.bincount(np.array([node_index[n] for seg in segments for n in seg['nodes']]), minlength=nvar)
     flat = np.where((degree[ea] >= 3) | (degree[eb] >= 3), JUNCTION_FLAT, 1.)
-    ce, ct = ALPHA * flat / el, BETA / tl ** 3
-    edge_max = np.array([GRADE_MAX.get(segments[k]['tags'].get('highway'), GRADE_DEFAULT) for k in seg_of[:-1][same]])
-    edge_max = np.maximum(edge_max, np.abs(dem[eb] - dem[ea]) / el + .01)   # a hill street keeps its hill
+    hw_types = [segments[k]['tags'].get('highway', '') for k in seg_of[:-1][same]]
+    is_urban_edge = np.array([h in urban_types for h in hw_types])
+    is_major_edge = np.array([h in major_types for h in hw_types])
+    edge_stiff = np.where(is_major_edge, 3.0, np.where(is_urban_edge, 2.5, 1.0))
+    ce = ALPHA * flat * edge_stiff / el
+
+    hw_types_tri = [segments[k]['tags'].get('highway', '') for k in seg_of[:-2][tri]]
+    is_major_tri = np.array([h in major_types for h in hw_types_tri])
+    ct = BETA * np.where(is_major_tri, 4.0, 1.5) / tl ** 3
+
+    edge_max = np.array([GRADE_MAX.get(h, GRADE_DEFAULT) for h in hw_types])
+    dem_grade = np.abs(dem[eb] - dem[ea]) / el + .01
+    dem_grade_allowed = np.where(is_major_edge, np.minimum(dem_grade, 0.05),
+                        np.where(is_urban_edge, np.minimum(dem_grade, 0.07), dem_grade))
+    edge_max = np.maximum(edge_max, dem_grade_allowed)
     stiff = np.ones(len(ea))
     widths = np.clip(np.array([seg.get('width', 4.) for seg in segments]), .5, 80.)
-    pa, pe, pt = close_pairs(pos_st, seg_of, widths[seg_of], k_st == 0, same)
+    (pa, pe, pt), (upa, upe, upt, upw) = close_pairs(
+        pos_st, seg_of, widths[seg_of], levels[seg_of], same,
+        is_urban=is_urban_seg, is_major=is_major_seg, is_oneway=is_oneway_seg, names=seg_names
+    )
     va, vb1, vb2 = ids[pa], ids[pe], ids[pe + 1]
     keep = (va != vb1) & (va != vb2)
     va, vb1, vb2, pt = va[keep], vb1[keep], vb2[keep], pt[keep]
+    if len(upa):
+        uva, uvb1, uvb2 = ids[upa], ids[upe], ids[upe + 1]
+        ukeep = (uva != uvb1) & (uva != uvb2)
+        uva, uvb1, uvb2, upt, upw = uva[ukeep], uvb1[ukeep], uvb2[ukeep], upt[ukeep], upw[ukeep]
+    else:
+        uva, uvb1, uvb2, upt, upw = np.zeros(0, int), np.zeros(0, int), np.zeros(0, int), np.zeros(0), np.zeros(0)
     # a bridge over a road: the deck (not the road under it) reaches clear above that road.
     # A lower road may itself be a bridge (stacked motorway interchanges).
     # Compare vertical levels, not just bridge versus non-bridge: short spans
@@ -387,8 +551,13 @@ def solve(segments, sample, iterations=400, tol=1e-3, emit=None):
         sa, sb = seg_of[pa[keep]], seg_of[pe[keep]]
         free = np.array([b not in apart_of.get(a, ()) for a, b in zip(sa.tolist(), sb.tolist())], bool)
         va, vb1, vb2, pt = va[free], vb1[free], vb2[free], pt[free]
+        if len(uva):
+            usa, usb = seg_of[upa[ukeep]], seg_of[upe[ukeep]]
+            ufree = np.array([b not in apart_of.get(a, ()) for a, b in zip(usa.tolist(), usb.tolist())], bool)
+            uva, uvb1, uvb2, upt, upw = uva[ufree], uvb1[ufree], uvb2[ufree], upt[ufree], upw[ufree]
     # residual h_a - (1-t) h_b1 - t h_b2, weight COUPLE
     cv, cw = (va, vb1, vb2), (np.ones(len(va)), -(1 - pt), -pt)
+    ucv, ucw = (uva, uvb1, uvb2), (np.ones(len(uva)), -(1 - upt), -upt)
     trip, coef = (ta, tb, tc), (1., -2., 1.)
 
     def assemble():
@@ -399,6 +568,10 @@ def solve(segments, sample, iterations=400, tol=1e-3, emit=None):
         for i in range(3):
             for j in range(3):
                 rows.append(cv[i]); cols.append(cv[j]); vals.append(COUPLE * cw[i] * cw[j])
+        if len(uva):
+            for i in range(3):
+                for j in range(3):
+                    rows.append(ucv[i]); cols.append(ucv[j]); vals.append(upw * ucw[i] * ucw[j])
         for i in range(3):
             for j in range(3):
                 rows.append(trip[i]); cols.append(trip[j]); vals.append(ct * coef[i] * coef[j])
@@ -511,6 +684,17 @@ class Mosaic:
                     gx, gy = np.meshgrid(ix, iy)
                     grid[(b - ty0) * 256:(b - ty0 + 1) * 256,
                          (a - tx0) * 256:(a - tx0 + 1) * 256] = self.terrain.pixels(gx.ravel(), gy.ravel()).reshape(256, 256)
+        valid = np.isfinite(grid)
+        if valid.any():
+            try:
+                from scipy.ndimage import median_filter
+                fill_val = float(np.nanmedian(grid[valid]))
+                filled = np.where(valid, grid, fill_val)
+                med = median_filter(filled, size=5)
+                despiked = np.where(np.abs(filled - med) > 4.0, med, filled)
+                grid = np.where(valid, despiked, np.nan)
+            except Exception:
+                pass
         return grid
 
     @staticmethod

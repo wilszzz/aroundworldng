@@ -35,10 +35,26 @@ import shapely
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import triangulate
 
-import fast_sources
-import country_fetch
-import places
-import looks
+try:
+    import fast_sources
+    import country_fetch
+    import places
+    import looks
+    import road_markings
+    import road_decorations
+    import proc_vegetation
+    import spawn_system
+    import terrain_builder
+except ImportError:
+    from . import fast_sources
+    from . import country_fetch
+    from . import places
+    from . import looks
+    from . import road_markings
+    from . import road_decorations
+    from . import proc_vegetation
+    from . import spawn_system
+    from . import terrain_builder
 
 if getattr(sys, 'frozen', False):
     ROOT = Path(sys.executable).resolve().parent
@@ -109,91 +125,452 @@ def slugify(text: str) -> str:
     return re.sub(r'[^a-z0-9]+', '_', t).strip('_')
 
 
-def write_ter_bytes(heightmap_u16: np.ndarray, materials=('Grass', 'BeachSand', 'dirt_rocky_large', 'rock')) -> bytes:
-    """Encode 1024x1024 v9 Torque3D binary terrain."""
-    size = heightmap_u16.shape[0]
-    buf = bytearray()
-    buf.append(9)  # version 9
-    buf.extend(struct.pack('<I', size))
-    buf.extend(heightmap_u16.astype('<u2').tobytes())
-    buf.extend(b'\x01' * (size * size))  # layermap: default layer 1
-    buf.extend(struct.pack('<I', len(materials)))
-    for mat in materials:
-        bname = mat.encode('ascii')
-        buf.append(len(bname))
-        buf.extend(bname)
-    return bytes(buf)
+def write_ter_bytes(
+    heightmap_u16: np.ndarray,
+    materials=('Grass', 'BeachSand', 'dirt_rocky_large', 'rock'),
+    layer_map: Optional[np.ndarray] = None,
+) -> bytes:
+    """Encode 1024x1024 v9 Torque3D binary terrain using the canonical terrain_builder."""
+    return terrain_builder.encode_ter_v9(
+        heightmap_u16=heightmap_u16,
+        layer_map_u8=layer_map,
+        materials=materials,
+    )
 
 
-def generate_collada_dae(buildings: list[dict], mat_name="bld_facade") -> str:
-    """Generate Collada 1.4.1 XML string for extruded 3D buildings."""
-    positions = []
-    uvs = []
-    indices = []
+def polygon_area_2d(pts: list) -> float:
+    """Compute signed 2D area of a polygon ring. Positive for CCW, negative for CW."""
+    n = len(pts)
+    if n < 3:
+        return 0.0
+    return sum(pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1] for i in range(n)) * 0.5
+
+
+def triangulate_polygon_2d(outer_pts: list, holes: Optional[list] = None) -> list[tuple]:
+    """Robust ear-clipping 2D polygon triangulation with hole bridge support.
+
+    Guarantees strict counter-clockwise (CCW) triangle orientation and eliminates
+    the boundary bleed and sliver artifacts of unconstrained Delaunay triangulation.
+    """
+    outer = list(outer_pts)
+    if len(outer) > 1 and outer[0][:2] == outer[-1][:2]:
+        outer.pop()
+    if len(outer) < 3:
+        return []
+
+    # Enforce CCW orientation for outer boundary
+    area_o = polygon_area_2d(outer)
+    if abs(area_o) < 1e-4:
+        return []
+    if area_o < 0:
+        outer.reverse()
+
+    # Bridge holes into the outer boundary seam
+    if holes:
+        for hole in holes:
+            h = list(hole)
+            if len(h) > 1 and h[0][:2] == h[-1][:2]:
+                h.pop()
+            if len(h) < 3:
+                continue
+            h_area = polygon_area_2d(h)
+            if abs(h_area) < 1e-4:
+                continue
+            if h_area > 0:
+                h.reverse()  # Holes must be CW
+
+            # Connect hole vertex with maximum X to nearest outer vertex
+            max_idx = max(range(len(h)), key=lambda i: h[i][0])
+            h_pt = h[max_idx]
+            best_o = min(range(len(outer)), key=lambda i: (outer[i][0] - h_pt[0])**2 + (outer[i][1] - h_pt[1])**2)
+            h_rot = h[max_idx:] + h[:max_idx]
+            outer = outer[:best_o + 1] + h_rot + [h_rot[0], outer[best_o]] + outer[best_o + 1:]
+
+    pts = outer
+    n = len(pts)
+    if n < 3:
+        return []
+    if n == 3:
+        return [(pts[0], pts[1], pts[2])]
+
+    def is_convex(p0, p1, p2):
+        return (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0]) > 1e-7
+
+    def point_in_tri(p, a, b, c):
+        c1 = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+        c2 = (c[0] - b[0]) * (p[1] - b[1]) - (c[1] - b[1]) * (p[0] - b[0])
+        c3 = (a[0] - c[0]) * (p[1] - c[1]) - (a[1] - c[1]) * (p[0] - c[0])
+        return (c1 >= -1e-7 and c2 >= -1e-7 and c3 >= -1e-7) or (c1 <= 1e-7 and c2 <= 1e-7 and c3 <= 1e-7)
+
+    indices = list(range(len(pts)))
+    triangles = []
+    attempts = 0
+    max_attempts = len(indices) * 4
+
+    while len(indices) > 3 and attempts < max_attempts:
+        ear_found = False
+        k = len(indices)
+        for idx in range(k):
+            prev_i = indices[(idx - 1) % k]
+            curr_i = indices[idx]
+            next_i = indices[(idx + 1) % k]
+
+            p_prev = pts[prev_i]
+            p_curr = pts[curr_i]
+            p_next = pts[next_i]
+
+            if not is_convex(p_prev, p_curr, p_next):
+                continue
+
+            any_inside = False
+            for other_idx in range(k):
+                if other_idx in ((idx - 1) % k, idx, (idx + 1) % k):
+                    continue
+                p_test = pts[indices[other_idx]]
+                if p_test == p_prev or p_test == p_curr or p_test == p_next:
+                    continue
+                if point_in_tri(p_test, p_prev, p_curr, p_next):
+                    any_inside = True
+                    break
+
+            if not any_inside:
+                triangles.append((p_prev, p_curr, p_next))
+                indices.pop(idx)
+                ear_found = True
+                break
+        if not ear_found:
+            attempts += 1
+            break
+
+    if len(indices) == 3:
+        triangles.append((pts[indices[0]], pts[indices[1]], pts[indices[2]]))
+
+    return triangles
+
+
+def generate_collada_dae(
+    buildings: list[dict],
+    mat_name: str = "bld_facade",
+    roof_mat_name: str = "bld_roof",
+    origin: tuple[float, float, float] = (0.0, 0.0, 0.0),
+    skirt_depth: float = 0.5,
+) -> str:
+    """Generate Collada 1.4.1 XML string for extruded 3D buildings.
+
+    Optimized for BeamNG.drive / Torque3D:
+    - Watertight walls with ground skirt (0.5m) for 'Visible Mesh Final' collision physics.
+    - Strict CCW winding for outward-facing wall normals and upward-facing roof normals.
+    - Floor & window bay UV unwrapping (1 texture repeat per floor and per window bay).
+    - Robust ear-clipping roof triangulation with hole support and Delaunay fallback.
+    - Distinct wall and roof materials for realistic architectural rendering.
+    - Local origin offsetting for high-precision vertex buffers and TSStatic culling.
+    """
+    ox, oy, oz = origin
+    positions: list[float] = []
+    normals: list[float] = []
+    uvs: list[float] = []
+    wall_indices: list[int] = []
+    roof_indices: list[int] = []
     v_idx = 0
 
     for b in buildings:
         rings = b.get('rings', [])
         if not rings:
             continue
-        outer = rings[0]
+        outer = list(rings[0])
         if len(outer) < 3:
             continue
-        h = float(b.get('height', 10.0))
-        z_base = float(min(p[2] for p in outer)) if len(outer[0]) > 2 else 0.0
-        z_roof = z_base + h
 
-        # 1. Extrude Walls
+        # Ensure outer ring is closed
+        if outer[0][:2] != outer[-1][:2]:
+            outer.append(outer[0])
+
+        # Ensure outer ring is CCW in XY plane
+        area_2d = polygon_area_2d([p[:2] for p in outer[:-1]])
+        if abs(area_2d) < 1.0:
+            continue
+        if area_2d < 0:
+            outer.reverse()
+
+        tags = b.get('tags', {})
+        h_match = re.search(r'[\d.]+', str(tags.get('height') or b.get('height') or ''))
+        lvl_match = re.search(r'[\d.]+', str(tags.get('building:levels') or tags.get('levels') or ''))
+
+        if h_match:
+            try:
+                h = max(3.0, min(800.0, float(h_match.group(0))))
+            except Exception:
+                h = 10.0
+        elif lvl_match:
+            try:
+                h = max(3.0, min(800.0, float(lvl_match.group(0)) * 3.2))
+            except Exception:
+                h = 10.0
+        else:
+            try:
+                h = max(3.0, min(800.0, float(b.get('height', 10.0))))
+            except Exception:
+                h = 10.0
+
+        if lvl_match:
+            try:
+                levels = max(1, round(float(lvl_match.group(0))))
+            except Exception:
+                levels = max(1, round(h / 3.2))
+        else:
+            levels = max(1, round(h / 3.2))
+        floor_h = h / max(1, levels)
+
+        z_ground_pts = [p[2] for p in outer if len(p) > 2] or [0.0]
+        z_ground_max = max(z_ground_pts)
+        z_roof = z_ground_max + h
+        z_roof_rel = z_roof - oz
+        v_roof = float(levels)
+
+        # 1. Extrude Outer Walls
         for k in range(len(outer) - 1):
-            xa, ya = outer[k][0], outer[k][1]
-            xb, yb = outer[k + 1][0], outer[k + 1][1]
+            pa = outer[k]
+            pb = outer[k + 1]
+            xa, ya = pa[0], pa[1]
+            xb, yb = pb[0], pb[1]
+            za = pa[2] if len(pa) > 2 else z_ground_max
+            zb = pb[2] if len(pb) > 2 else z_ground_max
+
             dx, dy = xb - xa, yb - ya
-            seg_len = math.sqrt(dx * dx + dy * dy)
+            seg_len = math.hypot(dx, dy)
             if seg_len < 0.1:
                 continue
-            u_max = max(1.0, seg_len / 3.2)
-            v_max = max(1.0, h / 3.0)
 
-            # 4 vertices per wall quad
-            positions.extend([xa, ya, z_base, xb, yb, z_base, xb, yb, z_roof, xa, ya, z_roof])
-            uvs.extend([0.0, 0.0, u_max, 0.0, u_max, v_max, 0.0, v_max])
-            # Two triangles (offset 0: pos, offset 1: uv)
-            indices.extend([v_idx, v_idx, v_idx + 1, v_idx + 1, v_idx + 2, v_idx + 2,
-                            v_idx, v_idx, v_idx + 2, v_idx + 2, v_idx + 3, v_idx + 3])
+            # Outward normal (perpendicular to CCW edge pointing right)
+            nx = dy / seg_len
+            ny = -dx / seg_len
+            nz = 0.0
+
+            # Skirt depth into ground terrain for watertight collision
+            za_base = za - skirt_depth
+            zb_base = zb - skirt_depth
+
+            xa_rel = xa - ox
+            ya_rel = ya - oy
+            xb_rel = xb - ox
+            yb_rel = yb - oy
+            za_base_rel = za_base - oz
+            zb_base_rel = zb_base - oz
+
+            # UV coordinates:
+            # U: integer number of window bays to avoid cut-off windows at corners
+            num_bays = max(1.0, round(seg_len / 3.2))
+            u0 = 0.0
+            u1 = float(num_bays)
+            # V: 0.0 at ground level, v_roof at roofline, smooth skirt extension below 0
+            v_base_a = (za_base - za) / floor_h
+            v_base_b = (zb_base - zb) / floor_h
+
+            # Quad vertices:
+            # v0: bottom-left (xa, ya, za_base)
+            # v1: bottom-right (xb, yb, zb_base)
+            # v2: top-right (xb, yb, z_roof)
+            # v3: top-left (xa, ya, z_roof)
+            positions.extend([
+                xa_rel, ya_rel, za_base_rel,
+                xb_rel, yb_rel, zb_base_rel,
+                xb_rel, yb_rel, z_roof_rel,
+                xa_rel, ya_rel, z_roof_rel,
+            ])
+            normals.extend([
+                nx, ny, nz,
+                nx, ny, nz,
+                nx, ny, nz,
+                nx, ny, nz,
+            ])
+            uvs.extend([
+                u0, v_base_a,
+                u1, v_base_b,
+                u1, v_roof,
+                u0, v_roof,
+            ])
+            # Two CCW triangles: (0, 1, 2) and (0, 2, 3)
+            wall_indices.extend([
+                v_idx, v_idx, v_idx,
+                v_idx + 1, v_idx + 1, v_idx + 1,
+                v_idx + 2, v_idx + 2, v_idx + 2,
+
+                v_idx, v_idx, v_idx,
+                v_idx + 2, v_idx + 2, v_idx + 2,
+                v_idx + 3, v_idx + 3, v_idx + 3,
+            ])
             v_idx += 4
 
-        # 2. Triangulate Roof
-        try:
-            poly = Polygon([(p[0], p[1]) for p in outer])
-            if poly.is_valid and poly.area > 1.0:
-                for tri in triangulate(poly):
-                    if poly.buffer(1e-4).contains(tri.centroid):
-                        coords = list(tri.exterior.coords)[:3]
-                        for px, py in coords:
-                            positions.extend([px, py, z_roof])
-                            uvs.extend([px / 6.0, py / 6.0])
-                        indices.extend([v_idx, v_idx, v_idx + 1, v_idx + 1, v_idx + 2, v_idx + 2])
-                        v_idx += 3
-        except Exception:
-            pass
+        # 2. Extrude Inner Courtyard Walls (if any)
+        holes = []
+        if len(rings) > 1:
+            for inner in rings[1:]:
+                in_ring = list(inner)
+                if len(in_ring) < 3:
+                    continue
+                if in_ring[0][:2] != in_ring[-1][:2]:
+                    in_ring.append(in_ring[0])
+                in_area = polygon_area_2d([p[:2] for p in in_ring[:-1]])
+                if abs(in_area) < 1.0:
+                    continue
+                # Inner holes must be CW so walls face into courtyard
+                if in_area > 0:
+                    in_ring.reverse()
+                holes.append(in_ring)
+
+                for k in range(len(in_ring) - 1):
+                    pa = in_ring[k]
+                    pb = in_ring[k + 1]
+                    xa, ya = pa[0], pa[1]
+                    xb, yb = pb[0], pb[1]
+                    za = pa[2] if len(pa) > 2 else z_ground_max
+                    zb = pb[2] if len(pb) > 2 else z_ground_max
+                    dx, dy = xb - xa, yb - ya
+                    seg_len = math.hypot(dx, dy)
+                    if seg_len < 0.1:
+                        continue
+
+                    # Normal facing into courtyard
+                    nx = dy / seg_len
+                    ny = -dx / seg_len
+                    nz = 0.0
+
+                    za_base = za - skirt_depth
+                    zb_base = zb - skirt_depth
+                    xa_rel = xa - ox
+                    ya_rel = ya - oy
+                    xb_rel = xb - ox
+                    yb_rel = yb - oy
+                    za_base_rel = za_base - oz
+                    zb_base_rel = zb_base - oz
+
+                    num_bays = max(1.0, round(seg_len / 3.2))
+                    u0 = 0.0
+                    u1 = float(num_bays)
+                    v_base_a = (za_base - za) / floor_h
+                    v_base_b = (zb_base - zb) / floor_h
+
+                    positions.extend([
+                        xa_rel, ya_rel, za_base_rel,
+                        xb_rel, yb_rel, zb_base_rel,
+                        xb_rel, yb_rel, z_roof_rel,
+                        xa_rel, ya_rel, z_roof_rel,
+                    ])
+                    normals.extend([
+                        nx, ny, nz,
+                        nx, ny, nz,
+                        nx, ny, nz,
+                        nx, ny, nz,
+                    ])
+                    uvs.extend([
+                        u0, v_base_a,
+                        u1, v_base_b,
+                        u1, v_roof,
+                        u0, v_roof,
+                    ])
+                    wall_indices.extend([
+                        v_idx, v_idx, v_idx,
+                        v_idx + 1, v_idx + 1, v_idx + 1,
+                        v_idx + 2, v_idx + 2, v_idx + 2,
+
+                        v_idx, v_idx, v_idx,
+                        v_idx + 2, v_idx + 2, v_idx + 2,
+                        v_idx + 3, v_idx + 3, v_idx + 3,
+                    ])
+                    v_idx += 4
+
+        # 3. Triangulate Roof
+        outer_2d = [p[:2] for p in outer[:-1]]
+        holes_2d = [[p[:2] for p in h[:-1]] for h in holes] if holes else None
+        triangles = triangulate_polygon_2d(outer_2d, holes_2d)
+
+        # Fallback to Shapely if ear-clipping returned nothing
+        if not triangles:
+            try:
+                poly = Polygon(outer_2d, holes_2d)
+                if poly.is_valid and poly.area > 1.0:
+                    for tri in triangulate(poly):
+                        if poly.buffer(1e-4).contains(tri.centroid):
+                            c = list(tri.exterior.coords)[:3]
+                            triangles.append((c[0], c[1], c[2]))
+            except Exception:
+                pass
+
+        for tri in triangles:
+            p0, p1, p2 = tri[0], tri[1], tri[2]
+            positions.extend([
+                p0[0] - ox, p0[1] - oy, z_roof_rel,
+                p1[0] - ox, p1[1] - oy, z_roof_rel,
+                p2[0] - ox, p2[1] - oy, z_roof_rel,
+            ])
+            normals.extend([
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0,
+            ])
+            # Planar UV mapping: 4.0m texture repeat
+            uvs.extend([
+                (p0[0] - ox) / 4.0, (p0[1] - oy) / 4.0,
+                (p1[0] - ox) / 4.0, (p1[1] - oy) / 4.0,
+                (p2[0] - ox) / 4.0, (p2[1] - oy) / 4.0,
+            ])
+            roof_indices.extend([
+                v_idx, v_idx, v_idx,
+                v_idx + 1, v_idx + 1, v_idx + 1,
+                v_idx + 2, v_idx + 2, v_idx + 2,
+            ])
+            v_idx += 3
 
     pos_str = ' '.join(f'{v:.3f}' for v in positions)
+    norm_str = ' '.join(f'{v:.3f}' for v in normals)
     uv_str = ' '.join(f'{v:.3f}' for v in uvs)
-    idx_str = ' '.join(str(i) for i in indices)
-    tri_count = len(indices) // 6
+    wall_p_str = ' '.join(str(i) for i in wall_indices)
+    roof_p_str = ' '.join(str(i) for i in roof_indices)
+
+    wall_tri_count = len(wall_indices) // 9
+    roof_tri_count = len(roof_indices) // 9
+
+    triangles_xml = []
+    if wall_tri_count > 0:
+        triangles_xml.append(f'''        <triangles material="{mat_name}" count="{wall_tri_count}">
+          <input semantic="VERTEX" source="#bld_geom-vtx" offset="0"/>
+          <input semantic="NORMAL" source="#bld_geom-norm" offset="1"/>
+          <input semantic="TEXCOORD" source="#bld_geom-uv" offset="2" set="0"/>
+          <p>{wall_p_str}</p>
+        </triangles>''')
+
+    if roof_tri_count > 0:
+        triangles_xml.append(f'''        <triangles material="{roof_mat_name}" count="{roof_tri_count}">
+          <input semantic="VERTEX" source="#bld_geom-vtx" offset="0"/>
+          <input semantic="NORMAL" source="#bld_geom-norm" offset="1"/>
+          <input semantic="TEXCOORD" source="#bld_geom-uv" offset="2" set="0"/>
+          <p>{roof_p_str}</p>
+        </triangles>''')
+
+    triangles_section = '\n'.join(triangles_xml)
 
     dae = f'''<?xml version="1.0" encoding="utf-8"?>
 <COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
-  <asset><unit name="meter" meter="1"/><up_axis>Z_UP</up_axis></asset>
+  <asset>
+    <contributor><authoring_tool>AroundWorldNG Procedural 3D Building Extrusion</authoring_tool></contributor>
+    <unit name="meter" meter="1"/>
+    <up_axis>Z_UP</up_axis>
+  </asset>
   <library_effects>
     <effect id="{mat_name}-fx">
       <profile_COMMON>
         <technique sid="common"><lambert><diffuse><color>0.75 0.75 0.75 1</color></diffuse></lambert></technique>
       </profile_COMMON>
     </effect>
+    <effect id="{roof_mat_name}-fx">
+      <profile_COMMON>
+        <technique sid="common"><lambert><diffuse><color>0.35 0.35 0.35 1</color></diffuse></lambert></technique>
+      </profile_COMMON>
+    </effect>
   </library_effects>
   <library_materials>
     <material id="{mat_name}" name="{mat_name}"><instance_effect url="#{mat_name}-fx"/></material>
+    <material id="{roof_mat_name}" name="{roof_mat_name}"><instance_effect url="#{roof_mat_name}-fx"/></material>
   </library_materials>
   <library_geometries>
     <geometry id="bld_geom" name="bld_geom">
@@ -202,6 +579,14 @@ def generate_collada_dae(buildings: list[dict], mat_name="bld_facade") -> str:
           <float_array id="bld_geom-pos-array" count="{len(positions)}">{pos_str}</float_array>
           <technique_common>
             <accessor source="#bld_geom-pos-array" count="{len(positions)//3}" stride="3">
+              <param name="X" type="float"/><param name="Y" type="float"/><param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bld_geom-norm">
+          <float_array id="bld_geom-norm-array" count="{len(normals)}">{norm_str}</float_array>
+          <technique_common>
+            <accessor source="#bld_geom-norm-array" count="{len(normals)//3}" stride="3">
               <param name="X" type="float"/><param name="Y" type="float"/><param name="Z" type="float"/>
             </accessor>
           </technique_common>
@@ -215,11 +600,7 @@ def generate_collada_dae(buildings: list[dict], mat_name="bld_facade") -> str:
           </technique_common>
         </source>
         <vertices id="bld_geom-vtx"><input semantic="POSITION" source="#bld_geom-pos"/></vertices>
-        <triangles material="{mat_name}" count="{tri_count}">
-          <input semantic="VERTEX" source="#bld_geom-vtx" offset="0"/>
-          <input semantic="TEXCOORD" source="#bld_geom-uv" offset="1" set="0"/>
-          <p>{idx_str}</p>
-        </triangles>
+{triangles_section}
       </mesh>
     </geometry>
   </library_geometries>
@@ -228,7 +609,10 @@ def generate_collada_dae(buildings: list[dict], mat_name="bld_facade") -> str:
       <node id="bld_node" name="bld_node">
         <instance_geometry url="#bld_geom">
           <bind_material>
-            <technique_common><instance_material symbol="{mat_name}" target="#{mat_name}"/></technique_common>
+            <technique_common>
+              <instance_material symbol="{mat_name}" target="#{mat_name}"/>
+              <instance_material symbol="{roof_mat_name}" target="#{roof_mat_name}"/>
+            </technique_common>
           </bind_material>
         </instance_geometry>
       </node>
@@ -286,18 +670,79 @@ def generate_preview_image(title: str, roads_xy: list, bounds: tuple) -> bytes:
     return buf.getvalue()
 
 
+UNPAVED_DIRT_SURFACES = {'dirt', 'earth', 'ground', 'soil', 'mud', 'clay', 'unpaved'}
+UNPAVED_GRAVEL_SURFACES = {'gravel', 'fine_gravel', 'compacted', 'pebblestone', 'crushed_stone'}
+COBBLESTONE_SURFACES = {'sett', 'cobblestone', 'paving_stones', 'cobblestone:flattened'}
+
+
+def choose_road_look(tags: dict, width: float = 6.0) -> tuple[str, float, int]:
+    """Determines PBR material name, texture length, and render priority for DecalRoad."""
+    h = str(tags.get('highway', '')).lower().strip()
+    s = str(tags.get('surface', '')).lower().strip()
+    tracktype = str(tags.get('tracktype', '')).lower().strip()
+    smoothness = str(tags.get('smoothness', '')).lower().strip()
+
+    is_oneway = fast_sources.oneway(tags) if hasattr(fast_sources, 'oneway') else (
+        str(tags.get('oneway', '')).lower() in ('yes', '1', 'true') or h == 'motorway'
+    )
+    lanes_val = tags.get('lanes')
+    try:
+        lanes = float(lanes_val) if lanes_val else (1.0 if is_oneway else 2.0)
+    except (ValueError, TypeError):
+        lanes = 1.0 if is_oneway else 2.0
+
+    # 1. Unpaved Dirt / Earth / Mud
+    if s in UNPAVED_DIRT_SURFACES:
+        if tracktype in ('grade2', 'grade3') or h in ('track', 'path'):
+            return 'dirt_tiretracks', 22.0, 10
+        if s == 'mud':
+            return 'm_dirt_variation_04_east_coast_usa', 25.0, 10
+        return 'DirtRoad_variation_01_d', 25.0, 10
+
+    # 2. Sand
+    if s == 'sand':
+        return 'Dirt_road_variation_02', 25.0, 10
+
+    # 3. Gravel / Compacted Stone
+    if s in UNPAVED_GRAVEL_SURFACES:
+        return 'dirt_road_gravels', 30.0, 10
+
+    # 4. Cobblestone / Sett / Damaged Asphalt
+    if s in COBBLESTONE_SURFACES or smoothness in ('bad', 'very_bad', 'horrible'):
+        return 'm_asphalt_damaged_01_east_coast_usa', 15.0, 10
+
+    # 5. Highways without explicit surface tag
+    if not s:
+        if h in ('track', 'path', 'bridleway'):
+            if tracktype == 'grade1':
+                return 'dirt_road_gravels', 30.0, 10
+            if tracktype in ('grade2', 'grade3'):
+                return 'dirt_tiretracks', 22.0, 10
+            return 'DirtRoad_variation_01_d', 25.0, 10
+
+    # 6. Service / Living Street / Driveway / Pedestrian
+    if h in ('service', 'living_street', 'parking_aisle', 'driveway', 'pedestrian', 'footway', 'cycleway'):
+        return 'DefaultDecalRoadMaterial', 12.0, 10
+
+    # 7. Racetracks
+    if h == 'raceway':
+        return 'AsphaltRoad_variation_track', 15.0, 10
+
+    # 8. Paved Carriageways (One-way vs Two-way)
+    if is_oneway or lanes == 1.0 or width < 4.8:
+        if h in ('residential', 'unclassified') or width < 4.8:
+            return 'DefaultDecalRoadMaterial', 12.0, 10
+        return 'AsphaltRoad_variation_one_way', 12.0, 10
+
+    if lanes >= 2.0 or h in ('motorway', 'trunk', 'primary', 'secondary', 'tertiary'):
+        return 'AsphaltRoad_variation_two_way', 12.0, 10
+
+    return 'DefaultDecalRoadMaterial', 12.0, 10
+
+
 def choose_road_material(tags: dict) -> str:
-    highway = tags.get('highway', '')
-    surface = tags.get('surface', '')
-    if surface in ('dirt', 'ground', 'unpaved', 'gravel', 'sand'):
-        return 'DirtRoad_variation_01_d'
-    if highway in ('motorway', 'trunk', 'motorway_link', 'trunk_link'):
-        return 'AsphaltRoad_variation_two_way'
-    if highway in ('primary', 'secondary', 'tertiary'):
-        return 'AsphaltRoad_variation_two_way'
-    if highway in ('service', 'track'):
-        return 'DefaultDecalRoadMaterial'
-    return 'AsphaltRoad_variation_two_way'
+    """Select appropriate PBR road material name from art/road/main.materials.json."""
+    return choose_road_look(tags)[0]
 
 
 def safe_scenery(store: fast_sources.Store, rect: list[float], depth: int = 0) -> list:
@@ -478,29 +923,64 @@ def export_standalone_level(
 
     emit(f"Найдено сегментов дорог: {len(roads)}")
 
-    # Query scenery (buildings, trees, lamps)
+    # Query scenery (buildings, vegetation, lamps)
     scenery = safe_scenery(store, query_rect)
     buildings = []
     trees = []
+    forest_polys = []
+    tree_rows = []
+    surveyed_trees = []
+    scrub_polys = []
     lamps = []
+    bus_stops = []
+    surveyed_signs = []
 
     for fid, kind, data, geom in scenery:
         tags = data.get('tags', {})
         if kind == 'building':
-            h = max(3.0, min(800.0, float(tags.get('height') or (float(tags.get('building:levels') or 3) * 3.2))))
-            # rings
+            h_match = re.search(r'[\d.]+', str(tags.get('height') or ''))
+            lvl_match = re.search(r'[\d.]+', str(tags.get('building:levels') or tags.get('levels') or ''))
+            if h_match:
+                try:
+                    h = max(3.0, min(800.0, float(h_match.group(0))))
+                except Exception:
+                    h = 10.0
+            elif lvl_match:
+                try:
+                    h = max(3.0, min(800.0, float(lvl_match.group(0)) * 3.2))
+                except Exception:
+                    h = 10.0
+            else:
+                h = 10.0
+
+            # rings with exterior and courtyard interiors
             parts = [geom] if geom.geom_type == 'Polygon' else list(getattr(geom, 'geoms', []))
             for p in parts:
                 coords = list(p.exterior.coords)
                 z_sampled = store.terrain.sample(coords)
                 rings_3d = [[(c[0], c[1], float(z)) for c, z in zip(coords, z_sampled)]]
+                for interior in getattr(p, 'interiors', []):
+                    in_coords = list(interior.coords)
+                    in_z = store.terrain.sample(in_coords)
+                    rings_3d.append([(c[0], c[1], float(z)) for c, z in zip(in_coords, in_z)])
                 buildings.append({'id': fid, 'height': h, 'rings': rings_3d, 'tags': tags})
+        elif kind in ('forest', 'park', 'orchard'):
+            forest_polys.append((geom, tags))
+        elif kind == 'tree_row':
+            tree_rows.append((geom, tags))
         elif kind == 'tree':
             trees.append((geom.x, geom.y, float(store.terrain.sample([[geom.x, geom.y]])[0])))
+            surveyed_trees.append((geom, tags))
+        elif kind in ('scrub', 'heath'):
+            scrub_polys.append((geom, tags))
         elif kind == 'lamp':
             lamps.append((geom.x, geom.y, float(store.terrain.sample([[geom.x, geom.y]])[0])))
+        elif kind == 'stop':
+            bus_stops.append((geom.x, geom.y, tags))
+        elif kind in ('stop_sign', 'give_way', 'traffic_sign'):
+            surveyed_signs.append((geom.x, geom.y, kind, tags))
 
-    emit(f"Найдено зданий: {len(buildings)}, деревьев: {len(trees)}, фонарей: {len(lamps)}")
+    emit(f"Найдено OSM объектов: зданий: {len(buildings)}, лесных зон: {len(forest_polys)}, рядов деревьев: {len(tree_rows)}, отдельных деревьев: {len(surveyed_trees)}, фонарей: {len(lamps)}, остановок: {len(bus_stops)}")
 
     if progress:
         progress('Geometry', time.monotonic() - t0)
@@ -537,8 +1017,20 @@ def export_standalone_level(
     z_norm = np.clip((z_grid - base_z) / max_height, 0.0, 1.0)
     heightmap_u16 = (z_norm * 65535.0).astype('<u2')
 
-    ter_bytes = write_ter_bytes(heightmap_u16)
+    # Procedural multi-layer splat map (Grass, BeachSand, dirt_rocky_large, rock)
+    layer_map = terrain_builder.generate_procedural_layermap(
+        z_grid=z_grid,
+        square_size=square_size,
+        min_z=min_z,
+        max_z=max_z,
+    )
+    ter_bytes = terrain_builder.encode_ter_v9(heightmap_u16, layer_map_u8=layer_map)
+
     emit(f"Высота рельефа: от {min_z:.1f} м до {max_z:.1f} м (диапазон: {max_height:.1f} м)")
+    l_counts = {int(k): int(v) for k, v in zip(*np.unique(layer_map, return_counts=True))}
+    total_pts = float(ter_size * ter_size)
+    emit(f"Слои поверхности: Трава {l_counts.get(0, 0)/total_pts*100:.1f}%, Песок {l_counts.get(1, 0)/total_pts*100:.1f}%, "
+         f"Каменистая почва {l_counts.get(2, 0)/total_pts*100:.1f}%, Скалы {l_counts.get(3, 0)/total_pts*100:.1f}%")
 
     if progress:
         progress('Terrain', time.monotonic() - t0)
@@ -548,53 +1040,51 @@ def export_standalone_level(
     t0 = time.monotonic()
     if progress:
         progress('Roads', None)
-    emit("Шаг 4/6: Создание дорог DecalRoad...")
+    emit("Шаг 4/6: Создание дорог DecalRoad и разметки...")
 
-    decal_roads = []
-    spawn_pos = None
-    spawn_heading = 0.0
-    roads_sketch = []
+    roads_sketch = [r.get('xy', []) for r in roads if len(r.get('xy', [])) >= 2]
 
-    for idx, r in enumerate(roads):
-        pts_2d = r.get('xy', [])
-        if len(pts_2d) < 2:
-            continue
-        roads_sketch.append(pts_2d)
-        tags = r.get('tags', {})
-        mat = choose_road_material(tags)
-        width = float(r.get('width', 6.0))
+    # Process roads, trimmed intersections, and longitudinal/transverse markings
+    marking_config = road_markings.MarkingConfig(
+        style=road_markings.MarkingStyle.RU_EU,
+        enable_center_line=True,
+        enable_lane_dividers=True,
+        enable_edge_lines=True,
+        enable_stop_lines=True,
+        enable_crossings=True
+    )
+    processed_roads = road_markings.process_roads_and_markings(
+        raw_roads=roads,
+        store_terrain=store.terrain,
+        config=marking_config,
+        material_selector=choose_road_material
+    )
 
-        # Sample or interpolate z
-        z_pts = store.terrain.sample(pts_2d)
-        nodes = []
-        for (x, y), z in zip(pts_2d, z_pts):
-            nodes.append([round(float(x), 2), round(float(y), 2), round(float(z) + 0.06, 2), round(width, 2)])
+    decal_roads = (
+        processed_roads.junction_aprons +
+        processed_roads.base_roads +
+        processed_roads.markings
+    )
 
-        decal_roads.append({
-            'name': f"road_{idx}_{r.get('id', idx)}",
-            'class': 'DecalRoad',
-            '__parent': 'Roads',
-            'drivability': 1,
-            'improvedSpline': True,
-            'material': mat,
-            'nodes': nodes,
-        })
+    center_z = float(store.terrain.sample([[0, 0]])[0])
+    spawn_pos, spawn_heading, rot_quat, rot_matrix = spawn_system.find_asphalt_spawn_point(
+        roads=processed_roads.base_roads,
+        max_span=max_span,
+        center=(0.0, 0.0),
+        height_offset=0.6,
+        default_terrain_z=center_z
+    )
+    spawn_obj = spawn_system.create_spawn_sphere(
+        position=spawn_pos,
+        quaternion=rot_quat,
+        rotation_matrix=rot_matrix,
+        name='spawn_default',
+        parent='Spawn',
+        radius=2.0
+    )
 
-        # Select first good road near center for spawn
-        if spawn_pos is None and len(nodes) >= 2:
-            dist_to_center = math.hypot(nodes[0][0], nodes[0][1])
-            if dist_to_center < max_span * 0.4:
-                spawn_pos = [nodes[0][0], nodes[0][1], nodes[0][2] + 0.6]
-                dx = nodes[1][0] - nodes[0][0]
-                dy = nodes[1][1] - nodes[0][1]
-                spawn_heading = math.atan2(dy, dx)
-
-    if spawn_pos is None:
-        center_z = float(store.terrain.sample([[0, 0]])[0])
-        spawn_pos = [0.0, 0.0, center_z + 1.0]
-
-    emit(f"Сгенерировано DecalRoad объектов: {len(decal_roads)}")
-    emit(f"Точка спавна: X={spawn_pos[0]:.1f}, Y={spawn_pos[1]:.1f}, Z={spawn_pos[2]:.1f}")
+    emit(f"Сгенерировано дорог: {len(processed_roads.base_roads)}, перекрестков: {len(processed_roads.junction_aprons)}, элементов разметки: {processed_roads.total_marking_count} (Всего DecalRoad: {len(decal_roads)})")
+    emit(f"Точка спавна (асфальт +0.6м, yaw={math.degrees(spawn_heading):.1f}°): X={spawn_pos[0]:.1f}, Y={spawn_pos[1]:.1f}, Z={spawn_pos[2]:.1f}")
 
     if progress:
         progress('Roads', time.monotonic() - t0)
@@ -606,52 +1096,288 @@ def export_standalone_level(
         progress('Buildings', None)
     emit("Шаг 5/6: Экструзия 3D-зданий и расстановка объектов...")
 
+    # Spatial clustering of buildings prior to chunking
+    def building_spatial_key(b):
+        rings = b.get('rings', [])
+        if not rings or not rings[0]:
+            return 0
+        outer = rings[0]
+        cx = sum(p[0] for p in outer) / len(outer)
+        cy = sum(p[1] for p in outer) / len(outer)
+        ix = int((cx + 500000) / 50.0) & 0xFFFF
+        iy = int((cy + 500000) / 50.0) & 0xFFFF
+        code = 0
+        for bit in range(16):
+            code |= ((ix & (1 << bit)) << bit) | ((iy & (1 << bit)) << (bit + 1))
+        return code
+
+    buildings.sort(key=building_spatial_key)
+
     dae_files = {}
     bld_statics = []
-    chunk_size = 600
+    chunk_size = 100
 
     for chunk_idx, i in enumerate(range(0, len(buildings), chunk_size)):
         chunk = buildings[i:i + chunk_size]
+        chunk_pts = [p for b in chunk for ring in b.get('rings', []) for p in ring]
+        if chunk_pts:
+            chunk_cx = round(sum(p[0] for p in chunk_pts) / len(chunk_pts), 2)
+            chunk_cy = round(sum(p[1] for p in chunk_pts) / len(chunk_pts), 2)
+        else:
+            chunk_cx, chunk_cy = 0.0, 0.0
+        origin = (chunk_cx, chunk_cy, 0.0)
+
         dae_name = f"buildings_chunk_{chunk_idx}.dae"
-        dae_xml = generate_collada_dae(chunk, mat_name="bld_facade")
+        dae_xml = generate_collada_dae(
+            chunk,
+            mat_name="bld_facade",
+            roof_mat_name="bld_roof",
+            origin=origin,
+            skirt_depth=0.5,
+        )
         dae_files[f"levels/{level_slug}/art/shapes/buildings/{dae_name}"] = dae_xml
         bld_statics.append({
             'name': f"buildings_chunk_{chunk_idx}",
             'class': 'TSStatic',
             '__parent': 'Buildings',
-            'position': [0.0, 0.0, 0.0],
+            'position': [chunk_cx, chunk_cy, 0.0],
             'shapeName': f"/levels/{level_slug}/art/shapes/buildings/{dae_name}",
             'collisionType': 'Visible Mesh Final',
             'decalType': 'Visible Mesh',
             'useInstanceRenderData': True,
         })
 
-    # Props (trees & street lamps)
+    # Props (trees, procedural streetlights, guardrails, signs, and bus stops)
     prop_statics = []
-    tree_shape = "/levels/east_coast_usa/art/shapes/trees/trees_douglasfir/s_douglasfir_large_01.dae"
-    lamp_shape = "/levels/west_coast_usa/art/shapes/objects/street_light_single.dae"
+    prop_gen = road_decorations.RoadPropGenerator(
+        elevation_fn=lambda x, y: float(store.terrain.sample([[x, y]])[0]),
+        lamp_spacing=35.0,
+        curb_offset=1.2,
+        guardrail_step=2.40,
+    )
 
-    for idx, (tx, ty, tz) in enumerate(trees[:500]):
-        prop_statics.append({
-            'name': f"tree_{idx}",
-            'class': 'TSStatic',
-            '__parent': 'Props',
-            'position': [round(tx, 2), round(ty, 2), round(tz, 2)],
-            'shapeName': tree_shape,
-            'collisionType': 'Visible Mesh Final',
-            'useInstanceRenderData': True,
-        })
+    # 1. Road decorations: Streetlights, guardrails, and signs along DecalRoad paths
+    road_lamps_count = 0
+    road_rails_count = 0
+    road_signs_count = 0
 
-    for idx, (lx, ly, lz) in enumerate(lamps[:300]):
+    for r_obj in processed_roads.base_roads:
+        r_nodes = r_obj.get('nodes', [])
+        if len(r_nodes) < 2:
+            continue
+        pts_3d = [(float(n[0]), float(n[1]), float(n[2])) for n in r_nodes]
+        r_width = float(r_nodes[0][3]) if len(r_nodes[0]) > 3 else 6.0
+
+        # Streetlights (30-40m interval, oriented facing the carriageway)
+        road_lamps = prop_gen.generate_streetlights_for_road(
+            pts_3d=pts_3d,
+            road_width=r_width,
+            highway_type='residential',
+            is_tunnel=False,
+            staggered=True
+        )
+        for l in road_lamps:
+            l['__parent'] = 'Props'
+            prop_statics.append(l)
+            road_lamps_count += 1
+
+        # Guardrails on sharp turns or safety critical sections
+        road_rails = prop_gen.generate_guardrails_for_road(
+            pts_3d=pts_3d,
+            road_width=r_width,
+            is_bridge=False,
+            highway_type='residential',
+            is_tunnel=False
+        )
+        for rail in road_rails:
+            rail['__parent'] = 'Props'
+            prop_statics.append(rail)
+            road_rails_count += 1
+
+        # Traffic signs (speed limits, crossings, intersection stops)
+        road_signs = prop_gen.generate_traffic_signs_for_road(
+            pts_3d=pts_3d,
+            road_width=r_width,
+            speed_limit=60,
+            has_pedestrian_crossing=(len(pts_3d) > 4)
+        )
+        for s in road_signs:
+            s['__parent'] = 'Props'
+            prop_statics.append(s)
+            road_signs_count += 1
+
+    # 2. Bus stops (shelters + curb signs)
+    bus_stops_count = 0
+    for bs_x, bs_y, bs_tags in bus_stops[:50]:
+        # Find nearest road tangent
+        best_tangent = (1.0, 0.0)
+        best_dist = float('inf')
+        best_pos = (bs_x, bs_y, float(store.terrain.sample([[bs_x, bs_y]])[0]))
+        best_width = 7.0
+
+        for r_obj in processed_roads.base_roads:
+            r_nodes = r_obj.get('nodes', [])
+            for k in range(len(r_nodes) - 1):
+                qx, qy = r_nodes[k][0], r_nodes[k][1]
+                d = math.hypot(qx - bs_x, qy - bs_y)
+                if d < best_dist:
+                    best_dist = d
+                    dx = r_nodes[k + 1][0] - r_nodes[k][0]
+                    dy = r_nodes[k + 1][1] - r_nodes[k][1]
+                    l = math.hypot(dx, dy)
+                    if l > 0.1:
+                        best_tangent = (dx / l, dy / l)
+                    best_width = float(r_nodes[k][3]) if len(r_nodes[k]) > 3 else 7.0
+
+        bs_items = prop_gen.generate_bus_stop(
+            center_pos=best_pos,
+            road_tangent=best_tangent,
+            road_width=best_width,
+            side=1
+        )
+        for item in bs_items:
+            item['__parent'] = 'Props'
+            prop_statics.append(item)
+            bus_stops_count += 1
+
+    # 3. Procedural Vegetation (Köppen-Geiger biomes + OSM forests, tree rows, and surveyed trees)
+    min_lon, min_lat, max_lon, max_lat = box_w, box_s, box_e, box_n
+    center_lat = (min_lat + max_lat) / 2.0
+    center_lon = (min_lon + max_lon) / 2.0
+    veg_engine = proc_vegetation.ProceduralVegetationEngine(
+        center_lat=center_lat,
+        center_lon=center_lon,
+    )
+    emit(f"Биом климата: {veg_engine.climate.description} ({veg_engine.climate.code}), Группа: {veg_engine.climate.group}")
+
+    # Spatial clearance against building footprints and roads
+    bld_geoms = [shapely.geometry.Polygon(b['rings'][0]) for b in buildings if len(b.get('rings', [[]])[0]) >= 3]
+    bld_tree = shapely.STRtree(bld_geoms) if bld_geoms else None
+    road_geoms = [shapely.geometry.LineString(r['xy']) for r in roads if len(r.get('xy', [])) >= 2]
+    road_tree = shapely.STRtree(road_geoms) if road_geoms else None
+
+    def is_clear_fn(x: float, y: float, radius: float = 1.5) -> bool:
+        pt = shapely.geometry.Point(x, y)
+        if bld_tree:
+            for idx in bld_tree.query(pt.buffer(radius + 2.0)):
+                if bld_geoms[int(idx)].distance(pt) < radius + 1.5:
+                    return False
+        if road_tree:
+            for idx in road_tree.query(pt.buffer(radius + 2.0)):
+                if road_geoms[int(idx)].distance(pt) < radius + 1.5:
+                    return False
+        return True
+
+    def elev_fn(x: float, y: float) -> float:
+        return float(store.terrain.sample([[x, y]])[0])
+
+    all_foliage_instances: list[proc_vegetation.TreeInstance] = []
+
+    # 3.1. Forest & Park polygons (multi-tier canopy with clearings & ecotone)
+    for f_geom, f_tags in forest_polys:
+        parts = [f_geom] if f_geom.geom_type == 'Polygon' else list(getattr(f_geom, 'geoms', []))
+        for p in parts:
+            if p.area >= 25.0:
+                insts = veg_engine.populate_forest_polygon(
+                    p, f_tags, elevation_fn=elev_fn, is_clear_fn=is_clear_fn, spacing=6.5
+                )
+                all_foliage_instances.extend(insts)
+
+    # 3.2. Linear tree rows along streets & boundaries
+    for r_geom, r_tags in tree_rows:
+        parts = [r_geom] if r_geom.geom_type == 'LineString' else list(getattr(r_geom, 'geoms', []))
+        for line in parts:
+            insts = veg_engine.populate_tree_row(
+                line, r_tags, elevation_fn=elev_fn, is_clear_fn=is_clear_fn, step=10.0
+            )
+            all_foliage_instances.extend(insts)
+
+    # 3.3. Surveyed OSM trees (individual nodes)
+    for pt_geom, pt_tags in surveyed_trees:
+        inst = veg_engine.place_surveyed_tree(
+            pt_geom, pt_tags, elevation_fn=elev_fn, is_clear_fn=is_clear_fn
+        )
+        if inst:
+            all_foliage_instances.append(inst)
+
+    # 3.4. Scrub & Heath shrublands
+    for s_geom, s_tags in scrub_polys:
+        parts = [s_geom] if s_geom.geom_type == 'Polygon' else list(getattr(s_geom, 'geoms', []))
+        for p in parts:
+            if p.area >= 20.0:
+                insts = veg_engine.populate_scrub(
+                    p, s_tags, elevation_fn=elev_fn, is_clear_fn=is_clear_fn, spacing=4.5
+                )
+                all_foliage_instances.extend(insts)
+
+    # If no OSM forest polygons were present, spawn natural scatter on surveyed trees or fallback
+    if not forest_polys and not surveyed_trees:
+        for idx, (tx, ty, tz) in enumerate(trees[:500]):
+            inst = veg_engine.place_surveyed_tree(
+                shapely.geometry.Point(tx, ty), {}, elevation_fn=elev_fn, is_clear_fn=is_clear_fn
+            )
+            if inst:
+                all_foliage_instances.append(inst)
+
+    # Build BeamNG 0.24+/0.3x+ Native Forest files
+    forest_files = {}
+    forest_sim_object = None
+
+    if all_foliage_instances:
+        by_mesh: dict[str, list[proc_vegetation.TreeInstance]] = {}
+        for inst in all_foliage_instances:
+            by_mesh.setdefault(inst.mesh_key, []).append(inst)
+
+        managed_items: dict[str, Any] = {}
+        for mesh_key, group in by_mesh.items():
+            mesh_def = proc_vegetation.BEAMNG_MESHES.get(mesh_key)
+            if not mesh_def:
+                continue
+            forest4_lines = [inst.to_forest4_line() for inst in group]
+            forest_files[f"levels/{level_slug}/forest/{mesh_key}.forest4.json"] = '\n'.join(forest4_lines) + '\n'
+            managed_items[mesh_key] = {
+                "name": mesh_key,
+                "internalName": mesh_key,
+                "class": "TSForestItemData",
+                "persistentId": f"forest_item_{mesh_key}",
+                "annotation": "TREE" if mesh_def.tier in ('CANOPY', 'SUB_CANOPY') else "BUSH",
+                "radius": round(mesh_def.crown_radius, 2),
+                "shapeFile": mesh_def.shape_path,
+                "collidable": mesh_def.collidable,
+            }
+
+        forest_files[f"levels/{level_slug}/art/forest/managedItemData.json"] = json.dumps(managed_items, indent=2)
+        forest_files[f"levels/{level_slug}/{level_slug}.forest.json"] = json.dumps({
+            "header": {"format": "JSON Forest Data v4", "version": 4},
+            "types": list(managed_items.keys()),
+            "totalInstances": len(all_foliage_instances)
+        }, indent=2)
+
+        forest_sim_object = {
+            "name": "theForest",
+            "class": "Forest",
+            "persistentId": "the_procedural_forest",
+            "__parent": "MissionGroup",
+            "dataFile": f"/levels/{level_slug}/{level_slug}.forest.json"
+        }
+
+        # Also add landmark surveyed trees as TSStatic props with collision for immediate physical presence
+        landmark_trees = [inst for inst in all_foliage_instances if inst.source == 'surveyed_tree'][:150]
+        prop_statics.extend(proc_vegetation.export_tsstatic_props(landmark_trees, max_count=150))
+
+    # Surveyed standalone lamps from OSM (if any)
+    for idx, (lx, ly, lz) in enumerate(lamps[:100]):
         prop_statics.append({
-            'name': f"lamp_{idx}",
+            'name': f"osm_lamp_{idx}",
             'class': 'TSStatic',
             '__parent': 'Props',
             'position': [round(lx, 2), round(ly, 2), round(lz, 2)],
-            'shapeName': lamp_shape,
-            'collisionType': 'Visible Mesh Final',
+            'shapeName': road_decorations.MESH_STREETLIGHT_URBAN,
+            'collisionType': 'Collision Mesh',
             'useInstanceRenderData': True,
         })
+
+    emit(f"Расставлено объектов Props: фонарей: {road_lamps_count + len(lamps[:100])}, отбойников: {road_rails_count}, знаков: {road_signs_count}, остановок: {bus_stops_count}, деревьев: {len(trees[:500])}")
 
     if progress:
         progress('Buildings', time.monotonic() - t0)
@@ -662,40 +1388,6 @@ def export_standalone_level(
     if progress:
         progress('Packaging', None)
     emit("Шаг 6/6: Упаковка готового мода уровней...")
-
-    # SpawnSphere
-    yaw = spawn_heading
-    qz = math.sin(yaw / 2.0)
-    qw = math.cos(yaw / 2.0)
-    spawn_obj = {
-        'class': 'SpawnSphere',
-        'name': 'spawn_default',
-        '__parent': 'MissionGroup',
-        'position': [round(spawn_pos[0], 2), round(spawn_pos[1], 2), round(spawn_pos[2], 2)],
-        'rotation': [0.0, 0.0, round(qz, 4), round(qw, 4)],
-        'radius': 2.0,
-        'dataBlock': 'SpawnSphereMarker',
-    }
-
-    # TerrainBlock
-    terrain_block = {
-        'name': 'theTerrain',
-        'class': 'TerrainBlock',
-        '__parent': 'MissionGroup',
-        'position': [round(origin_x, 2), round(origin_y, 2), round(base_z, 2)],
-        'maxHeight': round(max_height, 2),
-        'squareSize': round(square_size, 3),
-        'terrainFile': f"/levels/{level_slug}/theTerrain.ter",
-    }
-
-    mission_group_items = [
-        {'class': 'SimGroup', 'name': 'Sky', '__parent': 'MissionGroup'},
-        {'class': 'SimGroup', 'name': 'Roads', '__parent': 'MissionGroup'},
-        {'class': 'SimGroup', 'name': 'Buildings', '__parent': 'MissionGroup'},
-        {'class': 'SimGroup', 'name': 'Props', '__parent': 'MissionGroup'},
-        spawn_obj,
-        terrain_block,
-    ]
 
     # Info.json
     info_json = {
@@ -713,26 +1405,15 @@ def export_standalone_level(
         }],
     }
 
-    # Terrain json
-    terrain_json = {
-        'binaryFormat': 'version(char), size(unsigned int), heightMap(heightMapSize * heightMapItemSize), layerMap(layerMapSize * layerMapItemSize), layerTextureMap(layerMapSize * layerMapItemSize), materialNames',
-        'datafile': f"/levels/{level_slug}/theTerrain.ter",
-        'heightMapItemSize': 2,
-        'heightMapSize': ter_size * ter_size,
-        'layerMapItemSize': 1,
-        'layerMapSize': ter_size * ter_size,
-        'materials': ['Grass', 'BeachSand', 'dirt_rocky_large', 'rock'],
-        'size': ter_size,
-        'version': 9,
-    }
-
-    # Materials
+    # Materials for buildings
     bld_materials = {
         'bld_facade': {
             'name': 'bld_facade',
             'mapTo': 'bld_facade',
             'class': 'Material',
             'version': 1.5,
+            'cullMode': 'none',
+            'doubleSided': True,
             'Stages': [
                 {
                     'baseColorMap': '/levels/east_coast_usa/art/shapes/buildings/eca_bld_brick_01_d.color.png',
@@ -740,27 +1421,61 @@ def export_standalone_level(
                 },
                 {}, {}, {}
             ],
-        }
+        },
+        'bld_roof': {
+            'name': 'bld_roof',
+            'mapTo': 'bld_roof',
+            'class': 'Material',
+            'version': 1.5,
+            'cullMode': 'none',
+            'doubleSided': True,
+            'Stages': [
+                {
+                    'baseColorMap': '/levels/east_coast_usa/art/shapes/buildings/eca_bld_concrete_01_d.color.png',
+                    'roughnessFactor': 0.9,
+                },
+                {}, {}, {}
+            ],
+        },
     }
 
-    # Load Terrain Materials
-    ter_mat_file = _find_resource('terrain_materials.json')
-    if ter_mat_file.is_file():
-        try:
-            terrain_materials = json.loads(ter_mat_file.read_text(encoding='utf-8'))
-        except Exception:
-            terrain_materials = {}
-    else:
-        terrain_materials = {}
+    # TerrainBlock & canonical TextureSet binding
+    tex_set_name = f"{level_slug}TerrainMaterialTextureSet"
+    terrain_block = terrain_builder.build_terrain_block(
+        level_slug=level_slug,
+        origin=(origin_x, origin_y, base_z),
+        max_height=max_height,
+        square_size=square_size,
+        texture_set_name=tex_set_name,
+    )
 
-    if 'templateTerrainMaterialTextureSet' not in terrain_materials:
-        terrain_materials['templateTerrainMaterialTextureSet'] = {
-            'name': 'templateTerrainMaterialTextureSet',
-            'class': 'TerrainMaterialTextureSet',
-            'baseTexSize': [512, 512],
-            'detailTexSize': [1024, 1024],
-            'macroTexSize': [1024, 1024],
-        }
+    # theTerrain.terrain.json descriptor
+    terrain_json = terrain_builder.build_terrain_json(level_slug=level_slug, size=ter_size)
+
+    # Reference v2 PBR terrain materials (Grass, BeachSand, dirt_rocky_large, rock)
+    terrain_materials = terrain_builder.build_terrain_pbr_materials(texture_set_name=tex_set_name)
+    # Also provide alias templateTerrainMaterialTextureSet for compatibility
+    terrain_materials['templateTerrainMaterialTextureSet'] = {
+        'name': 'templateTerrainMaterialTextureSet',
+        'class': 'TerrainMaterialTextureSet',
+        'persistentId': 'ac348aaa-081f-4d49-92db-d79fdfad5f80',
+        'baseTexSize': [1024, 1024],
+        'detailTexSize': [1024, 1024],
+        'macroTexSize': [1024, 1024],
+    }
+
+    # Strict QA validation of terrain binary & PBR material integrity
+    ter_val_errors = terrain_builder.validate_terrain_pipeline(
+        ter_bytes=ter_bytes,
+        terrain_json=terrain_json,
+        materials_json=terrain_materials,
+        terrain_block=terrain_block,
+    )
+    if ter_val_errors:
+        for err in ter_val_errors:
+            emit(f"[ПРЕДУПРЕЖДЕНИЕ Terrain] {err}")
+    else:
+        emit("Валидация рельефа и PBR-материалов: 100% OK (ошибок нет)")
 
     # Load Road Materials
     road_mat_file = _find_resource('road_materials.json')
@@ -771,6 +1486,16 @@ def export_standalone_level(
             road_materials = {}
     else:
         road_materials = {}
+
+    # Load Fast Tree Materials
+    tree_mat_file = _find_resource('fast_tree_materials.json')
+    if tree_mat_file.is_file():
+        try:
+            tree_materials = json.loads(tree_mat_file.read_text(encoding='utf-8'))
+        except Exception:
+            tree_materials = {}
+    else:
+        tree_materials = {}
 
     preview_jpg = generate_preview_image(title, roads_sketch, (min_x, min_y, max_x, max_y))
 
@@ -786,18 +1511,37 @@ def export_standalone_level(
         z.writestr(f"levels/{level_slug}/preview.jpg", preview_jpg)
         z.writestr(f"levels/{level_slug}/theTerrain.ter", ter_bytes)
         z.writestr(f"levels/{level_slug}/theTerrain.terrain.json", json.dumps(terrain_json, ensure_ascii=False, indent=2))
+
+        # Map JSON for in-game navi/radar and minimap
+        map_json = road_markings.generate_navigation_map(
+            raw_roads=roads,
+            base_roads=processed_roads.base_roads
+        )
+        z.writestr(f"levels/{level_slug}/map.json", json.dumps(map_json, indent=2, ensure_ascii=False))
         z.writestr(f"levels/{level_slug}/art/shapes/buildings/main.materials.json", json.dumps(bld_materials, indent=2))
         z.writestr(f"levels/{level_slug}/art/terrains/main.materials.json", json.dumps(terrain_materials, indent=2))
         z.writestr(f"levels/{level_slug}/art/road/main.materials.json", json.dumps(road_materials, indent=2))
-        z.writestr(f"levels/{level_slug}/art/main.materials.json", json.dumps({**road_materials, **bld_materials}, indent=2))
+        z.writestr(f"levels/{level_slug}/art/forest/main.materials.json", json.dumps(tree_materials, indent=2))
+        z.writestr(f"levels/{level_slug}/art/main.materials.json", json.dumps({**road_materials, **bld_materials, **tree_materials}, indent=2))
+        z.writestr(f"levels/{level_slug}/main.materials.json", json.dumps({**road_materials, **bld_materials, **tree_materials}, indent=2))
 
-        # Main SimGroup files
-        z.writestr(f"levels/{level_slug}/main/items.level.json", json.dumps({'class': 'SimGroup', 'name': 'MissionGroup'}) + '\n')
-        z.writestr(f"levels/{level_slug}/main/MissionGroup/items.level.json", ''.join(json.dumps(o) + '\n' for o in mission_group_items))
-        z.writestr(f"levels/{level_slug}/main/MissionGroup/Sky/items.level.json", ''.join(json.dumps({**o, '__parent': 'Sky'}) + '\n' for o in SKY))
-        z.writestr(f"levels/{level_slug}/main/MissionGroup/Roads/items.level.json", ''.join(json.dumps(o) + '\n' for o in decal_roads))
-        z.writestr(f"levels/{level_slug}/main/MissionGroup/Buildings/items.level.json", ''.join(json.dumps(o) + '\n' for o in bld_statics))
-        z.writestr(f"levels/{level_slug}/main/MissionGroup/Props/items.level.json", ''.join(json.dumps(o) + '\n' for o in prop_statics))
+        # Main SimGroup files (Hierarchical MissionGroup scene tree)
+        scene_files = spawn_system.build_mission_group_hierarchy(
+            level_slug=level_slug,
+            sky_items=SKY,
+            decal_roads=decal_roads,
+            building_statics=bld_statics,
+            prop_statics=prop_statics,
+            terrain_block=terrain_block,
+            spawn_obj=spawn_obj,
+            extra_mission_group_items=[forest_sim_object] if forest_sim_object else None
+        )
+        for s_path, s_content in scene_files.items():
+            z.writestr(s_path, s_content)
+
+        # BeamNG Forest files (NDJSON v4 forest4.json & managedItemData.json)
+        for fname, content in forest_files.items():
+            z.writestr(fname, content)
 
         # DAE files
         for fname, content in dae_files.items():
@@ -807,6 +1551,19 @@ def export_standalone_level(
         tmp_zip.replace(zip_path)
 
     emit(f"Архив карты создан: {zip_path.name} ({zip_path.stat().st_size / 2**20:.1f} MB)")
+
+    # QA Validation of assembled mod archive
+    try:
+        import level_validator
+        qa_report = level_validator.validate_level(zip_path)
+        if qa_report.is_valid:
+            emit(f"QA Контроль качества: [УСПЕХ] Уровень прошёл все проверки качества ({len(qa_report.checks)} чеков, 0 ошибок)")
+        else:
+            emit(f"QA Контроль качества: [ВНИМАНИЕ] Обнаружено ошибок: {len(qa_report.all_errors)}, предупреждений: {len(qa_report.all_warnings)}")
+            for err in qa_report.all_errors[:5]:
+                emit(f"  ! {err.category}: {err.message}")
+    except Exception as e:
+        emit(f"QA Контроль качества: проверка пропущена ({e})")
 
     # Install directly to mods if requested
     dest_path = zip_path

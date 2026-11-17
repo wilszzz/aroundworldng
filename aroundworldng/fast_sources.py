@@ -11,6 +11,7 @@ import math
 import os
 from pathlib import Path
 import sqlite3
+import threading
 import time
 
 import numpy as np
@@ -275,10 +276,11 @@ class Terrain:
     zoom 13: a local DEM's ~10 m tiles (est_dem); where none was burnt, the z12 tile
     bilinearly upsampled, so the two meet without a step.
     """
-    def __init__(self, cache, frame=None, zoom=12):
+    def __init__(self, cache, frame=None, zoom=12, despike=True):
         self.cache, self.frame, self.zoom = Path(cache), frame or Frame(), zoom
+        self.despike = despike
         self.images = OrderedDict()
-        self.coarse = Terrain(cache, self.frame) if zoom == 13 else None
+        self.coarse = Terrain(cache, self.frame, despike=despike) if zoom == 13 else None
 
     def has(self, a, b):
         if (self.cache / 'terrain' / str(self.zoom) / str(a) / f'{b}.png').exists():
@@ -304,7 +306,17 @@ class Terrain:
             else:
                 with Image.open(path) as im:
                     rgb = np.asarray(im.convert('RGB'), dtype=float)
-                self.images[key] = rgb[:,:,0]*256 + rgb[:,:,1] + rgb[:,:,2]/256 - 32768
+                h = rgb[:,:,0]*256 + rgb[:,:,1] + rgb[:,:,2]/256 - 32768
+                if self.despike:
+                    try:
+                        from fast_dem import clean_dsm_to_dtm
+                        h = clean_dsm_to_dtm(h, kernel_size=5, spike_thresh=3.5)
+                        from scipy.ndimage import median_filter
+                        med = median_filter(h, size=3)
+                        h = np.where(np.abs(h - med) > 2.5, med, h)
+                    except Exception:
+                        pass
+                self.images[key] = h
             if len(self.images) > 24:
                 self.images.popitem(last=False)
         self.images.move_to_end(key)
@@ -488,12 +500,21 @@ def write_index(segments, arcs, mouths, node_h, path, emit=print):
         del lines
         emit(f'rows: {time.perf_counter()-started:.1f}s')
         def dumps(objs, compact):
-            if pool is None:
-                out = _dumps(objs, compact)
-                return lambda: out
-            step = max(1, len(objs) // 48 + 1)
-            futures = [pool.submit(_dumps, objs[i:i + step], compact) for i in range(0, len(objs), step)]
-            return lambda: [t for f in futures for t in f.result()]
+            if pool is not None:
+                try:
+                    step = max(1, len(objs) // 48 + 1)
+                    futures = [pool.submit(_dumps, objs[i:i + step], compact) for i in range(0, len(objs), step)]
+                    def gather():
+                        try:
+                            return [t for f in futures for t in f.result()]
+                        except Exception as e:
+                            emit(f'pool serialization failed ({e}), falling back to direct encoding')
+                            return _dumps(objs, compact)
+                    return gather
+                except Exception as e:
+                    emit(f'pool submit failed ({e}), using direct serialization')
+            out = _dumps(objs, compact)
+            return lambda: out
         node_json = dumps(nodes, False)
         junction_json = dumps([j[1] for j in kept], True)
         segment_json = dumps(segments, True)
@@ -564,12 +585,17 @@ def _prepare(source, output, dem, emit=print, point=None, cancelled=None, box=No
 
     files = [Path(source) / entry['file'] for entry in index['tiles'].values()]
     shas = [entry['sha256'] for entry in index['tiles'].values()]
+    parts = None
     if len(files) > 24:
         # tiles parse in parallel; merged in tile order, first copy of a way wins (as before)
-        from concurrent.futures import ProcessPoolExecutor
-        with ProcessPoolExecutor(PARSE_WORKERS) as pool:
-            parts = list(pool.map(read_roads, files, shas, chunksize=4))
-    else:
+        try:
+            from concurrent.futures import ProcessPoolExecutor
+            with ProcessPoolExecutor(PARSE_WORKERS) as pool:
+                parts = list(pool.map(read_roads, files, shas, chunksize=4))
+        except Exception as exc:
+            emit(f'parallel tile parsing failed ({exc}), falling back to sequential parsing')
+            parts = None
+    if parts is None:
         parts = [read_roads(f, h) for f, h in zip(files, shas)]
     roads = {}
     for part in parts:
@@ -614,8 +640,9 @@ def _prepare(source, output, dem, emit=print, point=None, cancelled=None, box=No
     del roads, refs
     # one height solve for the whole graph: shared nodes, smooth grades, soft bridges/tunnels
     import fast_profile
+    from build_country import Despiked
     zoom = dem_zoom(dem, index['package_box'])
-    terrain = Terrain(dem, frame, zoom)
+    terrain = Despiked(Terrain(dem, frame, zoom, despike=True))
     # a wilderness region (Everest's Tibetan side) has no road at all: nothing to solve
     if segments:
         mosaic = fast_profile.Mosaic(terrain, np.concatenate([np.asarray(seg['xy']) for seg in segments]))
@@ -677,34 +704,117 @@ def link_parts(found):
 class Store:
     def __init__(self, directory):
         self.directory = Path(directory).resolve()
-        self.meta = json.loads((self.directory/'region.json').read_text())
-        self.db = sqlite3.connect((self.directory/'sources.sqlite').as_uri()+'?mode=ro',uri=True)
+        self.meta = json.loads((self.directory / 'region.json').read_text())
+        self._lock = threading.Lock()
+        self.db = None
+        self._get_db()
         self.frame = Frame.of(self.meta)
-        self.terrain = Terrain(self.meta['dem'],self.frame,self.meta.get('demZoom',12))
+        self.terrain = Terrain(self.meta['dem'], self.frame, self.meta.get('demZoom', 12), despike=True)
         from shapely.geometry import box
         self.coverage = shapely.union_all([box(*r) for r in self.meta['coverage']])
         self.heights = OrderedDict()
         self.scenes = OrderedDict()
-        self.source_index = json.loads((Path(self.meta['source'])/'index.json').read_text())
+        source_dir = Path(self.meta['source'])
+        if not source_dir.exists():
+            cand = Path('data/osm_tiles') / source_dir.name
+            if cand.exists():
+                source_dir = cand.resolve()
+        self.source_dir = source_dir
+        idx_path = source_dir / 'index.json'
+        self.source_index = json.loads(idx_path.read_text(encoding='utf-8')) if idx_path.exists() else {'tiles': {}}
+
+    def _get_db(self):
+        with self._lock:
+            if self.db is None:
+                db_path = self.directory / 'sources.sqlite'
+                if not db_path.exists():
+                    raise FileNotFoundError(f'missing sources.sqlite: {db_path}')
+                uri = db_path.as_uri() + '?mode=ro&immutable=1'
+                self.db = sqlite3.connect(uri, uri=True, check_same_thread=False)
+                self.db.execute('PRAGMA query_only = ON;')
+                self.db.execute('PRAGMA synchronous = OFF;')
+                self.db.execute('PRAGMA temp_store = MEMORY;')
+                try:
+                    self.db.execute('PRAGMA mmap_size = 268435456;')
+                except sqlite3.Error:
+                    pass
+            return self.db
+
+    def close(self):
+        with self._lock:
+            if getattr(self, 'db', None) is not None:
+                try:
+                    self.db.close()
+                except Exception:
+                    pass
+                self.db = None
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            pass
 
     def query(self, rect, kinds=None):
-        x0,y0,x1,y1=rect
-        rows = self.db.execute('''SELECT f.id,f.kind,f.data,f.geom FROM bounds b JOIN features f ON f.id=b.id
-            WHERE b.x1>=? AND b.x0<=? AND b.y1>=? AND b.y0<=? ORDER BY f.id''',(x0,x1,y0,y1))
-        return [(fid,kind,json.loads(data),shapely.from_wkb(geom)) for fid,kind,data,geom in rows
-                if kinds is None or kind in kinds]
+        x0, y0, x1, y1 = rect
+        if not all(math.isfinite(v) for v in (x0, y0, x1, y1)):
+            return []
+        min_x, max_x = min(x0, x1), max(x0, x1)
+        min_y, max_y = min(y0, y1), max(y0, y1)
+
+        if isinstance(kinds, str):
+            kinds_set = {kinds}
+        elif kinds is not None:
+            kinds_set = set(kinds)
+        else:
+            kinds_set = None
+
+        db = self._get_db()
+        with self._lock:
+            rows = db.execute(
+                '''SELECT f.id, f.kind, f.data, f.geom FROM bounds b JOIN features f ON f.id=b.id
+                WHERE b.x1>=? AND b.x0<=? AND b.y1>=? AND b.y0<=? ORDER BY f.id''',
+                (min_x, max_x, min_y, max_y)
+            ).fetchall()
+
+        out = []
+        for fid, kind, data_raw, geom_raw in rows:
+            if kinds_set is not None and kind not in kinds_set:
+                continue
+            try:
+                data = json.loads(data_raw) if isinstance(data_raw, str) else data_raw
+            except Exception:
+                data = {}
+            try:
+                geom = shapely.from_wkb(geom_raw) if geom_raw else None
+            except Exception:
+                geom = None
+            if geom is not None and not geom.is_empty:
+                out.append((fid, kind, data, geom))
+        return out
 
     def node(self, nid):
-        return json.loads(self.db.execute('SELECT data FROM nodes WHERE id=?',(nid,)).fetchone()[0])
+        db = self._get_db()
+        with self._lock:
+            row = db.execute('SELECT data FROM nodes WHERE id=?', (nid,)).fetchone()
+        if not row or not row[0]:
+            return None
+        try:
+            return json.loads(row[0]) if isinstance(row[0], str) else row[0]
+        except Exception:
+            return None
 
     def height(self, nid):
-        if nid in self.heights:
-            self.heights.move_to_end(nid)
-            return self.heights[nid]
-        h = float(self.node(nid)['h'])     # solved with the whole graph (fast_profile)
-        self.heights[nid] = h
-        if len(self.heights)>8192:
-            self.heights.popitem(last=False)
+        with self._lock:
+            if nid in self.heights:
+                self.heights.move_to_end(nid)
+                return self.heights[nid]
+        nd = self.node(nid)
+        h = float(nd['h']) if (nd and 'h' in nd) else 0.0
+        with self._lock:
+            self.heights[nid] = h
+            if len(self.heights) > 8192:
+                self.heights.popitem(last=False)
         return h
 
     def covered(self, rect):
@@ -769,7 +879,8 @@ class Store:
                             lines[-w.id]=(kind,dict(w.tags),LineString(coords))
             # Only nodes that can be points reach Python (Kyiv tile: 21 k of 218 k, 0.57 -> 0.25 s);
             # the location index still sees every node, so ways and areas keep their geometry.
-            Reader().apply_file(str(Path(self.meta['source'])/entry['file']),locations=True,
+            tile_file = self.source_dir / entry['file']
+            Reader().apply_file(str(tile_file), locations=True,
                                 filters=[osmium.filter.KeyFilter(*fast_style.point_keys()).enable_for(osmium.osm.NODE)])
             # OSM often maps a business both as a node and a containing site/building.
             # Keep the surveyed node when category and known brand match; unknown names

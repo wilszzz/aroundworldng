@@ -279,9 +279,21 @@ local function scan()
         if not entry then
           addIssue(path, 'invalid', message, type(manifest.id) == 'string' and manifest.id or nil)
         elseif ids[entry.id] then
-          conflicted[entry.id] = true
-          addIssue(path, 'duplicate', 'duplicate country id: ' .. entry.id, entry.id)
+          local existingPath = ids[entry.id]._path or ''
+          if path:match('^/aroundworldng/') and existingPath:match('^/earthng/') then
+            entry._path = path
+            ids[entry.id] = entry
+            for k, c in ipairs(catalog) do
+              if c.id == entry.id then catalog[k] = entry break end
+            end
+          elseif path:match('^/earthng/') and existingPath:match('^/aroundworldng/') then
+            -- Compatible alias for the same country, ignore without error
+          else
+            conflicted[entry.id] = true
+            addIssue(path, 'duplicate', 'duplicate country id: ' .. entry.id, entry.id)
+          end
         else
+          entry._path = path
           ids[entry.id] = entry
           catalog[#catalog + 1] = entry
         end

@@ -24,6 +24,9 @@ try:
     if awng_dir.is_dir() and str(awng_dir) not in sys.path:
         sys.path.insert(0, str(awng_dir))
 
+    import country_fetch
+    country_fetch.auto_detect_proxy()
+
     if __name__ == "__main__":
         if len(sys.argv) > 1:
             first = sys.argv[1]
@@ -54,9 +57,45 @@ try:
 
         import country_ui
 
+        auto_build_query = None
+        if len(sys.argv) > 1:
+            for idx, arg in enumerate(sys.argv):
+                if arg == "--auto-build" and idx + 1 < len(sys.argv):
+                    auto_build_query = sys.argv[idx + 1]
+                    break
+
         def main():
             root = country_ui.create_root()
             app = country_ui.Setup(root)
+
+            if auto_build_query:
+                def trigger_auto_build():
+                    if not app.places:
+                        root.after(500, trigger_auto_build)
+                        return
+                    q = auto_build_query.casefold()
+                    matched = None
+                    for p in app.places:
+                        if q in p['name'].casefold() or q in p['id'].casefold():
+                            matched = p
+                            break
+                    if not matched and app.places:
+                        matched = app.places[0]
+                    if matched:
+                        app.select_place(matched)
+
+                    def do_build():
+                        try:
+                            if hasattr(app, 'optimize_source'):
+                                app.optimize_source()
+                        except Exception:
+                            pass
+                        app.build()
+
+                    root.after(1200, do_build)
+
+                root.after(1000, trigger_auto_build)
+
             root.mainloop()
 
         main()

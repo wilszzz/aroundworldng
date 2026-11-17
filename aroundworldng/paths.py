@@ -7,3 +7,8 @@ if getattr(sys, 'frozen', False):
 else:
     PROJECT = Path(__file__).resolve().parents[1]
 OUT = PROJECT / 'out'
+WORLD = OUT / 'world'
+FAST_INDEX = WORLD / 'fast-index'
+DATA = PROJECT / 'data'
+OSM_TILES = DATA / 'osm_tiles'
+DEM_CACHE = DATA / 'dem'

@@ -533,8 +533,8 @@ end
 -- points, and building a string per point made garbage and most of the scatter time.
 local HMOD = 2147483647
 local function ihash(seed, a, b, c)
-  local h = (seed * 1000003 + a) % HMOD
-  h = (h * 1000003 + b) % HMOD
+  local h = (((seed or 0) * 1000003 + (a or 0)) % HMOD)
+  h = ((h * 1000003 + (b or 0)) % HMOD)
   if c then h = (h * 1000003 + c) % HMOD end
   h = (h * 48271 + 11) % HMOD
   return (h * 48271 + 7) % HMOD
@@ -4704,19 +4704,17 @@ function BLD.balconies(scene, a, b, length, along, base, height, kind, h, spans)
   if length < 6 then return 0 end
   local floors = math.floor((height - .3) / D.cell)
   local isModern = kind:find('_d_', 1, true) ~= nil
-  local sheet
-  if isModern then
-    local variant = ihash(h, k, 0, 71) % 4
-    if variant == 0 then sheet = 'wall_glass'
-    elseif variant == 1 then sheet = 'clad_metal'
-    elseif variant == 2 then sheet = 'plinth'
-    else sheet = 'wall_glass' end
-  else
-    sheet = h % 3 == 0 and 'clad_metal' or 'plinth'
-  end
+  local defaultSheet = isModern and 'wall_glass' or (h % 3 == 0 and 'clad_metal' or 'plinth')
   local n = 0
   for k = math.ceil((along + .3) / D.cell), math.floor((along + length - .3) / D.cell) - 1 do
     if BLD.balconyColumn(kind, height, h, k) then
+      local sheet = defaultSheet
+      if isModern then
+        local variant = ihash(h, k, 0, 71) % 4
+        if variant == 0 or variant == 3 then sheet = 'wall_glass'
+        elseif variant == 1 then sheet = 'clad_metal'
+        else sheet = 'plinth' end
+      end
       local c0 = k * D.cell - along
       local s0, s1 = c0 + B.width[1] * D.cell, c0 + B.width[2] * D.cell
       local clear = true

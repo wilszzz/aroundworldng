@@ -36,6 +36,16 @@ SETTINGS = ROOT / 'country_setup.json'
 HISTORY = ROOT / 'out' / 'country-setup' / 'build-times.json'
 READY_MAPS_URL = 'https://drive.google.com/drive/folders/1n3A-msXrJtuQ2qJKn7YqzCooLZyliKMy?usp=drive_link'
 
+STAGE_NAMES_RU = {
+    'Sources': 'Загрузка исходных данных',
+    'Cut tiles': 'Нарезка тайлов карты',
+    'Elevation': 'Загрузка высот (DEM)',
+    'Region index': 'Индексация регионов',
+    'Map detail': 'Детализация карты',
+    'Export': 'Экспорт геометрии и сборка',
+    'Install': 'Установка мода'
+}
+
 # Studio Workstation Palette - utilitarian, dark matte graphite ("дешево и серо, но человечно")
 PALETTE = {
     'bg_app': '#131316',           # Root window background
@@ -605,7 +615,15 @@ class Setup:
         self.options_changed()
 
     def say(self, text):
-        self.lines.put(str(text))
+        msg = str(text)
+        self.lines.put(msg)
+        try:
+            log_dir = ROOT / 'out' / 'aroundworldng'
+            log_dir.mkdir(parents=True, exist_ok=True)
+            with open(log_dir / 'build.log', 'a', encoding='utf-8') as f:
+                f.write(f"[{time.strftime('%H:%M:%S')}] {msg}\n")
+        except OSError:
+            pass
 
     def pump(self):
         messages = []
@@ -627,8 +645,8 @@ class Setup:
             self.log.configure(state='normal')
             self.log.insert('end', '\n'.join(messages) + '\n')
             count = int(self.log.index('end-1c').split('.')[0])
-            if count > 2000:
-                self.log.delete('1.0', f'{count-2000}.0')
+            if count > 50000:
+                self.log.delete('1.0', f'{count-50000}.0')
             self.log.see('end')
             self.log.configure(state='disabled')
             self.status.set(messages[-1])
@@ -637,10 +655,12 @@ class Setup:
             elapsed = time.monotonic() - self.started
             label = f'Прошло времени: {timing.duration(elapsed)}'
             if self.active_stage:
-                label = f'{self.active_stage} · {label}'
+                ru_stage = STAGE_NAMES_RU.get(self.active_stage, self.active_stage)
                 index = timing.STAGES.index(self.active_stage) if self.active_stage in timing.STAGES else None
                 if index is not None:
-                    label = f'{index+1}/{len(timing.STAGES)} · {label}'
+                    label = f'Этап {index+1}/{len(timing.STAGES)}: {ru_stage} · {label}'
+                else:
+                    label = f'{ru_stage} · {label}'
                 if index is not None and getattr(self, 'run_estimate', None):
                     remaining = sum(self.run_estimate[index:]) - (time.monotonic() - self.stage_started)
                     label += (f' · осталось ~{timing.duration(remaining*0.5)}–{timing.duration(remaining*2.5)}'
@@ -983,7 +1003,8 @@ class Setup:
     def busy(self, running):
         self.running = running
         self.map.enabled = not running
-        self.map.city.configure(state='disabled' if running else 'normal')
+        if hasattr(self.map, 'city') and hasattr(self.map.city, 'configure'):
+            self.map.city.configure(state='disabled' if running else 'normal')
 
         def set_state(widget):
             for child in widget.winfo_children():
@@ -1073,6 +1094,8 @@ class Setup:
         def target():
             if self.cancel.is_set():
                 raise InterruptedError('install stopped')
+            self.say(f"Установка готового пака «{self.place['name']}»...")
+            country_fetch.delete_previous_mods(mods, emit=self.say)
             if info.get('state') == 'local':
                 path = country_fetch.install_zip(info['path'], mods, slug_id, cancel=self.cancel)
             elif info.get('state') == 'url':
@@ -1082,7 +1105,7 @@ class Setup:
             else:
                 self.say('Готовый пак не найден')
                 return
-            self.say(f'Пак установлен в: {path}')
+            self.say(f'Пак успешно установлен в: {path}')
         self.run(target)
 
     def build(self):
@@ -1112,10 +1135,24 @@ class Setup:
         block = looks.BLOCK_BY_ID.get(look['block'], looks.BLOCK_BY_ID['general'])['title']
 
         def target():
+            log_dir = ROOT / 'out' / 'aroundworldng'
+            log_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                with open(log_dir / 'build.log', 'w', encoding='utf-8') as f:
+                    f.write(f"=== AroundWorldNG Map Studio Build Log ===\n")
+                    f.write(f"Date: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    f.write(f"Region: {place['name']} (ID: {place['id']})\n")
+                    f.write(f"Style: {block}\n")
+                    f.write(f"Box: {box}\n")
+                    f.write(f"BeamNG mods: {country_fetch.get_mods_dir(mods)}\n")
+                    f.write(f"==========================================\n\n")
+            except OSError:
+                pass
             self.say(f"Генерация: «{place['name']}», стиль «{block}». Дороги и высоты генерируются автоматически.")
             self.say("Конфигурация считывается из aroundworldng_planet.zip. Если обновляли исходники, нажмите «Синхронизировать ядро».")
             country_fetch.build_place(place, mods, look=look, include=include, box=box,
                                       by_id=self.by_id, emit=self.say, cancel=self.cancel, progress=self.stage_progress)
+            self.say(f"Полный лог сборки записан в {log_dir / 'build.log'}")
 
         self.run(target, estimate=estimate, history_key=key)
 
